@@ -29,94 +29,100 @@ class FocusCard extends ConsumerWidget {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '专注核心',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white70,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '专注核心',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppDesignTokens.flameCore.withAlpha(40),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Lv.$flameLevel',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Center(
+                  child: SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: FlameCore(intensity: intensity),
+                  ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppDesignTokens.flameCore.withAlpha(40),
-                  borderRadius: BorderRadius.circular(10),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _formatFocusTime(todayMinutes),
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      '今日专注时长',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white60,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  'Lv.$flameLevel',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(20),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        dashboardState.weather.type == 'sunny' ? '心流状态' : '进入驾驶舱',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 14),
+                    ],
                   ),
                 ),
               ),
             ],
-          ),
-          const Spacer(),
-          Center(
-            child: SizedBox(
-              width: 100,
-              height: 100,
-              child: FlameCore(intensity: intensity),
-            ),
-          ),
-          const Spacer(),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  _formatFocusTime(todayMinutes),
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  '今日专注时长',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white60,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(20),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    dashboardState.weather.type == 'sunny' ? '心流状态' : '进入驾驶舱',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 14),
-                ],
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

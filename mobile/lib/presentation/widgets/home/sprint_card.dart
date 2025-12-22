@@ -30,83 +30,85 @@ class SprintCard extends ConsumerWidget {
     final daysLeft = sprint.daysLeft;
     final isUrgent = daysLeft <= 3;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        const Text(
-          '冲刺',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.white70,
-          ),
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            const Text(
+              '冲刺',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white70,
+              ),
+            ),
 
-        const Spacer(),
-
-        // Circular progress
-        Center(
-          child: SizedBox(
-            width: 70,
-            height: 70,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: const Size(70, 70),
-                  painter: _CircularProgressPainter(
-                    progress: progress,
-                    isUrgent: isUrgent,
+            Expanded(
+              child: Center(
+                child: SizedBox(
+                  width: 70,
+                  height: 70,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: const Size(70, 70),
+                        painter: _CircularProgressPainter(
+                          progress: progress,
+                          isUrgent: isUrgent,
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$daysLeft',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isUrgent ? Colors.red : Colors.white,
+                            ),
+                          ),
+                          Text(
+                            '天',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white.withAlpha(180),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$daysLeft',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isUrgent ? Colors.red : Colors.white,
-                      ),
-                    ),
-                    Text(
-                      '天',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withAlpha(180),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
 
-        const Spacer(),
-
-        // Sprint name
-        Text(
-          sprint.name,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          '${(progress * 100).toInt()}% 完成',
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.white.withAlpha(150),
-          ),
-        ),
-      ],
+            // Sprint name
+            Text(
+              sprint.name,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${(progress * 100).toInt()}% 完成',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withAlpha(150),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

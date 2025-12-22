@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/app_theme.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 import 'package:sparkle/presentation/screens/profile/edit_profile_screen.dart';
 import 'package:sparkle/presentation/screens/profile/unified_settings_screen.dart';
@@ -14,31 +15,35 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final brightness = Theme.of(context).brightness;
 
     if (user == null) return const SizedBox.shrink();
 
     return Scaffold(
-      backgroundColor: AppDesignTokens.neutral50,
-      body: MobileConstrainedBox(
-        backgroundColor: AppDesignTokens.neutral50,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _buildHeader(context, user),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppDesignTokens.spacing16),
-                child: Column(
-                  children: [
-                    const SizedBox(height: AppDesignTokens.spacing24),
-                    const StatisticsCard(),
-                    const SizedBox(height: AppDesignTokens.spacing24),
-                    _buildSettingsSection(context, ref),
-                    const SizedBox(height: 100), // Bottom padding
-                  ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(brightness),
+        ),
+        child: MobileConstrainedBox(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                _buildHeader(context, user),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppDesignTokens.spacing16),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: AppDesignTokens.spacing24),
+                      const StatisticsCard(),
+                      const SizedBox(height: AppDesignTokens.spacing24),
+                      _buildSettingsSection(context, ref),
+                      const SizedBox(height: 100), // Bottom padding
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

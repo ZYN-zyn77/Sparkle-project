@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/app_theme.dart';
 import 'package:sparkle/presentation/providers/galaxy_provider.dart';
 import 'package:sparkle/presentation/widgets/galaxy/flame_core.dart';
 import 'package:sparkle/presentation/widgets/galaxy/star_map_painter.dart';
@@ -161,11 +162,15 @@ class _GalaxyScreenState extends ConsumerState<GalaxyScreen> {
   @override
   Widget build(BuildContext context) {
     final galaxyState = ref.watch(galaxyProvider);
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
-      backgroundColor: Colors.black, // Deep space
-      body: Stack(
-        children: [
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(brightness),
+        ),
+        child: Stack(
+          children: [
           // 1. Star Map (Interactive)
           InteractiveViewer(
             transformationController: _transformationController,
@@ -262,7 +267,8 @@ class _GalaxyScreenState extends ConsumerState<GalaxyScreen> {
 
           if (galaxyState.isLoading)
             const Center(child: CircularProgressIndicator()),
-        ],
+          ],
+        ),
       ),
     );
   }

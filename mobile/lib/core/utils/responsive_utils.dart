@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/utils/screen_size.dart';
 
 /// ResponsiveUtils - Utility class for handling multi-platform and responsive layouts
 class ResponsiveUtils {
   ResponsiveUtils._();
+
+  /// 获取当前屏幕尺寸枚举
+  static ScreenSize getScreenSize(BuildContext context) {
+    return getScreenSizeFromContext(context);
+  }
 
   /// Returns true if the screen width is mobile scale
   static bool isMobile(BuildContext context) {

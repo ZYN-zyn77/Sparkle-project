@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/app_theme.dart';
 import 'package:sparkle/presentation/providers/chat_provider.dart';
 import 'package:sparkle/presentation/widgets/chat/chat_bubble.dart';
 import 'package:sparkle/presentation/widgets/chat/chat_input.dart';
@@ -50,6 +51,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
     final messages = chatState.messages;
+    final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -122,58 +124,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
-      body: MobileConstrainedBox(
-        backgroundColor: AppDesignTokens.neutral50,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: messages.isEmpty && chatState.streamingContent.isEmpty
-                    ? _buildQuickActions(context)
-                    : ListView.builder(
-                        controller: _scrollController,
-                        reverse: true,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-                        // 🆕 显示流式内容或加载指示器
-                        itemCount: messages.length + (chatState.isSending ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (chatState.isSending && index == 0) {
-                            // 如果有流式内容，显示它；否则显示加载指示器
-                            if (chatState.streamingContent.isNotEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12.0),
-                                child: _StreamingBubble(content: chatState.streamingContent),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(brightness),
+        ),
+        child: MobileConstrainedBox(
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: messages.isEmpty && chatState.streamingContent.isEmpty
+                      ? _buildQuickActions(context)
+                      : ListView.builder(
+                          controller: _scrollController,
+                          reverse: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+                          // 🆕 显示流式内容或加载指示器
+                          itemCount: messages.length + (chatState.isSending ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (chatState.isSending && index == 0) {
+                              // 如果有流式内容，显示它；否则显示加载指示器
+                              if (chatState.streamingContent.isNotEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12.0),
+                                  child: _StreamingBubble(content: chatState.streamingContent),
+                                );
+                              }
+                              return const Padding(
+                                padding: EdgeInsets.only(bottom: 12.0),
+                                child: _TypingIndicator(),
                               );
                             }
-                            return const Padding(
-                              padding: EdgeInsets.only(bottom: 12.0),
-                              child: _TypingIndicator(),
-                            );
-                          }
 
-                          // Adjust index if we have a loading indicator at 0
-                          final msgIndex = chatState.isSending ? index - 1 : index;
-                          final message = messages[messages.length - 1 - msgIndex];
-                          return ChatBubble(message: message);
-                        },
-                      ),
-              ),
-              if (chatState.error != null)
-                 Container(
-                   width: double.infinity,
-                   padding: const EdgeInsets.all(8.0),
-                   color: AppDesignTokens.error.withOpacity(0.1),
-                   child: Text(
-                     'Error: ${chatState.error}', 
-                     style: const TextStyle(color: AppDesignTokens.error),
-                     textAlign: TextAlign.center,
-                   ),
-                 ),
-              ChatInput(
-                enabled: !chatState.isSending,
-                onSend: (text) => ref.read(chatProvider.notifier).sendMessage(text),
-              ),
-            ],
+                            // Adjust index if we have a loading indicator at 0
+                            final msgIndex = chatState.isSending ? index - 1 : index;
+                            final message = messages[messages.length - 1 - msgIndex];
+                            return ChatBubble(message: message);
+                          },
+                        ),
+                ),
+                if (chatState.error != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8.0),
+                    color: AppDesignTokens.error.withOpacity(0.1),
+                    child: Text(
+                      'Error: ${chatState.error}', 
+                      style: const TextStyle(color: AppDesignTokens.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ChatInput(
+                  enabled: !chatState.isSending,
+                  onSend: (text) => ref.read(chatProvider.notifier).sendMessage(text),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -115,17 +115,35 @@ class AppDesignTokens {
 
   // ==================== Deep Space Theme (v2.3) ====================
 
-  /// Deep Space background colors
+  /// Deep Space background colors (Dark Mode)
   static const Color deepSpaceStart = Color(0xFF0D1B2A);
   static const Color deepSpaceEnd = Color(0xFF1B263B);
   static const Color deepSpaceSurface = Color(0xFF1B2838);
 
-  /// Deep Space gradient (radial for background)
+  /// Deep Space gradient (Dark Mode)
   static const LinearGradient deepSpaceGradient = LinearGradient(
     colors: [deepSpaceStart, deepSpaceEnd],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
+
+  // ==================== Light Theme ====================
+
+  /// Light mode background colors
+  static const Color lightBackgroundStart = Color(0xFFF5F7FA);
+  static const Color lightBackgroundEnd = Color(0xFFE8EAF6);
+  static const Color lightSurface = Color(0xFFFFFFFF);
+
+  /// Light mode gradient
+  static const LinearGradient lightBackgroundGradient = LinearGradient(
+    colors: [lightBackgroundStart, lightBackgroundEnd],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  /// Light mode glassmorphism
+  static final Color lightGlassBackground = Colors.white.withAlpha(200); // 0.78 * 255
+  static final Color lightGlassBorder = Colors.black.withAlpha(25); // 0.1 * 255
 
   /// Glassmorphism colors
   static final Color glassBackground = Colors.white.withOpacity(0.08);
@@ -362,6 +380,23 @@ class AppDesignTokens {
   static const double breakpointTablet = 768.0;
   static const double breakpointDesktop = 1024.0;
   static const double breakpointWide = 1440.0;
+
+  // ==================== Responsive Layout ====================
+
+  /// 导航栏宽度
+  static const double sidebarWidth = 240.0;
+  static const double railWidth = 72.0;
+
+  /// 内容区最大宽度
+  static const double contentMaxWidthMobile = 430.0;
+  static const double contentMaxWidthTablet = 720.0;
+  static const double contentMaxWidthDesktop = 1000.0;
+  static const double contentMaxWidthWide = 1200.0;
+
+  /// Bento Grid 间距
+  static const double bentoGridSpacing = 12.0;
+  static const double bentoGridMinCellSize = 80.0;
+  static const double bentoGridMaxCellSize = 180.0;
 
   // ==================== Opacity Levels ====================
 

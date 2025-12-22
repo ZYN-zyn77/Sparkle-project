@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/app_theme.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/providers/community_provider.dart';
 import 'package:sparkle/presentation/widgets/common/empty_state.dart';
@@ -13,6 +14,8 @@ class CommunityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -36,11 +39,16 @@ class CommunityScreen extends StatelessWidget {
             labelColor: AppDesignTokens.primaryBase,
           ),
         ),
-        body: const TabBarView(
-          children: [
-            _GroupsTab(),
-            _FriendsTab(),
-          ],
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: AppTheme.getBackgroundGradient(brightness),
+          ),
+          child: const TabBarView(
+            children: [
+              _GroupsTab(),
+              _FriendsTab(),
+            ],
+          ),
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {

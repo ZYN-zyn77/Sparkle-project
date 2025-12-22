@@ -3,7 +3,7 @@
 ## Project Overview
 Sparkle is an AI-powered learning assistant application designed for college students. It integrates an "AI Time Tutor" to guide users through a learning loop: Dialogue → Task Cards → Execution → Feedback → Sprint Plans.
 
-**Target**: MVP completion by February 2, 2025.
+**Target**: MVP completion by February 2, 2025 for university software innovation competition.
 **Team**: Student team (Python/AI background, learning Flutter).
 
 ## Tech Stack
@@ -34,6 +34,29 @@ Sparkle is an AI-powered learning assistant application designed for college stu
 *   **Local Database**: hive - For local database
 *   **SVG Rendering**: flutter_svg - For SVG image rendering
 *   **Internationalization**: intl - For internationalization support
+
+## Repository Structure
+
+```
+sparkle-flutter/
+├── backend/          # FastAPI backend
+│   ├── app/
+│   │   ├── api/v1/   # API endpoints (auth, tasks, chat, plans, statistics, subjects, errors, knowledge, push)
+│   │   ├── core/     # Security, exceptions, idempotency
+│   │   ├── db/       # Database session and initialization
+│   │   ├── models/   # SQLAlchemy models
+│   │   ├── schemas/  # Pydantic schemas for request/response
+│   │   ├── services/ # Business logic (user, task, plan, chat, LLM, subject, knowledge, push)
+│   │   └── utils/    # Helper utilities (forgetting curve, vector search)
+│   ├── alembic/      # Database migrations
+│   └── tests/        # Pytest tests
+└── mobile/           # Flutter app
+    └── lib/
+        ├── app/      # App configuration, routes, theme
+        ├── core/     # Constants, errors, network client
+        ├── data/     # Models, repositories
+        └── presentation/ # Screens, widgets, providers (Riverpod)
+```
 
 ## Environment & Configuration
 
@@ -191,20 +214,107 @@ mobile/
 │       └── constants/
 └── shaders/
     └── core_flame.frag                   # Flame shader, GLSL implementation
+
+## Common Development Commands
+
+### Backend
+
+**Setup and Run**:
+```bash
+cd backend
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env: set DATABASE_URL, SECRET_KEY, LLM_API_KEY, etc.
+
+# Run database migrations
+alembic upgrade head
+
+# Start development server
+uvicorn app.main:app --reload
+```
+
+**Database**:
+```bash
+# Create new migration (after model changes)
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+
+# Rollback one version
+alembic downgrade -1
+```
+
+**Testing**:
+```bash
+cd backend
+pytest                    # Run all tests
+pytest tests/test_auth.py # Run specific test file
+pytest -v                 # Verbose output
+pytest -k "test_name"     # Run tests matching pattern
+```
+
+**Code Quality**:
+```bash
+cd backend
+black app/               # Format code
+flake8 app/             # Lint code
+mypy app/               # Type checking
+```
+
+**API Documentation**:
+- After starting the server: http://localhost:8000/docs (Swagger UI)
+- Alternative: http://localhost:8000/redoc
+
+### Mobile
+
+**Setup and Run**:
+```bash
+cd mobile
+
+# Install dependencies
+flutter pub get
+
+# Generate code (for json_serializable, riverpod_generator, etc.)
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# Run app
+flutter run
+
+# Run on specific device
+flutter run -d <device-id>
+```
+
+**Code Generation** (required after changing models/providers):
+```bash
+cd mobile
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# Watch mode for development
+flutter pub run build_runner watch --delete-conflicting-outputs
+```
+
+**Testing**:
+```bash
+cd mobile
+flutter test            # Run all tests
+flutter test test/unit/ # Run specific directory
+```
+
+**Code Quality**:
+```bash
+cd mobile
+flutter analyze         # Static analysis
+dart format lib/        # Format code
 ```
 
 ## Development Workflow
 
 ### Backend (`/backend`)
-
-**Setup & Run:**
-```bash
-cd backend
-pip install -r requirements.txt
-cp .env.example .env  # Configure DB and AI keys
-alembic upgrade head  # Apply DB migrations
-uvicorn app.main:app --reload
-```
 
 **Startup Process (`backend/app/main.py`):**
 1.  On application startup, FastAPI's `lifespan` context manager is invoked.
@@ -217,23 +327,7 @@ uvicorn app.main:app --reload
 3.  **Shutdown Phase**:
     *   Stop knowledge expansion background task (`stop_expansion_worker`).
 
-**Database Migrations:**
-*   Create migration: `alembic revision --autogenerate -m "message"`
-*   Apply migration: `alembic upgrade head`
-*   Rollback: `alembic downgrade -1`
-
-**Testing:**
-*   Run all tests: `pytest`
-*   Run specific file: `pytest tests/test_api/test_auth.py`
-
 ### Mobile (`/mobile`)
-
-**Setup & Run:**
-```bash
-cd mobile
-flutter pub get
-flutter run
-```
 
 **Startup Process (`mobile/lib/main.dart`):**
 1.  `WidgetsFlutterBinding.ensureInitialized()`: Ensures Flutter binding is initialized.
@@ -333,7 +427,7 @@ flutter pub run build_runner build --delete-conflicting-outputs
 ##### `study_records` (Study Records Table)
 - `user_id` (GUID): User ID
 - `node_id` (GUID): Node ID
-- `task_id` (GUID): Associated task ID
+- `task_id` (GUID): Associated Task ID
 - `study_minutes` (Integer): Study minutes
 - `mastery_delta` (Float): Mastery delta
 - `record_type` (String): Record type (task_complete/review/exploration)
@@ -665,7 +759,7 @@ The mobile application uses `Riverpod` for state management, with core Providers
 ## Error Handling
 
 ### Backend Error Handling
-The backend uniformly handles HTTP exceptions via `app/core/exceptions.py`, defining various custom exception types such as `BadRequestException`, `UnauthorizedException`, `NotFoundException`, `InternalServerErrorException`, etc. These exceptions are caught in API routes, returning standardized error responses.
+The backend uniformly handles HTTP exceptions via `app/core/exceptions.py`, defining various custom exception types suchs as `BadRequestException`, `UnauthorizedException`, `NotFoundException`, `InternalServerErrorException`, etc. These exceptions are caught in API routes, returning standardized error responses.
 
 Error handling mechanisms include:
 1.  **Custom Exception Classes**: Defines various business-related exception types.
@@ -684,6 +778,3 @@ Error handling mechanisms include:
 4.  **Retry Mechanism**: Provides a retry button or automatic retry functionality for retriable operations.
 5.  **Local Caching**: Uses `hive` or `shared_preferences` to cache critical operations and resubmit them when the network is restored.
 6.  **User-Friendly Prompts**: Displays clear and easy-to-understand error messages, avoiding technical jargon.
-
-
-
