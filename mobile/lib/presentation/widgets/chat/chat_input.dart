@@ -94,9 +94,21 @@ class _ChatInputState extends State<ChatInput>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return SafeArea(
-      child: ClipRect(
-        child: BackdropFilter(
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppDesignTokens.neutral900 : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: ClipRect(
+          child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -207,6 +219,7 @@ class _ChatInputState extends State<ChatInput>
             ),
           ),
         ),
+      ),
       ),
     );
   }

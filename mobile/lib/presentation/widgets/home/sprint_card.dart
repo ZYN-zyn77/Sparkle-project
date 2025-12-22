@@ -1,16 +1,12 @@
-import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_tokens.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
+import 'package:sparkle/presentation/widgets/common/app_card.dart';
 
 /// SprintCard - Sprint Progress Card for v2.3 dashboard
-///
-/// 1x1 small card displaying:
-/// - Circular progress ring
-/// - Days remaining
-/// - Sprint name
+/// Updated with AppCard standardization.
 class SprintCard extends ConsumerWidget {
   final VoidCallback? onTap;
 
@@ -21,25 +17,11 @@ class SprintCard extends ConsumerWidget {
     final dashboardState = ref.watch(dashboardProvider);
     final sprint = dashboardState.sprint;
 
-    return GestureDetector(
+    return AppCard(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: AppDesignTokens.borderRadius20,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppDesignTokens.glassBackground,
-              borderRadius: AppDesignTokens.borderRadius20,
-              border: Border.all(color: AppDesignTokens.glassBorder),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: sprint != null
-                ? _buildSprintContent(sprint)
-                : _buildEmptyState(),
-          ),
-        ),
-      ),
+      child: sprint != null
+          ? _buildSprintContent(sprint)
+          : _buildEmptyState(),
     );
   }
 

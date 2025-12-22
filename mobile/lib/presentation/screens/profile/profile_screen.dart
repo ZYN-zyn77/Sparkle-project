@@ -4,6 +4,7 @@ import 'package:sparkle/core/design/design_tokens.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 import 'package:sparkle/presentation/screens/profile/edit_profile_screen.dart';
 import 'package:sparkle/presentation/screens/profile/unified_settings_screen.dart';
+import 'package:sparkle/presentation/widgets/layout/mobile_constrained_box.dart';
 import 'package:sparkle/presentation/widgets/profile/statistics_card.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -18,24 +19,27 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppDesignTokens.neutral50,
-      body: SingleChildScrollView(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            _buildHeader(context, user),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppDesignTokens.spacing16),
-              child: Column(
-                children: [
-                  const SizedBox(height: AppDesignTokens.spacing24),
-                  const StatisticsCard(),
-                  const SizedBox(height: AppDesignTokens.spacing24),
-                  _buildSettingsSection(context, ref),
-                  const SizedBox(height: 100), // Bottom padding
-                ],
+      body: MobileConstrainedBox(
+        backgroundColor: AppDesignTokens.neutral50,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _buildHeader(context, user),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppDesignTokens.spacing16),
+                child: Column(
+                  children: [
+                    const SizedBox(height: AppDesignTokens.spacing24),
+                    const StatisticsCard(),
+                    const SizedBox(height: AppDesignTokens.spacing24),
+                    _buildSettingsSection(context, ref),
+                    const SizedBox(height: 100), // Bottom padding
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

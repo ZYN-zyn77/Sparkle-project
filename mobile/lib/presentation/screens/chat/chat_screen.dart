@@ -6,6 +6,7 @@ import 'package:sparkle/core/design/design_tokens.dart';
 import 'package:sparkle/presentation/providers/chat_provider.dart';
 import 'package:sparkle/presentation/widgets/chat/chat_bubble.dart';
 import 'package:sparkle/presentation/widgets/chat/chat_input.dart';
+import 'package:sparkle/presentation/widgets/layout/mobile_constrained_box.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -121,10 +122,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          color: AppDesignTokens.neutral50,
-        ),
+      body: MobileConstrainedBox(
+        backgroundColor: AppDesignTokens.neutral50,
         child: SafeArea(
           child: Column(
             children: [

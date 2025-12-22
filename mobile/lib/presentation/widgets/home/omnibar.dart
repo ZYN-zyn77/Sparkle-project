@@ -41,11 +41,11 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
   void _onTextChanged() {
     final text = _controller.text.toLowerCase();
     String? newIntent;
-    if (text.contains('提醒') || text.contains('做') || text.contains('任务')) {
+    if (text.contains('提醒') || text.contains('做') || text.contains('任务') || text.contains('背')) {
       newIntent = 'TASK';
-    } else if (text.contains('烦') || text.contains('想') || text.contains('！')) {
+    } else if (text.contains('烦') || text.contains('想') || text.contains('！') || text.contains('好')) {
       newIntent = 'CAPSULE';
-    } else if (text.length > 10) {
+    } else if (text.length > 8) {
       newIntent = 'CHAT';
     }
 
@@ -123,23 +123,23 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
       builder: (context, child) {
         final color = _getIntentColor();
         return Container(
-          height: 56,
+          height: 50, // Slightly more compact
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E).withOpacity(0.9),
-            borderRadius: BorderRadius.circular(28),
+            color: const Color(0xFF1E1E1E).withOpacity(0.95),
+            borderRadius: BorderRadius.circular(25),
             border: Border.all(
-              color: color.withOpacity(0.3 + (_glowAnimation.value * 0.4)),
-              width: 1.5,
+              color: color.withOpacity(0.2 + (_glowAnimation.value * 0.4)),
+              width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(_glowAnimation.value * 0.2),
-                blurRadius: 15,
-                spreadRadius: 2,
+                color: color.withOpacity(_glowAnimation.value * 0.15),
+                blurRadius: 10,
+                spreadRadius: 1,
               ),
             ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               Expanded(
@@ -147,24 +147,27 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
                   controller: _controller,
                   focusNode: _focusNode,
                   onSubmitted: (_) => _submit(),
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: '告诉我你的想法...',
-                    hintStyle: TextStyle(color: Colors.white.withAlpha(80), fontSize: 14),
+                    hintText: '刚才为什么分心了？',
+                    hintStyle: TextStyle(color: Colors.white.withAlpha(80), fontSize: 13),
                     border: InputBorder.none,
+                    isDense: true,
                   ),
                 ),
               ),
               if (_isLoading)
-                const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
               else
                 IconButton(
                   icon: Icon(
                     _intentType == 'CHAT' ? Icons.auto_awesome : Icons.arrow_upward_rounded,
                     color: _intentType != null ? color : Colors.white70,
-                    size: 20,
+                    size: 18,
                   ),
                   onPressed: _submit,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
             ],
           ),
