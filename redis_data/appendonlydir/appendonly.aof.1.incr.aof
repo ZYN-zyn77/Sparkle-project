@@ -49,3 +49,8 @@ $21
 queue:persist:history
 $33
 {"role":"user","content":"hello"}
+*2
+$3
+DEL
+$29
+chat:history:test_session_456
