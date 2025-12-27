@@ -1,5 +1,6 @@
 import json
 import asyncio
+import time
 from typing import AsyncGenerator, List, Dict, Optional, Any
 from loguru import logger
 from datetime import datetime
@@ -8,6 +9,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.llm_service import llm_service
 from app.services.knowledge_service import KnowledgeService
+from app.services.galaxy_service import GalaxyService
 from app.services.user_service import UserService
 from app.orchestration.prompts import build_system_prompt
 from app.orchestration.executor import ToolExecutor
@@ -16,8 +18,12 @@ from app.orchestration.dynamic_tool_registry import dynamic_tool_registry
 from app.orchestration.validator import RequestValidator, ValidationResult
 from app.orchestration.composer import ResponseComposer
 from app.orchestration.context_pruner import ContextPruner
+from app.orchestration.token_tracker import TokenTracker
 from app.gen.agent.v1 import agent_service_pb2
 from app.config import settings
+from app.core.metrics import (
+    REQUEST_COUNT, REQUEST_LATENCY, TOKEN_USAGE, TOOL_EXECUTION_COUNT, ACTIVE_SESSIONS
+)
 
 # FSM States
 STATE_INIT = "INIT"
@@ -26,6 +32,59 @@ STATE_GENERATING = "GENERATING"
 STATE_TOOL_CALLING = "TOOL_CALLING"
 STATE_DONE = "DONE"
 STATE_FAILED = "FAILED"
+
+
+def get_agent_type_for_tool(tool_name: str) -> int:
+    """
+    Map tool names to AgentType enum for multi-agent visualization.
+
+    Returns:
+        AgentType enum value (int)
+    """
+    tool_lower = tool_name.lower()
+
+    # Knowledge-related tools -> KNOWLEDGE agent
+    if any(keyword in tool_lower for keyword in ['knowledge', 'query', 'search', 'retrieve', 'vector', 'graphrag']):
+        return agent_service_pb2.KNOWLEDGE
+
+    # Math/calculation tools -> MATH agent
+    if any(keyword in tool_lower for keyword in ['math', 'calculate', 'wolfram', 'compute', 'formula', 'equation']):
+        return agent_service_pb2.MATH
+
+    # Code/system tools -> CODE agent
+    if any(keyword in tool_lower for keyword in ['code', 'execute', 'run', 'system', 'debug', 'compile']):
+        return agent_service_pb2.CODE
+
+    # Data analysis tools -> DATA_ANALYSIS agent
+    if any(keyword in tool_lower for keyword in ['data', 'analyze', 'statistic', 'chart', 'plot', 'visualize', 'pandas', 'numpy']):
+        return agent_service_pb2.DATA_ANALYSIS
+
+    # Translation tools -> TRANSLATION agent
+    if any(keyword in tool_lower for keyword in ['translate', 'language', 'localize', 'i18n']):
+        return agent_service_pb2.TRANSLATION
+
+    # Image tools -> IMAGE agent
+    if any(keyword in tool_lower for keyword in ['image', 'photo', 'picture', 'draw', 'generate_image', 'edit_image']):
+        return agent_service_pb2.IMAGE
+
+    # Audio tools -> AUDIO agent
+    if any(keyword in tool_lower for keyword in ['audio', 'sound', 'music', 'speech', 'voice', 'tts', 'stt']):
+        return agent_service_pb2.AUDIO
+
+    # Writing/content tools -> WRITING agent
+    if any(keyword in tool_lower for keyword in ['write', 'summarize', 'compose', 'draft', 'edit_text']):
+        return agent_service_pb2.WRITING
+
+    # Reasoning/logic tools -> REASONING agent
+    if any(keyword in tool_lower for keyword in ['reason', 'logic', 'solve', 'deduce', 'infer', 'prove']):
+        return agent_service_pb2.REASONING
+
+    # Task/orchestration tools -> ORCHESTRATOR
+    if any(keyword in tool_lower for keyword in ['task', 'plan', 'create', 'update', 'batch', 'orchestrate']):
+        return agent_service_pb2.ORCHESTRATOR
+
+    # Default to ORCHESTRATOR
+    return agent_service_pb2.ORCHESTRATOR
 
 
 class ChatOrchestrator:
@@ -45,12 +104,13 @@ class ChatOrchestrator:
 
         # Initialize components
         self.state_manager = SessionStateManager(redis_client) if redis_client else None
-        self.validator = RequestValidator(redis_client) if redis_client else None
+        self.validator = RequestValidator(redis_client, daily_quota=100000) if redis_client else None
         self.tool_executor = ToolExecutor()
         self.response_composer = ResponseComposer()
 
         # Initialize ContextPruner (P0 feature)
         self.context_pruner = None
+        self.token_tracker = None
         if redis_client:
             self.context_pruner = ContextPruner(
                 redis_client=redis_client,
@@ -58,7 +118,11 @@ class ChatOrchestrator:
                 summary_threshold=20,         # 超过20轮触发总结
                 summary_cache_ttl=3600        # 总结缓存1小时
             )
-            logger.info("ChatOrchestrator initialized with ContextPruner")
+
+            # Initialize TokenTracker (P1 feature)
+            self.token_tracker = TokenTracker(redis_client)
+
+            logger.info("ChatOrchestrator initialized with ContextPruner and TokenTracker")
 
         # Initialize tool registry (auto-discover tools)
         if redis_client:  # Only log if initialized
@@ -209,6 +273,8 @@ class ChatOrchestrator:
         """
         Process the incoming chat request with enhanced features
         """
+        start_time = time.time()
+        ACTIVE_SESSIONS.inc()
         request_id = request.request_id
         session_id = request.session_id
         user_id = request.user_id
@@ -216,8 +282,8 @@ class ChatOrchestrator:
         # Use provided session or instance session
         active_db = db_session or self.db_session
         
-        # Step 0: Request Validation
-        validation_result = self.validator.validate_chat_request(request)
+        # Step 0: Request Validation (with quota check)
+        validation_result = await self.validator.validate_chat_request(request)
         if not validation_result.is_valid:
             logger.error(f"Validation failed: {validation_result.error_message}")
             yield agent_service_pb2.ChatResponse(
@@ -293,18 +359,60 @@ class ChatOrchestrator:
             await self._update_state(session_id, STATE_THINKING, "Pruning conversation history...")
             conversation_context = await self._build_conversation_context(session_id, user_id)
 
-            # Step 7: RAG Retrieval
+            # Step 7: GraphRAG Retrieval (Enhanced with graph database)
             await self._update_state(session_id, STATE_THINKING, "Retrieving relevant knowledge...")
             knowledge_context = ""
+            
             if active_db and user_id:
                 try:
-                    ks = KnowledgeService(active_db)
-                    knowledge_context = await ks.retrieve_context(
+                    # Use RAG v2.0 Hybrid Search via GalaxyService
+                    galaxy_svc = GalaxyService(active_db)
+                    search_results = await galaxy_svc.hybrid_search(
                         user_id=uuid.UUID(user_id),
-                        query=user_message
+                        query=user_message,
+                        limit=5,
+                        use_reranker=True
                     )
+                    
+                    citation_protos = []
+                    context_parts = []
+                    
+                    for item in search_results:
+                        node = item.node
+                        score = item.similarity
+                        
+                        # Build Context
+                        context_parts.append(f"[{node.name}]: {node.description}")
+                        
+                        # Build Citation Proto
+                        citation_protos.append(agent_service_pb2.Citation(
+                            id=str(node.id),
+                            title=node.name,
+                            content=node.description[:300] if node.description else "",
+                            source_type="hybrid",
+                            score=float(score)
+                        ))
+                    
+                    knowledge_context = "\n\n".join(context_parts)
+                    
+                    # Yield Citations to client
+                    if citation_protos:
+                        yield agent_service_pb2.ChatResponse(
+                            response_id=f"resp_{uuid.uuid4()}",
+                            created_at=int(datetime.now().timestamp()),
+                            request_id=request_id,
+                            citations=agent_service_pb2.CitationBlock(citations=citation_protos),
+                            status_update=agent_service_pb2.AgentStatus(
+                                state=agent_service_pb2.AgentStatus.SEARCHING,
+                                details=f"Found {len(citation_protos)} relevant knowledge points",
+                                current_agent_name="SearchAgent",
+                                active_agent=agent_service_pb2.KNOWLEDGE
+                            )
+                        )
+
                 except Exception as e:
-                    logger.warning(f"Knowledge retrieval failed: {e}")
+                    logger.warning(f"RAG retrieval failed: {e}")
+
 
             # Step 8: Build Prompt with ContextPruner
             await self._update_state(session_id, STATE_THINKING, "Building system prompt...")
@@ -326,7 +434,8 @@ class ChatOrchestrator:
                 request_id=request_id,
                 status_update=agent_service_pb2.AgentStatus(
                     state=agent_service_pb2.AgentStatus.THINKING,
-                    details="Analyzing your request and preparing response..."
+                    details="Analyzing your request and preparing response...",
+                    active_agent=agent_service_pb2.ORCHESTRATOR
                 )
             )
 
@@ -341,7 +450,9 @@ class ChatOrchestrator:
 
             full_response = ""
             tool_execution_results = []
-            
+            total_prompt_tokens = 0
+            total_completion_tokens = 0
+
             # Call LLM Service
             async for chunk in llm_service.chat_stream_with_tools(
                 system_prompt=full_system_prompt,
@@ -357,23 +468,58 @@ class ChatOrchestrator:
                         request_id=request_id,
                         delta=chunk.content
                     )
-                
+
                 elif chunk.type == "tool_call_end":
                     # Tool call is ready
                     await self._update_state(session_id, STATE_TOOL_CALLING, f"Calling {chunk.tool_name}...")
-                    
+
+                    # Create a progress callback for the tool
+                    async def send_progress(progress: int, message: str, task_id: str = None):
+                        yield agent_service_pb2.ChatResponse(
+                            response_id=f"resp_{uuid.uuid4()}",
+                            created_at=int(datetime.now().timestamp()),
+                            request_id=request_id,
+                            status_update=agent_service_pb2.AgentStatus(
+                                state=agent_service_pb2.AgentStatus.EXECUTING_TOOL,
+                                details=f"[{chunk.tool_name}] {message} ({progress}%)",
+                                active_agent=get_agent_type_for_tool(chunk.tool_name)
+                            )
+                        )
+
                     yield agent_service_pb2.ChatResponse(
                         response_id=f"resp_{uuid.uuid4()}",
                         created_at=int(datetime.now().timestamp()),
                         request_id=request_id,
                         status_update=agent_service_pb2.AgentStatus(
-                            state=agent_service_pb2.AgentStatus.TOOL_CALLING,
-                            details=f"Executing {chunk.tool_name}..."
+                            state=agent_service_pb2.AgentStatus.EXECUTING_TOOL,
+                            details=f"Executing {chunk.tool_name}...",
+                            active_agent=get_agent_type_for_tool(chunk.tool_name)
                         ),
                         tool_call=agent_service_pb2.ToolCall(
                             id=chunk.tool_call_id,
                             name=chunk.tool_name,
                             arguments=json.dumps(chunk.full_arguments)
+                        )
+                    )
+
+                # Collect token usage
+                elif chunk.type == "usage" and self.token_tracker:
+                    total_prompt_tokens = chunk.prompt_tokens or 0
+                    total_completion_tokens = chunk.completion_tokens or 0
+                    
+                    # Record to Prometheus
+                    TOKEN_USAGE.labels(model="gpt-4", type="prompt").inc(total_prompt_tokens)
+                    TOKEN_USAGE.labels(model="gpt-4", type="completion").inc(total_completion_tokens)
+
+                    # Send usage info to client
+                    yield agent_service_pb2.ChatResponse(
+                        response_id=f"resp_{uuid.uuid4()}",
+                        created_at=int(datetime.now().timestamp()),
+                        request_id=request_id,
+                        usage=agent_service_pb2.Usage(
+                            prompt_tokens=total_prompt_tokens,
+                            completion_tokens=total_completion_tokens,
+                            total_tokens=total_prompt_tokens + total_completion_tokens
                         )
                     )
 
@@ -399,8 +545,11 @@ class ChatOrchestrator:
                 full_text=final_response_data.get("message", full_response),
                 finish_reason=agent_service_pb2.STOP
             )
+            
+            REQUEST_COUNT.labels(module="orchestration", method="process_stream", status="success").inc()
 
         except Exception as e:
+            REQUEST_COUNT.labels(module="orchestration", method="process_stream", status="error").inc()
             logger.error(f"Orchestration Error: {e}", exc_info=True)
             await self._update_state(session_id, STATE_FAILED, str(e))
             yield agent_service_pb2.ChatResponse(
@@ -416,5 +565,42 @@ class ChatOrchestrator:
             )
         
         finally:
+            ACTIVE_SESSIONS.dec()
+            latency = time.time() - start_time
+            REQUEST_LATENCY.labels(module="orchestration", method="process_stream").observe(latency)
+            
             # Always release lock
             await self._release_session_lock(session_id, request_id)
+
+            # Record token usage (async, non-blocking)
+            if self.token_tracker and total_prompt_tokens > 0:
+                try:
+                    # Estimate cost
+                    estimated_cost = await self.token_tracker.estimate_cost(
+                        prompt_tokens=total_prompt_tokens,
+                        completion_tokens=total_completion_tokens,
+                        model="gpt-4"
+                    )
+
+                    # Record usage (async)
+                    asyncio.create_task(
+                        self.token_tracker.record_usage(
+                            user_id=user_id,
+                            session_id=session_id,
+                            request_id=request_id,
+                            prompt_tokens=total_prompt_tokens,
+                            completion_tokens=total_completion_tokens,
+                            model="gpt-4",
+                            cost=estimated_cost
+                        )
+                    )
+
+                    logger.info(
+                        f"Token usage recorded for user {user_id}: "
+                        f"{total_prompt_tokens} + {total_completion_tokens} = "
+                        f"{total_prompt_tokens + total_completion_tokens} tokens, "
+                        f"est. cost: ${estimated_cost:.6f}"
+                    )
+
+                except Exception as e:
+                    logger.error(f"Failed to record token usage: {e}")
