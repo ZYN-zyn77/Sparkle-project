@@ -16,8 +16,7 @@ class TestApp extends StatelessWidget {
   const TestApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context) => MaterialApp(
       title: 'Chain of Thought Visualization Test',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -25,7 +24,6 @@ class TestApp extends StatelessWidget {
       ),
       home: const ReasoningVisualizationDemo(),
     );
-  }
 }
 
 class ReasoningVisualizationDemo extends StatefulWidget {
@@ -37,7 +35,7 @@ class ReasoningVisualizationDemo extends StatefulWidget {
 
 class _ReasoningVisualizationDemoState extends State<ReasoningVisualizationDemo> {
   bool _showRealTime = false;
-  bool _showCompleted = false;
+  final bool _showCompleted = false;
 
   // Mock: Real-time reasoning steps (streaming in)
   final List<ReasoningStep> _realTimeSteps = [
@@ -135,8 +133,7 @@ class _ReasoningVisualizationDemoState extends State<ReasoningVisualizationDemo>
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Chain of Thought Visualization'),
         backgroundColor: Colors.deepPurple,
@@ -175,10 +172,8 @@ class _ReasoningVisualizationDemoState extends State<ReasoningVisualizationDemo>
         ),
       ),
     );
-  }
 
-  Widget _buildHeader() {
-    return Container(
+  Widget _buildHeader() => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -205,10 +200,8 @@ class _ReasoningVisualizationDemoState extends State<ReasoningVisualizationDemo>
         ],
       ),
     );
-  }
 
-  Widget _buildSection(String title, String subtitle, Widget content) {
-    return Container(
+  Widget _buildSection(String title, String subtitle, Widget content) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade900,
@@ -235,10 +228,8 @@ class _ReasoningVisualizationDemoState extends State<ReasoningVisualizationDemo>
         ],
       ),
     );
-  }
 
-  Widget _buildRealTimeDemo() {
-    return Column(
+  Widget _buildRealTimeDemo() => Column(
       children: [
         AgentReasoningBubble(
           steps: _realTimeSteps,
@@ -275,23 +266,17 @@ class _ReasoningVisualizationDemoState extends State<ReasoningVisualizationDemo>
         ),
       ],
     );
-  }
 
-  Widget _buildCompletedDemo() {
-    return AgentReasoningBubble(
+  Widget _buildCompletedDemo() => AgentReasoningBubble(
       steps: _completedSteps,
-      isThinking: false,
       totalDurationMs: 7000,
     );
-  }
 
-  Widget _buildCollaborationDemo() {
-    return MultiAgentCollaborationBubble(
+  Widget _buildCollaborationDemo() => MultiAgentCollaborationBubble(
       contributions: _collaborationContributions,
       summary: '综合三位专家的分析，推荐使用幂函数直接计算导数，时间复杂度O(1)，代码简洁高效。',
       isComplete: true,
     );
-  }
 
   Widget _buildPersistedMessageDemo() {
     final message = ChatMessageModel(
@@ -369,7 +354,6 @@ class _ReasoningVisualizationDemoState extends State<ReasoningVisualizationDemo>
                   const SizedBox(height: 8),
                   AgentReasoningBubble(
                     steps: message.reasoningSteps!,
-                    isThinking: false,
                     totalDurationMs: 7000,
                   ),
                 ],

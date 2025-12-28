@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:sparkle/core/design/design_tokens.dart';
+
+import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/decay/interactive_decay_timeline.dart';
 
 class GalaxyScreen extends StatefulWidget {
@@ -29,20 +31,17 @@ class _GalaxyScreenState extends State<GalaxyScreen> with SingleTickerProviderSt
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppDesignTokens.deepSpaceStart, // Void (Base)
+  Widget build(BuildContext context) => Scaffold(
+      backgroundColor: DS.deepSpaceStart, // Void (Base)
       body: Stack(
         children: [
           // 1. The Dynamic Galaxy Painter
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _controller,
-              builder: (context, child) {
-                return CustomPaint(
+              builder: (context, child) => CustomPaint(
                   painter: _SectorModelPainter(animationValue: _controller.value),
-                );
-              },
+                ),
             ),
           ),
           
@@ -56,25 +55,25 @@ class _GalaxyScreenState extends State<GalaxyScreen> with SingleTickerProviderSt
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.9), // Wisdom (White)
+                    color: DS.brandPrimary.withValues(alpha: 0.9), // Wisdom (White)
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: DS.brandPrimary.withValues(alpha: 0.6),
                         blurRadius: 40,
                         spreadRadius: 10,
                       ),
                       BoxShadow(
-                        color: Colors.blue.withValues(alpha: 0.3),
+                        color: DS.brandPrimary.withValues(alpha: 0.3),
                         blurRadius: 80,
                         spreadRadius: 20,
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Icon(Icons.psychology, size: 40, color: Colors.black87),
+                  child: Center(
+                    child: Icon(Icons.psychology, size: 40, color: DS.brandPrimary87),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: DS.xl),
                 // Text is now drawn by painter to avoid rotation issues, 
                 // but main title can stay here
               ],
@@ -90,7 +89,7 @@ class _GalaxyScreenState extends State<GalaxyScreen> with SingleTickerProviderSt
               child: Text(
                 'Sparkle 6+1 知识星域',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: DS.brandPrimary.withValues(alpha: 0.5),
                   fontSize: 14,
                   letterSpacing: 2,
                 ),
@@ -114,20 +113,17 @@ class _GalaxyScreenState extends State<GalaxyScreen> with SingleTickerProviderSt
                 // 调用 GalaxyProvider 的 simulateReview(nodeIds, days)
                 print('模拟复习 ${nodeIds.length} 个节点');
               },
-              selectedNodeIds: const [], // TODO: 从provider获取选中节点
-              initialDays: 30,
             ),
           ),
         ],
       ),
     );
-  }
 }
 
 class _SectorModelPainter extends CustomPainter {
-  final double animationValue;
 
   _SectorModelPainter({required this.animationValue});
+  final double animationValue;
 
   // 6+1 Sector Definitions
   static final List<_SectorDef> sectors = [
@@ -177,13 +173,13 @@ class _SectorModelPainter extends CustomPainter {
     _drawVoid(canvas, size);
 
     // 2. Draw Radial Sectors
-    final double angleStep = (2 * math.pi) / sectors.length;
+    final angleStep = (2 * math.pi) / sectors.length;
     // Rotate slightly slowly
-    final double rotationOffset = animationValue * 2 * math.pi * 0.05; 
+    final rotationOffset = animationValue * 2 * math.pi * 0.05; 
 
-    for (int i = 0; i < sectors.length; i++) {
+    for (var i = 0; i < sectors.length; i++) {
       final sector = sectors[i];
-      final double startAngle = (i * angleStep) - (math.pi / 2) + rotationOffset;
+      final startAngle = (i * angleStep) - (math.pi / 2) + rotationOffset;
       
       _drawSector(
         canvas, 
@@ -203,13 +199,13 @@ class _SectorModelPainter extends CustomPainter {
     final paint = Paint();
     final random = math.Random(42); // Deterministic seed
 
-    for (int i = 0; i < 150; i++) {
+    for (var i = 0; i < 150; i++) {
       final x = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
       final starSize = random.nextDouble() * 2;
       final opacity = random.nextDouble() * 0.5 + 0.1;
 
-      paint.color = Colors.white.withValues(alpha: opacity);
+      paint.color = DS.brandPrimary.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), starSize, paint);
     }
   }
@@ -306,7 +302,7 @@ class _SectorModelPainter extends CustomPainter {
     final random = math.Random(sector.id.hashCode);
     final starPaint = Paint()..color = sector.color;
     
-    for(int i=0; i<8; i++) {
+    for(var i=0; i<8; i++) {
         // Random polar coordinates within the sector wedge
         final r = (random.nextDouble() * 0.6 + 0.3) * radius; // 30% to 90% radius
         final a = startAngle + (random.nextDouble() * 0.8 + 0.1) * sweepAngle; // Keep away from edges
@@ -330,7 +326,7 @@ class _SectorModelPainter extends CustomPainter {
   void _drawWisdomHalo(Canvas canvas, Offset center, double radius) {
     // Halo Paint
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.1)
+      ..color = DS.brandPrimary.withValues(alpha: 0.1)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
     
     canvas.drawCircle(center, radius, paint);
@@ -338,7 +334,7 @@ class _SectorModelPainter extends CustomPainter {
     // Inner Ring
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..color = Colors.white.withValues(alpha: 0.2)
+      ..color = DS.brandPrimary.withValues(alpha: 0.2)
       ..strokeWidth = 1;
       
     canvas.drawCircle(center, radius * 0.8, ringPaint);
@@ -349,11 +345,6 @@ class _SectorModelPainter extends CustomPainter {
 }
 
 class _SectorDef {
-  final String id;
-  final String name;
-  final String description;
-  final Color color;
-  final IconData icon;
 
   _SectorDef({
     required this.id,
@@ -362,4 +353,9 @@ class _SectorDef {
     required this.color,
     required this.icon,
   });
+  final String id;
+  final String name;
+  final String description;
+  final Color color;
+  final IconData icon;
 }

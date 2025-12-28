@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 enum AgendaType {
   busy,      // 1 繁忙
@@ -7,13 +8,13 @@ enum AgendaType {
 }
 
 class WeeklyAgendaGrid extends StatefulWidget {
-  final Map<String, dynamic>? initialData;
-  final Function(Map<String, dynamic> data) onChanged;
 
   const WeeklyAgendaGrid({
     required this.onChanged, super.key,
     this.initialData,
   });
+  final Map<String, dynamic>? initialData;
+  final Function(Map<String, dynamic> data) onChanged;
 
   @override
   State<WeeklyAgendaGrid> createState() => _WeeklyAgendaGridState();
@@ -47,11 +48,11 @@ class _WeeklyAgendaGridState extends State<WeeklyAgendaGrid> {
   Color _getColor(AgendaType type) {
     switch (type) {
       case AgendaType.busy:
-        return Colors.red.shade300;
+        return DS.error.shade300;
       case AgendaType.fragmented:
-        return Colors.green.shade300;
+        return DS.success.shade300;
       case AgendaType.relax:
-        return Colors.blue.shade100; // Lighter blue for default
+        return DS.brandPrimary.shade100; // Lighter blue for default
     }
   }
 
@@ -88,7 +89,7 @@ class _WeeklyAgendaGridState extends State<WeeklyAgendaGrid> {
                   color: _getColor(type).withValues(alpha: isSelected ? 1.0 : 0.5),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected ? (isDark ? Colors.white : Colors.black54) : Colors.transparent,
+                    color: isSelected ? (isDark ? DS.brandPrimary : DS.brandPrimary54) : Colors.transparent,
                     width: 2,
                   ),
                   boxShadow: isSelected ? [
@@ -98,7 +99,7 @@ class _WeeklyAgendaGridState extends State<WeeklyAgendaGrid> {
                 child: Text(
                   _getLabel(type),
                   style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: isDark ? DS.brandPrimary : DS.brandPrimary87,
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
@@ -131,7 +132,7 @@ class _WeeklyAgendaGridState extends State<WeeklyAgendaGrid> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
-                              color: isDark ? Colors.white70 : Colors.grey.shade700,
+                              color: isDark ? DS.brandPrimary70 : DS.brandPrimary.shade700,
                             ),
                           ),
                         ),
@@ -158,7 +159,7 @@ class _WeeklyAgendaGridState extends State<WeeklyAgendaGrid> {
                               hour.toString().padLeft(2, '0'),
                               style: TextStyle(
                                 fontSize: 10,
-                                color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                color: isDark ? DS.brandPrimary54 : DS.brandPrimary.shade600,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -187,8 +188,8 @@ class _WeeklyAgendaGridState extends State<WeeklyAgendaGrid> {
                                       decoration: BoxDecoration(
                                         color: _getColor(_gridState[index]),
                                         border: Border(
-                                          right: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade200, width: 0.5),
-                                          bottom: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade200, width: 0.5),
+                                          right: BorderSide(color: isDark ? DS.brandPrimary10 : DS.brandPrimary.shade200, width: 0.5),
+                                          bottom: BorderSide(color: isDark ? DS.brandPrimary10 : DS.brandPrimary.shade200, width: 0.5),
                                         ),
                                       ),
                                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
 /// 错误组件类型
@@ -20,6 +21,66 @@ enum ErrorSeverity {
 ///
 /// 支持多种错误展示样式：全屏错误页、顶部横幅、内联提示
 class CustomErrorWidget extends StatelessWidget {
+
+  const CustomErrorWidget({
+    required this.message, super.key,
+    this.type = ErrorType.inline,
+    this.severity = ErrorSeverity.error,
+    this.title,
+    this.icon,
+    this.onRetry,
+    this.onClose,
+    this.actions,
+    this.showIcon = true,
+  });
+
+  /// 全屏错误页工厂构造函数
+  factory CustomErrorWidget.page({
+    required String message, Key? key,
+    String? title,
+    IconData? icon,
+    VoidCallback? onRetry,
+    List<Widget>? actions,
+    ErrorSeverity severity = ErrorSeverity.error,
+  }) => CustomErrorWidget(
+      key: key,
+      type: ErrorType.page,
+      severity: severity,
+      title: title,
+      message: message,
+      icon: icon,
+      onRetry: onRetry,
+      actions: actions,
+    );
+
+  /// 错误横幅工厂构造函数
+  factory CustomErrorWidget.banner({
+    required String message, Key? key,
+    String? title,
+    VoidCallback? onClose,
+    ErrorSeverity severity = ErrorSeverity.error,
+  }) => CustomErrorWidget(
+      key: key,
+      type: ErrorType.banner,
+      severity: severity,
+      title: title,
+      message: message,
+      onClose: onClose,
+    );
+
+  /// 内联错误提示工厂构造函数
+  factory CustomErrorWidget.inline({
+    required String message, Key? key,
+    IconData? icon,
+    bool showIcon = true,
+    ErrorSeverity severity = ErrorSeverity.error,
+  }) => CustomErrorWidget(
+      key: key,
+      severity: severity,
+      message: message,
+      icon: icon,
+      showIcon: showIcon,
+    );
   /// 错误类型
   final ErrorType type;
 
@@ -47,73 +108,6 @@ class CustomErrorWidget extends StatelessWidget {
   /// 是否显示图标
   final bool showIcon;
 
-  const CustomErrorWidget({
-    required this.message, super.key,
-    this.type = ErrorType.inline,
-    this.severity = ErrorSeverity.error,
-    this.title,
-    this.icon,
-    this.onRetry,
-    this.onClose,
-    this.actions,
-    this.showIcon = true,
-  });
-
-  /// 全屏错误页工厂构造函数
-  factory CustomErrorWidget.page({
-    required String message, Key? key,
-    String? title,
-    IconData? icon,
-    VoidCallback? onRetry,
-    List<Widget>? actions,
-    ErrorSeverity severity = ErrorSeverity.error,
-  }) {
-    return CustomErrorWidget(
-      key: key,
-      type: ErrorType.page,
-      severity: severity,
-      title: title,
-      message: message,
-      icon: icon,
-      onRetry: onRetry,
-      actions: actions,
-    );
-  }
-
-  /// 错误横幅工厂构造函数
-  factory CustomErrorWidget.banner({
-    required String message, Key? key,
-    String? title,
-    VoidCallback? onClose,
-    ErrorSeverity severity = ErrorSeverity.error,
-  }) {
-    return CustomErrorWidget(
-      key: key,
-      type: ErrorType.banner,
-      severity: severity,
-      title: title,
-      message: message,
-      onClose: onClose,
-    );
-  }
-
-  /// 内联错误提示工厂构造函数
-  factory CustomErrorWidget.inline({
-    required String message, Key? key,
-    IconData? icon,
-    bool showIcon = true,
-    ErrorSeverity severity = ErrorSeverity.error,
-  }) {
-    return CustomErrorWidget(
-      key: key,
-      type: ErrorType.inline,
-      severity: severity,
-      message: message,
-      icon: icon,
-      showIcon: showIcon,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     switch (type) {
@@ -129,33 +123,33 @@ class CustomErrorWidget extends StatelessWidget {
   Color _getBackgroundColor() {
     switch (severity) {
       case ErrorSeverity.error:
-        return AppDesignTokens.error;
+        return DS.error;
       case ErrorSeverity.warning:
-        return AppDesignTokens.warning;
+        return DS.warning;
       case ErrorSeverity.info:
-        return AppDesignTokens.info;
+        return DS.info;
     }
   }
 
   Color _getLightBackgroundColor() {
     switch (severity) {
       case ErrorSeverity.error:
-        return AppDesignTokens.errorLight.withValues(alpha: 0.1);
+        return DS.errorLight.withValues(alpha: 0.1);
       case ErrorSeverity.warning:
-        return AppDesignTokens.warningLight.withValues(alpha: 0.1);
+        return DS.warningLight.withValues(alpha: 0.1);
       case ErrorSeverity.info:
-        return AppDesignTokens.infoLight.withValues(alpha: 0.1);
+        return DS.infoLight.withValues(alpha: 0.1);
     }
   }
 
   LinearGradient _getGradient() {
     switch (severity) {
       case ErrorSeverity.error:
-        return AppDesignTokens.errorGradient;
+        return DS.errorGradient;
       case ErrorSeverity.warning:
-        return AppDesignTokens.warningGradient;
+        return DS.warningGradient;
       case ErrorSeverity.info:
-        return AppDesignTokens.infoGradient;
+        return DS.infoGradient;
     }
   }
 
@@ -181,10 +175,9 @@ class CustomErrorWidget extends StatelessWidget {
     }
   }
 
-  Widget _buildErrorPage(BuildContext context) {
-    return Center(
+  Widget _buildErrorPage(BuildContext context) => Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppDesignTokens.spacing32),
+        padding: const EdgeInsets.all(DS.spacing32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -195,7 +188,7 @@ class CustomErrorWidget extends StatelessWidget {
                 height: 120.0,
                 decoration: BoxDecoration(
                   gradient: _getGradient(),
-                  borderRadius: AppDesignTokens.borderRadiusFull,
+                  borderRadius: DS.borderRadiusFull,
                   boxShadow: [
                     BoxShadow(
                       color: _getBackgroundColor().withValues(alpha: 0.3),
@@ -206,33 +199,33 @@ class CustomErrorWidget extends StatelessWidget {
                 ),
                 child: Icon(
                   icon ?? _getDefaultIcon(),
-                  size: AppDesignTokens.iconSize3xl,
-                  color: Colors.white,
+                  size: DS.iconSize3xl,
+                  color: DS.brandPrimaryConst,
                 ),
               ),
-            const SizedBox(height: AppDesignTokens.spacing32),
+            const SizedBox(height: DS.spacing32),
             // 错误标题
             Text(
               title ?? _getDefaultTitle(),
               style: const TextStyle(
-                fontSize: AppDesignTokens.fontSize2xl,
-                fontWeight: AppDesignTokens.fontWeightBold,
-                color: AppDesignTokens.neutral900,
+                fontSize: DS.fontSize2xl,
+                fontWeight: DS.fontWeightBold,
+                color: DS.neutral900,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDesignTokens.spacing12),
+            const SizedBox(height: DS.spacing12),
             // 错误消息
             Text(
               message,
               style: const TextStyle(
-                fontSize: AppDesignTokens.fontSizeBase,
-                color: AppDesignTokens.neutral600,
-                height: AppDesignTokens.lineHeightNormal,
+                fontSize: DS.fontSizeBase,
+                color: DS.neutral600,
+                height: DS.lineHeightNormal,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDesignTokens.spacing32),
+            const SizedBox(height: DS.spacing32),
             // 操作按钮
             if (actions != null)
               ...actions!
@@ -247,31 +240,29 @@ class CustomErrorWidget extends StatelessWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildErrorBanner(BuildContext context) {
-    return Container(
+  Widget _buildErrorBanner(BuildContext context) => Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: _getGradient(),
-        boxShadow: AppDesignTokens.shadowMd,
+        boxShadow: DS.shadowMd,
       ),
       child: Material(
         color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDesignTokens.spacing16,
-            vertical: AppDesignTokens.spacing12,
+            horizontal: DS.spacing16,
+            vertical: DS.spacing12,
           ),
           child: Row(
             children: [
               // 图标
               Icon(
                 icon ?? _getDefaultIcon(),
-                color: Colors.white,
-                size: AppDesignTokens.iconSizeBase,
+                color: DS.brandPrimaryConst,
+                size: DS.iconSizeBase,
               ),
-              const SizedBox(width: AppDesignTokens.spacing12),
+              const SizedBox(width: DS.spacing12),
               // 内容
               Expanded(
                 child: Column(
@@ -281,19 +272,19 @@ class CustomErrorWidget extends StatelessWidget {
                     if (title != null) ...[
                       Text(
                         title!,
-                        style: const TextStyle(
-                          fontSize: AppDesignTokens.fontSizeSm,
-                          fontWeight: AppDesignTokens.fontWeightSemibold,
-                          color: Colors.white,
+                        style: TextStyle(
+                          fontSize: DS.fontSizeSm,
+                          fontWeight: DS.fontWeightSemibold,
+                          color: DS.brandPrimaryConst,
                         ),
                       ),
-                      const SizedBox(height: AppDesignTokens.spacing4),
+                      const SizedBox(height: DS.spacing4),
                     ],
                     Text(
                       message,
-                      style: const TextStyle(
-                        fontSize: AppDesignTokens.fontSizeSm,
-                        color: Colors.white,
+                      style: TextStyle(
+                        fontSize: DS.fontSizeSm,
+                        color: DS.brandPrimaryConst,
                       ),
                     ),
                   ],
@@ -301,11 +292,11 @@ class CustomErrorWidget extends StatelessWidget {
               ),
               // 关闭按钮
               if (onClose != null) ...[
-                const SizedBox(width: AppDesignTokens.spacing12),
+                const SizedBox(width: DS.spacing12),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
-                  color: Colors.white,
-                  iconSize: AppDesignTokens.iconSizeSm,
+                  color: DS.brandPrimaryConst,
+                  iconSize: DS.iconSizeSm,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: onClose,
@@ -316,18 +307,15 @@ class CustomErrorWidget extends StatelessWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildInlineError(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppDesignTokens.spacing12),
+  Widget _buildInlineError(BuildContext context) => Container(
+      padding: const EdgeInsets.all(DS.spacing12),
       decoration: BoxDecoration(
         color: _getLightBackgroundColor(),
         border: Border.all(
           color: _getBackgroundColor().withValues(alpha: 0.3),
-          width: 1.0,
         ),
-        borderRadius: AppDesignTokens.borderRadius12,
+        borderRadius: DS.borderRadius12,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,58 +324,54 @@ class CustomErrorWidget extends StatelessWidget {
             Icon(
               icon ?? _getDefaultIcon(),
               color: _getBackgroundColor(),
-              size: AppDesignTokens.iconSizeSm,
+              size: DS.iconSizeSm,
             ),
-            const SizedBox(width: AppDesignTokens.spacing8),
+            const SizedBox(width: DS.spacing8),
           ],
           Expanded(
             child: Text(
               message,
               style: TextStyle(
-                fontSize: AppDesignTokens.fontSizeSm,
+                fontSize: DS.fontSizeSm,
                 color: _getBackgroundColor(),
-                height: AppDesignTokens.lineHeightNormal,
+                height: DS.lineHeightNormal,
               ),
             ),
           ),
         ],
       ),
     );
-  }
 }
 
 /// 网络错误页面
 class NetworkErrorPage extends StatelessWidget {
-  final VoidCallback? onRetry;
 
   const NetworkErrorPage({
     super.key,
     this.onRetry,
   });
+  final VoidCallback? onRetry;
 
   @override
-  Widget build(BuildContext context) {
-    return CustomErrorWidget.page(
+  Widget build(BuildContext context) => CustomErrorWidget.page(
       title: '网络连接失败',
       message: '请检查您的网络连接后重试',
       icon: Icons.wifi_off_rounded,
       onRetry: onRetry,
     );
-  }
 }
 
 /// 404错误页面
 class NotFoundErrorPage extends StatelessWidget {
-  final VoidCallback? onGoBack;
 
   const NotFoundErrorPage({
     super.key,
     this.onGoBack,
   });
+  final VoidCallback? onGoBack;
 
   @override
-  Widget build(BuildContext context) {
-    return CustomErrorWidget.page(
+  Widget build(BuildContext context) => CustomErrorWidget.page(
       title: '页面不存在',
       message: '抱歉，您访问的页面不存在或已被删除',
       icon: Icons.search_off_rounded,
@@ -398,31 +382,28 @@ class NotFoundErrorPage extends StatelessWidget {
             text: '返回',
             onPressed: onGoBack,
             icon: Icons.arrow_back_rounded,
-            customGradient: AppDesignTokens.warningGradient,
+            customGradient: DS.warningGradient,
           ),
       ],
     );
-  }
 }
 
 /// 服务器错误页面
 class ServerErrorPage extends StatelessWidget {
-  final VoidCallback? onRetry;
-  final String? errorMessage;
 
   const ServerErrorPage({
     super.key,
     this.onRetry,
     this.errorMessage,
   });
+  final VoidCallback? onRetry;
+  final String? errorMessage;
 
   @override
-  Widget build(BuildContext context) {
-    return CustomErrorWidget.page(
+  Widget build(BuildContext context) => CustomErrorWidget.page(
       title: '服务器错误',
       message: errorMessage ?? '服务器开小差了，请稍后重试',
       icon: Icons.cloud_off_rounded,
       onRetry: onRetry,
     );
-  }
 }

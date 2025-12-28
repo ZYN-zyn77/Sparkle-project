@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:sparkle/data/models/reasoning_step_model.dart';
+
 import 'package:sparkle/data/models/chat_message_model.dart';
 import 'package:sparkle/data/models/chat_stream_events.dart';
+import 'package:sparkle/data/models/reasoning_step_model.dart';
 
 void main() {
   print('🧪 Testing Chain of Thought Visualization Models\n');
@@ -27,7 +28,7 @@ void main() {
   // JSON serialization
   final stepJson = step1.toJson();
   print('\n✓ JSON Output:');
-  print('  ${JsonEncoder.withIndent('  ').convert(stepJson)}');
+  print('  ${const JsonEncoder.withIndent('  ').convert(stepJson)}');
 
   final step1FromJson = ReasoningStep.fromJson(stepJson);
   print('\n✓ Deserialized: $step1FromJson');
@@ -107,7 +108,7 @@ void main() {
   ];
 
   print('✓ Created ${contributions.length} agent contributions:');
-  for (var c in contributions) {
+  for (final c in contributions) {
     print('  - ${c.agentName} (${c.agentType}): ${c.responseText}');
   }
 
@@ -121,7 +122,7 @@ void main() {
   print('  - Step: ${event.step.description}');
 
   // Summary
-  print('\n\n' + '=' * 60);
+  print('\n\n${'=' * 60}');
   print('✅ ALL TESTS PASSED');
   print('=' * 60);
   print('\nSummary:');

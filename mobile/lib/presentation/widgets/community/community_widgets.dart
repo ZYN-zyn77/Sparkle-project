@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/sparkle_theme.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/widgets/common/sparkle_avatar.dart';
 
 /// 带有在线状态指示器的头像
 class StatusAvatar extends StatelessWidget {
-  final String? url;
-  final UserStatus status;
-  final double size;
-  final String? fallbackText;
 
   const StatusAvatar({
     required this.status, super.key,
@@ -16,19 +12,23 @@ class StatusAvatar extends StatelessWidget {
     this.size = 48,
     this.fallbackText,
   });
+  final String? url;
+  final UserStatus status;
+  final double size;
+  final String? fallbackText;
 
   @override
   Widget build(BuildContext context) {
-    final Color statusColor = status == UserStatus.online 
-        ? SparkleTheme.online 
-        : (status == UserStatus.invisible ? SparkleTheme.invisible : SparkleTheme.offline);
+    final statusColor = status == UserStatus.online
+        ? DS.statusOnline
+        : (status == UserStatus.invisible ? DS.statusInvisible : DS.statusOffline);
 
     return Stack(
       children: [
-        Container(
+        DecoratedBox(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: SparkleTheme.primary.withValues(alpha: 0.1), width: 2),
+            border: Border.all(color: DS.brandPrimary.withValues(alpha: 0.1), width: 2),
           ),
           child: SparkleAvatar(
             radius: size / 2,
@@ -45,7 +45,7 @@ class StatusAvatar extends StatelessWidget {
             decoration: BoxDecoration(
               color: statusColor,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
+              border: Border.all(color: DS.brandPrimaryConst, width: 2),
               boxShadow: [
                 BoxShadow(
                   color: statusColor.withValues(alpha: 0.4),
@@ -62,27 +62,26 @@ class StatusAvatar extends StatelessWidget {
 }
 
 /// 优雅的消息气泡
-class ChatBubble extends StatelessWidget {
-  final String content;
-  final bool isMe;
-  final DateTime time;
-  final bool isSent; // 是否已确认 (ACK)
+class ChatBubble extends StatelessWidget { // 是否已确认 (ACK)
 
   const ChatBubble({
     required this.content, required this.isMe, required this.time, super.key,
     this.isSent = true,
   });
+  final String content;
+  final bool isMe;
+  final DateTime time;
+  final bool isSent;
 
   @override
-  Widget build(BuildContext context) {
-    return Align(
+  Widget build(BuildContext context) => Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(DS.md),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isMe ? SparkleTheme.primary : Colors.white,
+          color: isMe ? DS.brandPrimary : DS.brandPrimary,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -91,7 +90,7 @@ class ChatBubble extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: DS.brandPrimary.withValues(alpha: 0.05),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -103,27 +102,27 @@ class ChatBubble extends StatelessWidget {
             Text(
               content,
               style: TextStyle(
-                color: isMe ? Colors.white : Colors.black87,
+                color: isMe ? DS.brandPrimary : DS.brandPrimary87,
                 fontSize: 15,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: DS.xs),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   "${time.hour}:${time.minute.toString().padLeft(2, '0')}",
                   style: TextStyle(
-                    color: isMe ? Colors.white70 : Colors.black45,
+                    color: isMe ? DS.brandPrimary70 : DS.brandPrimary45,
                     fontSize: 10,
                   ),
                 ),
                 if (isMe) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: DS.xs),
                   Icon(
                     isSent ? Icons.done_all : Icons.access_time,
                     size: 12,
-                    color: isSent ? Colors.white70 : Colors.white38,
+                    color: isSent ? DS.brandPrimary70 : DS.brandPrimary38,
                   ),
                 ],
               ],
@@ -132,7 +131,6 @@ class ChatBubble extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 /// 正在输入指示器 (动效)
@@ -159,10 +157,8 @@ class _TypingIndicatorState extends State<TypingIndicator> with SingleTickerProv
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(3, (index) {
-        return AnimatedBuilder(
+  Widget build(BuildContext context) => Row(
+      children: List.generate(3, (index) => AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
             final delay = index * 0.2;
@@ -172,13 +168,11 @@ class _TypingIndicatorState extends State<TypingIndicator> with SingleTickerProv
               height: 6,
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: SparkleTheme.primary.withValues(alpha: 0.3 + (value * 0.7)),
+                color: DS.brandPrimary.withValues(alpha: 0.3 + (value * 0.7)),
                 shape: BoxShape.circle,
               ),
             );
           },
-        );
-      }),
+        ),),
     );
-  }
 }

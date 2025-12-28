@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:sparkle/core/design/design_tokens.dart';
+
+import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 /// 架构可视化动画 - 必杀技 C
 ///
@@ -12,14 +14,14 @@ import 'package:sparkle/core/design/design_tokens.dart';
 ///
 /// 用于 Onboarding 流程，帮助用户理解系统工作原理
 class ArchitectureAnimation extends StatefulWidget {
-  final VoidCallback? onComplete;
-  final bool autoPlay;
 
   const ArchitectureAnimation({
     this.onComplete,
     this.autoPlay = true,
     super.key,
   });
+  final VoidCallback? onComplete;
+  final bool autoPlay;
 
   @override
   State<ArchitectureAnimation> createState() => _ArchitectureAnimationState();
@@ -66,8 +68,8 @@ class _ArchitectureAnimationState extends State<ArchitectureAnimation>
     }
   }
 
-  void _startAnimation() async {
-    for (int i = 0; i < _totalSteps; i++) {
+  Future<void> _startAnimation() async {
+    for (var i = 0; i < _totalSteps; i++) {
       setState(() => _currentStep = i);
       _mainController.forward(from: 0);
       await Future.delayed(const Duration(seconds: 3));
@@ -84,16 +86,15 @@ class _ArchitectureAnimationState extends State<ArchitectureAnimation>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       height: 500,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppDesignTokens.deepSpaceStart,
-            AppDesignTokens.deepSpaceEnd,
+            DS.deepSpaceStart,
+            DS.deepSpaceEnd,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
@@ -142,32 +143,25 @@ class _ArchitectureAnimationState extends State<ArchitectureAnimation>
         ],
       ),
     );
-  }
 
-  Widget _buildStarField() {
-    return CustomPaint(
+  Widget _buildStarField() => CustomPaint(
       painter: _StarFieldPainter(),
     );
-  }
 
-  Widget _buildStepIndicator() {
-    return Row(
+  Widget _buildStepIndicator() => Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_totalSteps, (index) {
-        return Container(
+      children: List.generate(_totalSteps, (index) => Container(
           width: index == _currentStep ? 24 : 8,
           height: 8,
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
             color: index <= _currentStep
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.3),
+                ? DS.brandPrimary
+                : DS.brandPrimary.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(4),
           ),
-        );
-      }),
+        ),),
     );
-  }
 
   Widget _buildStepDescription() {
     final steps = [
@@ -203,42 +197,42 @@ class _ArchitectureAnimationState extends State<ArchitectureAnimation>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
+        color: DS.brandPrimary.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: DS.brandPrimary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(DS.md),
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.3),
+              color: DS.brandPrimary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               step['icon'] as IconData,
-              color: Colors.white,
+              color: DS.brandPrimaryConst,
               size: 32,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: DS.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   step['title'] as String,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: DS.brandPrimaryConst,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: DS.xs),
                 Text(
                   step['description'] as String,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: DS.brandPrimary.withValues(alpha: 0.8),
                     fontSize: 14,
                   ),
                 ),
@@ -252,15 +246,15 @@ class _ArchitectureAnimationState extends State<ArchitectureAnimation>
 }
 
 class _ArchitecturePainter extends CustomPainter {
-  final int currentStep;
-  final double fadeValue;
-  final double pulseValue;
 
   _ArchitecturePainter({
     required this.currentStep,
     required this.fadeValue,
     required this.pulseValue,
   });
+  final int currentStep;
+  final double fadeValue;
+  final double pulseValue;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -293,24 +287,24 @@ class _ArchitecturePainter extends CustomPainter {
     // Draw layers
     if (currentStep >= 0) {
       _drawLayer(canvas, mobilePos, 'Flutter\nMobile', Icons.phone_android.codePoint,
-          currentStep >= 0 ? fadeValue : 0, Colors.blue.shade400);
+          currentStep >= 0 ? fadeValue : 0, DS.brandPrimary.shade400,);
     }
     if (currentStep >= 1) {
       _drawLayer(canvas, gatewayPos, 'Go\nGateway', Icons.swap_horiz.codePoint,
-          currentStep >= 1 ? fadeValue : 0, Colors.green.shade400);
+          currentStep >= 1 ? fadeValue : 0, DS.success.shade400,);
     }
     if (currentStep >= 2) {
       _drawLayer(canvas, agentPos, 'Python\nAgent', Icons.psychology.codePoint,
-          currentStep >= 2 ? fadeValue : 0, Colors.purple.shade400);
+          currentStep >= 2 ? fadeValue : 0, Colors.purple.shade400,);
     }
     if (currentStep >= 3) {
       _drawLayer(canvas, dbPos, 'PostgreSQL\n+ Redis', Icons.storage.codePoint,
-          currentStep >= 3 ? fadeValue : 0, Colors.orange.shade400);
+          currentStep >= 3 ? fadeValue : 0, DS.brandPrimary.shade400,);
     }
   }
 
   void _drawLayer(Canvas canvas, Offset position, String label, int iconCode,
-      double opacity, Color color) {
+      double opacity, Color color,) {
     final paint = Paint()
       ..color = color.withValues(alpha: opacity * 0.3)
       ..style = PaintingStyle.fill;
@@ -332,7 +326,7 @@ class _ArchitecturePainter extends CustomPainter {
       text: TextSpan(
         text: label,
         style: TextStyle(
-          color: Colors.white.withValues(alpha: opacity),
+          color: DS.brandPrimary.withValues(alpha: opacity),
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
@@ -353,7 +347,7 @@ class _ArchitecturePainter extends CustomPainter {
 
   void _drawConnection(Canvas canvas, Offset start, Offset end, double opacity) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: opacity * 0.5)
+      ..color = DS.brandPrimary.withValues(alpha: opacity * 0.5)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -362,11 +356,11 @@ class _ArchitecturePainter extends CustomPainter {
 
     // Draw arrowhead
     final arrowPaint = Paint()
-      ..color = Colors.white.withValues(alpha: opacity * 0.5)
+      ..color = DS.brandPrimary.withValues(alpha: opacity * 0.5)
       ..style = PaintingStyle.fill;
 
     final angle = math.atan2(end.dy - start.dy, end.dx - start.dx);
-    final arrowSize = 10.0;
+    const arrowSize = 10.0;
 
     final path = Path()
       ..moveTo(end.dx, end.dy)
@@ -410,11 +404,11 @@ class _ArchitecturePainter extends CustomPainter {
 class _StarFieldPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.3);
+    final paint = Paint()..color = DS.brandPrimary.withValues(alpha: 0.3);
 
     final random = math.Random(42); // Fixed seed for consistent stars
 
-    for (int i = 0; i < 50; i++) {
+    for (var i = 0; i < 50; i++) {
       final x = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
       final radius = random.nextDouble() * 2;

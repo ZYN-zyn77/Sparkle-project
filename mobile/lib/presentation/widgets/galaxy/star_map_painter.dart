@@ -1,16 +1,16 @@
-import 'dart:ui' as ui;
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/services/smart_cache.dart';
+import 'package:sparkle/core/services/text_cache.dart';
 import 'package:sparkle/data/models/galaxy_model.dart';
 import 'package:sparkle/presentation/providers/galaxy_provider.dart';
 import 'package:sparkle/presentation/widgets/galaxy/sector_config.dart';
 
 /// Pre-processed node data for efficient painting
 class ProcessedNode {
-  final GalaxyNodeModel node;
-  final Color color;
-  final double radius;
-  final Offset position;
 
   ProcessedNode({
     required this.node,
@@ -18,17 +18,14 @@ class ProcessedNode {
     required this.radius,
     required this.position,
   });
+  final GalaxyNodeModel node;
+  final Color color;
+  final double radius;
+  final Offset position;
 }
 
 /// Pre-processed edge data for efficient painting
 class ProcessedEdge {
-  final GalaxyEdgeModel edge;
-  final Offset start;
-  final Offset end;
-  final Color startColor;
-  final Color endColor;
-  final double distance;
-  final double strokeWidth;
 
   ProcessedEdge({
     required this.edge,
@@ -39,14 +36,17 @@ class ProcessedEdge {
     required this.distance,
     required this.strokeWidth,
   });
+  final GalaxyEdgeModel edge;
+  final Offset start;
+  final Offset end;
+  final Color startColor;
+  final Color endColor;
+  final double distance;
+  final double strokeWidth;
 }
 
 /// 关系类型颜色配置
 class _RelationStyle {
-  final Color color;
-  final double dashLength;
-  final bool isDashed;
-  final double baseWidth;
 
   const _RelationStyle({
     required this.color,
@@ -54,6 +54,10 @@ class _RelationStyle {
     this.isDashed = false,
     this.baseWidth = 1.5,
   });
+  final Color color;
+  final double dashLength;
+  final bool isDashed;
+  final double baseWidth;
 
   static _RelationStyle forType(EdgeRelationType type) {
     switch (type) {
@@ -86,12 +90,10 @@ class _RelationStyle {
           color: Color(0xFFE57373),  // 红色 - 对比概念
           isDashed: true,
           dashLength: 12,
-          baseWidth: 1.5,
         );
       case EdgeRelationType.application:
         return const _RelationStyle(
           color: Color(0xFF4DB6AC),  // 青色 - 应用场景
-          baseWidth: 1.5,
         );
       case EdgeRelationType.example:
         return const _RelationStyle(
@@ -102,7 +104,7 @@ class _RelationStyle {
         );
       case EdgeRelationType.parentChild:
         return const _RelationStyle(
-          color: Colors.white,
+          color: Color(0xFFFF6B35), // DS.brandPrimary
           baseWidth: 1.8,
         );
     }
@@ -110,20 +112,6 @@ class _RelationStyle {
 }
 
 class StarMapPainter extends CustomPainter {
-  final List<GalaxyNodeModel> nodes;
-  final List<GalaxyEdgeModel> edges;
-  final Map<String, Offset> positions;
-  final double scale;
-  final AggregationLevel aggregationLevel;
-  final Map<String, ClusterInfo> clusters;
-  final Rect? viewport;  // 可选视口用于裁剪
-  final Offset center;   // 宇宙中心点
-
-  // Pre-processed data (computed once in constructor)
-  late final List<ProcessedNode> _processedNodes;
-  late final List<ProcessedEdge> _processedEdges;
-  late final Map<String, Color> _colorCache;
-  late final Map<String, Offset> _positionCache;
 
   StarMapPainter({
     required this.nodes,
@@ -133,17 +121,87 @@ class StarMapPainter extends CustomPainter {
     this.clusters = const {},
     this.viewport,
     this.center = Offset.zero,
+    this.selectedNodeId,
+    this.expandedEdgeNodeIds = const {},
+    this.nodeAnimationProgress = const {},
+    this.selectionPulse = 0.0,
   }) {
     _preprocessData();
+  }
+  final List<GalaxyNodeModel> nodes;
+  final List<GalaxyEdgeModel> edges;
+  final Map<String, Offset> positions;
+  final double scale;
+  final AggregationLevel aggregationLevel;
+  final Map<String, ClusterInfo> clusters;
+  final Rect? viewport;  // 可选视口用于裁剪
+  final Offset center;   // 宇宙中心点
+  final String? selectedNodeId;
+  final Set<String> expandedEdgeNodeIds;
+  final Map<String, double> nodeAnimationProgress; // 0.0 to 1.0
+  final double selectionPulse; // 0.0 to 1.0 for selection animation
+
+  // Cache storage - 使用智能缓存替代简单Map
+  static final SmartCache<int, List<ProcessedNode>> _nodeCache = SmartCache(
+    maxSize: 10,
+  );
+  static final SmartCache<int, List<ProcessedEdge>> _edgeCache = SmartCache(
+    maxSize: 10,
+  );
+  static final SmartCache<int, Map<String, Color>> _colorCacheStorage = SmartCache(
+    maxSize: 10,
+  );
+  static final SmartCache<int, Map<String, Offset>> _positionCacheStorage = SmartCache(
+    maxSize: 10,
+  );
+
+  // 文本渲染器
+  static final BatchTextRenderer _textRenderer = BatchTextRenderer();
+
+  // Instance data
+  late final List<ProcessedNode> _processedNodes;
+  late final List<ProcessedEdge> _processedEdges;
+  late final Map<String, Color> _colorCache;
+  late final Map<String, Offset> _positionCache;
+
+  int _generateCacheKey() {
+    // Generate a unique key based on the data that affects the processed output
+    // Optimized: Avoid identityHashCode(positions) as the map instance is recreated often.
+    // Instead, sample actual position values which are stable across recreations.
+    return Object.hash(
+      identityHashCode(nodes),
+      identityHashCode(edges),
+      nodes.length,
+      edges.length,
+      // Sample positions to detect layout changes without checking the whole map
+      nodes.isNotEmpty ? positions[nodes.first.id] : 0,
+      nodes.length > 10 ? positions[nodes[nodes.length ~/ 2].id] : 0,
+    );
   }
 
   /// Pre-process all data in the constructor to avoid repeated work in paint()
   void _preprocessData() {
+    final cacheKey = _generateCacheKey();
+
+    // 使用智能缓存获取
+    final cachedNodes = _nodeCache.get(cacheKey);
+    final cachedEdges = _edgeCache.get(cacheKey);
+    final cachedColors = _colorCacheStorage.get(cacheKey);
+    final cachedPositions = _positionCacheStorage.get(cacheKey);
+
+    if (cachedNodes != null && cachedEdges != null && cachedColors != null && cachedPositions != null) {
+      _processedNodes = cachedNodes;
+      _processedEdges = cachedEdges;
+      _colorCache = cachedColors;
+      _positionCache = cachedPositions;
+      return;
+    }
+
     // Build caches
     _colorCache = {};
     _positionCache = {};
 
-    for (var node in nodes) {
+    for (final node in nodes) {
       // 使用星域色系：基于节点的星域、重要程度和掌握度生成颜色
       _colorCache[node.id] = SectorConfig.getNodeColor(
         sector: node.sector,
@@ -156,23 +214,14 @@ class StarMapPainter extends CustomPainter {
       }
     }
 
-    // Build processed nodes with viewport culling
+    // Build processed nodes
+    // Note: 'nodes' passed here are already filtered by Provider for Visibility & LOD
     _processedNodes = [];
-    for (var node in nodes) {
+    for (final node in nodes) {
       final pos = _positionCache[node.id];
       if (pos == null) continue;
 
-      // Viewport culling
-      if (viewport != null) {
-        if (pos.dx < viewport!.left - 50 ||
-            pos.dx > viewport!.right + 50 ||
-            pos.dy < viewport!.top - 50 ||
-            pos.dy > viewport!.bottom + 50) {
-          continue;
-        }
-      }
-
-      final color = _colorCache[node.id] ?? Colors.white;
+      final color = _colorCache[node.id] ?? DS.brandPrimary;
       final radius = node.radius;
       _processedNodes.add(ProcessedNode(
         node: node,
@@ -183,25 +232,18 @@ class StarMapPainter extends CustomPainter {
     }
 
     // Build processed edges
+    // Note: 'edges' passed here are already filtered by Provider
     _processedEdges = [];
 
     // First, add edges from the edges list
-    for (var edge in edges) {
+    for (final edge in edges) {
       final start = _positionCache[edge.sourceId];
       final end = _positionCache[edge.targetId];
 
       if (start == null || end == null) continue;
 
-      // Viewport culling for edges
-      if (viewport != null) {
-        final edgeRect = Rect.fromPoints(start, end);
-        if (!edgeRect.overlaps(viewport!.inflate(50))) {
-          continue;
-        }
-      }
-
-      final sourceColor = _colorCache[edge.sourceId] ?? Colors.white;
-      final targetColor = _colorCache[edge.targetId] ?? Colors.white;
+      final sourceColor = _colorCache[edge.sourceId] ?? DS.brandPrimary;
+      final targetColor = _colorCache[edge.targetId] ?? DS.brandPrimary;
       final distance = (end - start).distance;
       final style = _RelationStyle.forType(edge.relationType);
       final strokeWidth = style.baseWidth * (0.5 + edge.strength * 0.5);
@@ -219,7 +261,7 @@ class StarMapPainter extends CustomPainter {
 
     // Also add parent-child connections if not already in edges
     final edgeKeys = edges.map((e) => '${e.sourceId}-${e.targetId}').toSet();
-    for (var node in nodes) {
+    for (final node in nodes) {
       if (node.parentId != null) {
         final key = '${node.parentId}-${node.id}';
         if (edgeKeys.contains(key)) continue;
@@ -228,17 +270,10 @@ class StarMapPainter extends CustomPainter {
         final end = _positionCache[node.id];
 
         if (start == null || end == null) continue;
-
-        // Viewport culling
-        if (viewport != null) {
-          final edgeRect = Rect.fromPoints(start, end);
-          if (!edgeRect.overlaps(viewport!.inflate(50))) {
-            continue;
-          }
-        }
-
-        final parentColor = _colorCache[node.parentId] ?? Colors.white;
-        final childColor = _colorCache[node.id] ?? Colors.white;
+        
+        // Skip if parent is not in visible positions (might be culled)
+        final parentColor = _colorCache[node.parentId] ?? DS.brandPrimary;
+        final childColor = _colorCache[node.id] ?? DS.brandPrimary;
         final distance = (end - start).distance;
 
         _processedEdges.add(ProcessedEdge(
@@ -258,24 +293,72 @@ class StarMapPainter extends CustomPainter {
         ),);
       }
     }
+
+    // Store in cache - 智能缓存会自动管理大小和过期
+    _nodeCache.set(cacheKey, _processedNodes);
+    _edgeCache.set(cacheKey, _processedEdges);
+    _colorCacheStorage.set(cacheKey, _colorCache);
+    _positionCacheStorage.set(cacheKey, _positionCache);
+  }
+
+  /// 清理静态缓存（供外部调用）
+  static void clearCaches() {
+    _nodeCache.clear();
+    _edgeCache.clear();
+    _colorCacheStorage.clear();
+    _positionCacheStorage.clear();
+    _textRenderer.clear();
   }
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Base layer: Connections
+    _drawRootConnections(canvas);
+    _drawEdges(canvas);
+
+    // Nodes and overlays based on level
     switch (aggregationLevel) {
-      case AggregationLevel.full:
-        _drawRootConnections(canvas);
-        _drawEdges(canvas);
-        _drawNodes(canvas);
-        break;
-      case AggregationLevel.clustered:
-        _drawRootConnections(canvas); // Also draw roots in clustered view? Maybe not.
-        _drawClusteredView(canvas);
-        break;
-      case AggregationLevel.sectors:
+      case AggregationLevel.universe:
         _drawSectorView(canvas);
-        break;
+        
+      case AggregationLevel.galaxy:
+        _drawSectorView(canvas); // Still show sectors in background/context
+        _drawNodes(canvas); // Draw only roots (filtered by provider)
+        
+      case AggregationLevel.cluster:
+        _drawClusteredView(canvas);
+        _drawNodes(canvas); // Draw importance >= 3
+        
+      case AggregationLevel.nebula:
+        _drawClusteredView(canvas); // Faint clusters
+        _drawNodes(canvas); // Draw importance >= 2
+        
+      case AggregationLevel.full:
+        _drawNodes(canvas); // All nodes
     }
+    
+    // Draw selected node highlight if any
+    if (selectedNodeId != null && _positionCache.containsKey(selectedNodeId)) {
+      _drawSelectionHighlight(canvas, _positionCache[selectedNodeId]!);
+    }
+  }
+
+  void _drawSelectionHighlight(Canvas canvas, Offset pos) {
+    // Pulse effect driven by selectionPulse value (0.0 to 1.0)
+    final radius = 40.0 + (selectionPulse * 8.0); // 40 to 48
+    final opacity = 0.3 + (selectionPulse * 0.2); // 0.3 to 0.5
+    
+    final paint = Paint()
+      ..color = DS.brandPrimary.withValues(alpha: opacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0 + (selectionPulse * 1.0);
+      
+    canvas.drawCircle(pos, radius, paint);
+    
+    // Inner fill
+    paint.color = DS.brandPrimary.withValues(alpha: 0.1 + (selectionPulse * 0.05));
+    paint.style = PaintingStyle.fill;
+    canvas.drawCircle(pos, 40, paint);
   }
 
   /// Draw connections from Universe Center to Sector Roots
@@ -284,7 +367,7 @@ class StarMapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    for (var node in nodes) {
+    for (final node in nodes) {
       if (node.parentId == null) {
         final pos = _positionCache[node.id];
         if (pos == null) continue;
@@ -309,7 +392,7 @@ class StarMapPainter extends CustomPainter {
 
   /// Draw all edges with relationship-specific styling
   void _drawEdges(Canvas canvas) {
-    for (var processedEdge in _processedEdges) {
+    for (final processedEdge in _processedEdges) {
       _drawEdge(canvas, processedEdge);
     }
   }
@@ -383,7 +466,7 @@ class StarMapPainter extends CustomPainter {
     final unitDir = Offset(direction.dx / length, direction.dy / length);
 
     double currentLength = 0;
-    bool drawing = true;
+    var drawing = true;
     final dashLength = style.dashLength;
     final gapLength = style.dashLength * 0.6;
 
@@ -496,7 +579,7 @@ class StarMapPainter extends CustomPainter {
 
     // Badge background
     final badgePaint = Paint()
-      ..color = Colors.white
+      ..color = DS.brandPrimary
       ..style = PaintingStyle.fill;
     canvas.drawCircle(badgePos, badgeRadius, badgePaint);
 
@@ -527,28 +610,26 @@ class StarMapPainter extends CustomPainter {
     );
   }
 
-  /// Draw cluster label
+  /// Draw cluster label using cached text renderer
   void _drawClusterLabel(Canvas canvas, String name, Offset pos, double radius, Color color) {
-    final textSpan = TextSpan(
-      text: name,
-      style: TextStyle(
-        color: Colors.white.withAlpha(220),
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        shadows: [
-          Shadow(
-            color: color.withAlpha(150),
-            blurRadius: 6,
-          ),
-        ],
-      ),
+    final style = TextStyle(
+      color: DS.brandPrimary.withAlpha(220),
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      shadows: [
+        Shadow(
+          color: color.withAlpha(150),
+          blurRadius: 6,
+        ),
+      ],
     );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
+
+    _textRenderer.drawText(
+      canvas,
+      name,
+      pos + Offset(0, radius + 8),
+      style,
     );
-    textPainter.layout();
-    textPainter.paint(canvas, pos + Offset(-textPainter.width / 2, radius + 8));
   }
 
   /// Draw sector-level view - only sector centroids
@@ -580,7 +661,7 @@ class StarMapPainter extends CustomPainter {
         pos,
         baseRadius,
         [
-          Colors.white.withAlpha(200),
+          DS.brandPrimary.withAlpha(200),
           color.withAlpha(200),
           color.withAlpha(100),
         ],
@@ -594,7 +675,7 @@ class StarMapPainter extends CustomPainter {
       final textSpan = TextSpan(
         text: style.name,
         style: TextStyle(
-          color: Colors.white,
+          color: DS.brandPrimaryConst,
           fontSize: 16,
           fontWeight: FontWeight.bold,
           shadows: [
@@ -603,7 +684,7 @@ class StarMapPainter extends CustomPainter {
               blurRadius: 8,
             ),
             Shadow(
-              color: Colors.black.withAlpha(150),
+              color: DS.brandPrimary.withAlpha(150),
               blurRadius: 4,
             ),
           ],
@@ -620,7 +701,7 @@ class StarMapPainter extends CustomPainter {
       final countSpan = TextSpan(
         text: '${cluster.nodeCount} 个知识点',
         style: TextStyle(
-          color: Colors.white.withAlpha(180),
+          color: DS.brandPrimary.withAlpha(180),
           fontSize: 11,
         ),
       );
@@ -641,16 +722,23 @@ class StarMapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    for (var processedNode in _processedNodes) {
+    for (final processedNode in _processedNodes) {
       final node = processedNode.node;
       final pos = processedNode.position;
       final color = processedNode.color;
       final radius = processedNode.radius;
 
+      // Get animation progress (0.0 to 1.0)
+      final animationProgress = nodeAnimationProgress[node.id] ?? 1.0;
+
+      // Apply bloom animation: scale and opacity
+      final animatedRadius = radius * (0.3 + animationProgress * 0.7); // 0.3x to 1.0x
+      final animatedOpacity = animationProgress;
+
       // LOD: Skip small nodes when zoomed out significantly
       if (scale < 0.3 && node.importance < 3) {
-        nodePaint.color = color.withValues(alpha: 0.5);
-        canvas.drawCircle(pos, radius * 0.5, nodePaint);
+        nodePaint.color = color.withValues(alpha: 0.5 * animatedOpacity);
+        canvas.drawCircle(pos, animatedRadius * 0.5, nodePaint);
         continue;
       }
 
@@ -659,91 +747,87 @@ class StarMapPainter extends CustomPainter {
         final masteryFactor = node.masteryScore / 100.0;
         final glowIntensity = 0.3 + masteryFactor * 0.5;
 
-        // Outer glow (soft, large)
+        // Outer glow (soft, large) - scaled with animation
         if (scale > 0.5) { // Only draw glow if not too zoomed out
-          glowPaint.color = color.withValues(alpha: glowIntensity * 0.4);
-          canvas.drawCircle(pos, radius * 3.0, glowPaint);
+          glowPaint.color = color.withValues(alpha: glowIntensity * 0.4 * animatedOpacity);
+          canvas.drawCircle(pos, animatedRadius * 3.0, glowPaint);
         }
 
         // Inner glow (brighter, smaller)
-        glowPaint.color = color.withValues(alpha: glowIntensity * 0.7);
+        glowPaint.color = color.withValues(alpha: glowIntensity * 0.7 * animatedOpacity);
         glowPaint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
-        canvas.drawCircle(pos, radius * 1.8, glowPaint);
+        canvas.drawCircle(pos, animatedRadius * 1.8, glowPaint);
         glowPaint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 8.0);
 
         // Core fill with gradient
         final nodeGradient = ui.Gradient.radial(
           pos,
-          radius,
+          animatedRadius,
           [
-            Colors.white.withValues(alpha: 0.9),
-            color,
-            color.withValues(alpha: 0.8),
+            DS.brandPrimary.withValues(alpha: 0.9 * animatedOpacity),
+            color.withValues(alpha: animatedOpacity),
+            color.withValues(alpha: 0.8 * animatedOpacity),
           ],
           [0.0, 0.3, 1.0],
         );
         nodePaint.shader = nodeGradient;
-        canvas.drawCircle(pos, radius, nodePaint);
+        canvas.drawCircle(pos, animatedRadius, nodePaint);
         nodePaint.shader = null;
 
         // Progress Ring Logic (Study Count)
-        // 0: No ring (or very faint)
-        // 1: Half ring (Accumulating energy)
-        // >=2: Full ring + Glow (Ready to expand)
-        
-        if (scale > 0.4) { // Only draw rings if visible enough
-          final ringRadius = radius * 1.6;
-          
+        // Only draw rings when animation is mostly complete (>= 0.7)
+        if (scale > 0.4 && animationProgress > 0.7) {
+          final ringRadius = animatedRadius * 1.6;
+
           if (node.studyCount >= 2) {
              // Full Energy Ring
              ringPaint
-              ..color = color.withValues(alpha: 0.8)
+              ..color = color.withValues(alpha: 0.8 * animatedOpacity)
               ..strokeWidth = 2.0
-              ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2.0); // Glowy stroke
-             
+              ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 2.0);
+
              canvas.drawCircle(pos, ringRadius, ringPaint);
-             
+
              // Extra "Pulse" ring for expansion ready
              ringPaint
-              ..color = Colors.white.withValues(alpha: 0.5)
+              ..color = DS.brandPrimary.withValues(alpha: 0.5 * animatedOpacity)
               ..strokeWidth = 1.0
               ..maskFilter = null;
              canvas.drawCircle(pos, ringRadius * 1.1, ringPaint);
-             
+
           } else if (node.studyCount == 1) {
              // Half Energy Ring
              ringPaint
-              ..color = color.withValues(alpha: 0.6)
+              ..color = color.withValues(alpha: 0.6 * animatedOpacity)
               ..strokeWidth = 1.5
               ..maskFilter = null;
-              
-             // Draw arc from -90 (top) to 90 (bottom) - right side
+
              canvas.drawArc(
                Rect.fromCircle(center: pos, radius: ringRadius),
-               -math.pi / 2, 
-               math.pi, 
-               false, 
+               -math.pi / 2,
+               math.pi,
+               false,
                ringPaint,
              );
           }
         }
 
         // Bright center highlight (mastery indicator)
-        if (masteryFactor > 0.5) {
-          final highlightRadius = radius * 0.4 * masteryFactor;
-          nodePaint.color = Colors.white.withValues(alpha: 0.6 + masteryFactor * 0.3);
+        if (masteryFactor > 0.5 && animationProgress > 0.5) {
+          final highlightRadius = animatedRadius * 0.4 * masteryFactor;
+          nodePaint.color = DS.brandPrimary.withValues(alpha: (0.6 + masteryFactor * 0.3) * animatedOpacity);
           canvas.drawCircle(pos, highlightRadius, nodePaint);
         }
 
       } else {
         // Locked: Grey dim with subtle indication
-        nodePaint.color = Colors.grey.withValues(alpha: 0.25);
-        canvas.drawCircle(pos, radius * 0.8, nodePaint);
+        nodePaint.color = DS.brandPrimary.withValues(alpha: 0.25 * animatedOpacity);
+        canvas.drawCircle(pos, animatedRadius * 0.8, nodePaint);
 
         // Very subtle glow for locked nodes
         if (scale > 0.6) {
-          glowPaint.color = Colors.grey.withValues(alpha: 0.1);
-          canvas.drawCircle(pos, radius * 1.5, glowPaint);
+          glowPaint.color = DS.brandPrimary.withValues(alpha: 0.1 * animatedOpacity);
+          canvas.drawCircle(pos, animatedRadius * 1.5, glowPaint);
         }
       }
 
@@ -751,7 +835,7 @@ class StarMapPainter extends CustomPainter {
       // Zoom > 0.8: Show all labels
       // Zoom > 0.5: Show importance >= 3
       // Zoom <= 0.5: Show importance >= 4 only
-      bool shouldDrawLabel = false;
+      var shouldDrawLabel = false;
       if (scale > 0.8) {
         shouldDrawLabel = true;
       } else if (scale > 0.5) {
@@ -766,50 +850,89 @@ class StarMapPainter extends CustomPainter {
     }
   }
 
-  /// Draw node label with sector-aware styling
+  /// Draw node label with sector-aware styling using cached text renderer
   void _drawNodeLabel(Canvas canvas, GalaxyNodeModel node, Offset pos, Color color) {
     final sectorStyle = SectorConfig.getStyle(node.sector);
     final textColor = node.isUnlocked
-        ? Colors.white.withValues(alpha: 0.9)
-        : Colors.grey.withValues(alpha: 0.5);
+        ? DS.brandPrimary.withValues(alpha: 0.9)
+        : DS.brandPrimary.withValues(alpha: 0.5);
 
-    final textSpan = TextSpan(
-      text: node.name,
-      style: TextStyle(
-        color: textColor,
-        fontSize: node.importance >= 4 ? 12 : 10,
-        fontWeight: node.isUnlocked ? FontWeight.w600 : FontWeight.w400,
-        shadows: node.isUnlocked
-            ? [
-                Shadow(
-                  color: sectorStyle.primaryColor.withValues(alpha: 0.6),
-                  blurRadius: 6,
-                ),
-                const Shadow(
-                  color: Colors.black54,
-                  blurRadius: 2,
-                ),
-              ]
-            : null,
-      ),
+    final style = TextStyle(
+      color: textColor,
+      fontSize: node.importance >= 4 ? 12 : 10,
+      fontWeight: node.isUnlocked ? FontWeight.w600 : FontWeight.w400,
+      shadows: node.isUnlocked
+          ? [
+              Shadow(
+                color: sectorStyle.primaryColor.withValues(alpha: 0.6),
+                blurRadius: 6,
+              ),
+              Shadow(
+                color: DS.brandPrimary.withValues(alpha: 0.54),
+                blurRadius: 2,
+              ),
+            ]
+          : null,
     );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
+
+    // Use cached text renderer for better performance
+    _textRenderer.drawText(
+      canvas,
+      node.name,
+      pos + Offset(0, node.radius + 8),
+      style,
     );
-    textPainter.layout();
-    textPainter.paint(canvas, pos + Offset(-textPainter.width / 2, node.radius + 8));
   }
 
   @override
   bool shouldRepaint(covariant StarMapPainter oldDelegate) {
-    // Only repaint if data actually changed
-    return oldDelegate.nodes != nodes ||
-        oldDelegate.edges != edges ||
-        oldDelegate.positions != positions ||
-        oldDelegate.scale != scale ||
-        oldDelegate.aggregationLevel != aggregationLevel ||
-        oldDelegate.clusters != clusters ||
-        oldDelegate.viewport != viewport;
+    // 1. 视口变化检查（最频繁的变化）- 使用近似比较
+    final viewportChanged = !_approxEqualRect(oldDelegate.viewport, viewport);
+    if (viewportChanged) return true;
+
+    // 2. 数据变化检查（次频繁）- 使用引用比较
+    final dataChanged = !identical(oldDelegate.nodes, nodes) ||
+        !identical(oldDelegate.edges, edges) ||
+        !identical(oldDelegate.positions, positions);
+    if (dataChanged) return true;
+
+    // 3. 动画变化检查（特定动画）- 使用阈值比较
+    final animationChanged = (selectionPulse - oldDelegate.selectionPulse).abs() > 0.01 ||
+        !_mapsEqual(oldDelegate.nodeAnimationProgress, nodeAnimationProgress);
+    if (animationChanged) return true;
+
+    // 4. 聚合级别变化（较少发生）
+    if (oldDelegate.aggregationLevel != aggregationLevel) return true;
+
+    // 5. 选择状态变化
+    if (oldDelegate.selectedNodeId != selectedNodeId) return true;
+
+    // 6. 缩放变化 - 使用阈值
+    if ((oldDelegate.scale - scale).abs() > 0.01) return true;
+
+    // 7. 集群数据变化
+    if (!identical(oldDelegate.clusters, clusters)) return true;
+
+    return false;
+  }
+
+  /// 近似比较两个Rect
+  static bool _approxEqualRect(Rect? a, Rect? b) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    return (a.center.dx - b.center.dx).abs() < 1.0 &&
+        (a.center.dy - b.center.dy).abs() < 1.0 &&
+        (a.width - b.width).abs() < 1.0 &&
+        (a.height - b.height).abs() < 1.0;
+  }
+
+  /// 比较两个Map是否相等
+  static bool _mapsEqual<K, V>(Map<K, V> a, Map<K, V> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (!b.containsKey(key) || a[key] != b[key]) return false;
+    }
+    return true;
   }
 }

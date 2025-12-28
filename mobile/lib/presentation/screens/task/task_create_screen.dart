@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/data/repositories/task_repository.dart';
-import 'package:intl/intl.dart';
 
 class TaskCreateScreen extends ConsumerStatefulWidget {
   const TaskCreateScreen({super.key});
@@ -123,19 +125,7 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
         tags: tags,
         dueDate: _dueDate,
         knowledgeNodeId: _selectedKnowledgeNodeId,
-        // TODO: Pass generateGuide flag to API if supported via query param or extended DTO
-        // Currently API takes generate_guide as query param. 
-        // TaskRepository.createTask needs update or we assume default behavior.
-        // For now, we just create the task. 
-        // If we want to support the flag, we might need to update repository method signature.
-        // Leaving as is for MVP, backend defaults to False.
       );
-      
-      // Note: The repository method currently doesn't accept the 'generate_guide' query param.
-      // We will proceed without it for now, or update the repo if critical.
-      // The requirement says "AI Guide Generation Switch", so it is important.
-      // But I didn't update the repository yet. 
-      // I'll call the repository as is.
       
       await ref.read(taskRepositoryProvider).createTask(taskCreate);
       
@@ -161,15 +151,14 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('新建任务'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(DS.lg),
           children: [
             // Title
             TextFormField(
@@ -197,24 +186,22 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('智能建议：', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                    const Text('建议关联知识点', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                     const SizedBox(height: 4),
                     Wrap(
                       spacing: 8,
-                      children: _suggestions!.suggestedNodes.map((node) {
-                        return ActionChip(
+                      children: _suggestions!.suggestedNodes.map((node) => ActionChip(
                           avatar: Icon(node.isNew ? Icons.add_circle_outline : Icons.link, size: 16),
                           label: Text(node.name),
                           onPressed: () => _applySuggestion(node),
                           tooltip: node.reason,
-                          backgroundColor: node.isNew ? Colors.green.shade50 : Colors.blue.shade50,
-                        );
-                      }).toList(),
+                          backgroundColor: node.isNew ? Colors.green.shade50 : DS.brandPrimary.withValues(alpha: 0.1),
+                        ),).toList(),
                     ),
                   ],
                 ),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // Type Selector
             DropdownButtonFormField<TaskType>(
@@ -223,25 +210,23 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                 labelText: '任务类型',
                 border: OutlineInputBorder(),
               ),
-              items: TaskType.values.map((type) {
-                return DropdownMenuItem(
+              items: TaskType.values.map((type) => DropdownMenuItem(
                   value: type,
                   child: Row(
                     children: [
                       Icon(_getTypeIcon(type), size: 18),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: DS.sm),
                       Text(_getTypeLabel(type)),
                     ],
                   ),
-                );
-              }).toList(),
+                ),).toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() => _selectedType = value);
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // Tags
             TextFormField(
@@ -253,7 +238,7 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                 prefixIcon: Icon(Icons.label_outline),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // Estimated Time & Difficulty Row
             Row(
@@ -266,16 +251,14 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.timer_outlined),
                     ),
-                    items: [15, 25, 45, 60, 90, 120].map((m) {
-                      return DropdownMenuItem(
+                    items: [15, 25, 45, 60, 90, 120].map((m) => DropdownMenuItem(
                         value: m,
                         child: Text('$m 分钟'),
-                      );
-                    }).toList(),
+                      ),).toList(),
                     onChanged: (v) => setState(() => _estimatedMinutes = v!),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: DS.lg),
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: _difficulty,
@@ -284,18 +267,16 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.bar_chart),
                     ),
-                    items: [1, 2, 3, 4, 5].map((l) {
-                      return DropdownMenuItem(
+                    items: [1, 2, 3, 4, 5].map((l) => DropdownMenuItem(
                         value: l,
                         child: Text('Level $l'),
-                      );
-                    }).toList(),
+                      ),).toList(),
                     onChanged: (v) => setState(() => _difficulty = v!),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
             
             // Energy Cost
             DropdownButtonFormField<int>(
@@ -305,15 +286,13 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.bolt),
               ),
-              items: [1, 2, 3, 4, 5].map((l) {
-                return DropdownMenuItem(
+              items: [1, 2, 3, 4, 5].map((l) => DropdownMenuItem(
                   value: l,
                   child: Text('$l 火苗'),
-                );
-              }).toList(),
+                ),).toList(),
               onChanged: (v) => setState(() => _energyCost = v!),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // Due Date
             ListTile(
@@ -323,7 +302,7 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                 : DateFormat('yyyy-MM-dd').format(_dueDate!),),
               leading: const Icon(Icons.calendar_today),
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Colors.grey.shade400),
+                side: BorderSide(color: DS.brandPrimary.withValues(alpha: 0.4)),
                 borderRadius: BorderRadius.circular(4),
               ),
               onTap: () async {
@@ -344,7 +323,7 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
                     )
                   : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // AI Guide Switch
             SwitchListTile(
@@ -354,13 +333,13 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
               onChanged: (v) => setState(() => _generateGuide = v),
               secondary: const Icon(Icons.auto_awesome),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: DS.xxl),
 
             // Submit Button
             FilledButton.icon(
               onPressed: _isSubmitting ? null : _submitTask,
               icon: _isSubmitting 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.check),
               label: Text(_isSubmitting ? '创建中...' : '创建任务'),
               style: FilledButton.styleFrom(
@@ -371,7 +350,6 @@ class _TaskCreateScreenState extends ConsumerState<TaskCreateScreen> {
         ),
       ),
     );
-  }
 
   IconData _getTypeIcon(TaskType type) {
     switch (type) {

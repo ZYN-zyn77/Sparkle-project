@@ -5,12 +5,12 @@ import 'package:sparkle/presentation/providers/auth_provider.dart';
 
 // Feed State Controller
 class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
-  final CommunityRepository _repository;
-  final String? _currentUserId;
 
   FeedNotifier(this._repository, this._currentUserId) : super(const AsyncValue.loading()) {
     refresh();
   }
+  final CommunityRepository _repository;
+  final String? _currentUserId;
 
   Future<void> refresh() async {
     try {
@@ -37,7 +37,6 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
       user: PostUser(
         id: _currentUserId!,
         username: 'You', // In a real app, grab from currentUserProvider
-        avatarUrl: null, // Grab from currentUserProvider
       ),
       isOptimistic: true,
     );
@@ -53,7 +52,7 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
         content: content,
         imageUrls: imageUrls,
         topic: topic,
-      ));
+      ),);
       
       // 4. Wait a bit for Worker to sync (Optional hack for MVP)
       // In a real CQRS app, we might just leave the optimistic one until next refresh
@@ -66,7 +65,7 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
     } catch (e) {
       // Revert if failed
       state = AsyncValue.data(currentList);
-      throw e;
+      rethrow;
     }
   }
 }
@@ -74,5 +73,5 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
 final feedProvider = StateNotifierProvider<FeedNotifier, AsyncValue<List<Post>>>((ref) {
   final repository = ref.watch(communityRepositoryProvider);
   final user = ref.watch(currentUserProvider);
-  return FeedNotifier(repository, user?.id.toString());
+  return FeedNotifier(repository, user?.id);
 });

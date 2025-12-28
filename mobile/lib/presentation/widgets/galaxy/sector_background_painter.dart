@@ -1,16 +1,18 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/galaxy_model.dart';
 import 'package:sparkle/presentation/widgets/galaxy/sector_config.dart';
 
 /// Painter for the sector nebula backgrounds
 class SectorBackgroundPainter extends CustomPainter {
-  final double canvasSize;
 
   SectorBackgroundPainter({
     required this.canvasSize,
   });
+  final double canvasSize;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -131,7 +133,7 @@ class SectorBackgroundPainter extends CustomPainter {
           letterSpacing: 1.5,
           shadows: [
             Shadow(
-              color: Colors.black.withValues(alpha: 0.8),
+              color: DS.brandPrimary.withValues(alpha: 0.8),
               blurRadius: 4,
             ),
             Shadow(
@@ -154,7 +156,5 @@ class SectorBackgroundPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant SectorBackgroundPainter oldDelegate) {
-    return oldDelegate.canvasSize != canvasSize;
-  }
+  bool shouldRepaint(covariant SectorBackgroundPainter oldDelegate) => oldDelegate.canvasSize != canvasSize;
 }

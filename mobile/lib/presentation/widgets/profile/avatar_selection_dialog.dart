@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/sparkle_avatar.dart';
 
 class AvatarOption {
-  final String id;
-  final String url;
-  final String label;
 
   const AvatarOption({
     required this.id,
     required this.url,
     required this.label,
   });
+  final String id;
+  final String url;
+  final String label;
 }
 
 class AvatarSelectionDialog extends StatelessWidget {
-  final String? currentAvatarUrl;
-  final Function(String) onAvatarSelected;
 
   const AvatarSelectionDialog({
     required this.onAvatarSelected, super.key,
     this.currentAvatarUrl,
   });
+  final String? currentAvatarUrl;
+  final Function(String) onAvatarSelected;
 
   static const List<AvatarOption> presets = [
     AvatarOption(
@@ -62,7 +63,7 @@ class AvatarSelectionDialog extends StatelessWidget {
 
     return AlertDialog(
       title: const Text('选择系统头像'),
-      shape: RoundedRectangleBorder(borderRadius: AppDesignTokens.borderRadius16),
+      shape: RoundedRectangleBorder(borderRadius: DS.borderRadius16),
       content: SizedBox(
         width: double.maxFinite,
         child: GridView.builder(
@@ -86,17 +87,17 @@ class AvatarSelectionDialog extends StatelessWidget {
               child: Column(
                 children: [
                   Expanded(
-                    child: Container(
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? AppDesignTokens.primaryBase : Colors.transparent,
+                          color: isSelected ? DS.primaryBase : Colors.transparent,
                           width: 3,
                         ),
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: AppDesignTokens.primaryBase.withValues(alpha: 0.3),
+                                  color: DS.primaryBase.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                 ),
                               ]
@@ -104,18 +105,18 @@ class AvatarSelectionDialog extends StatelessWidget {
                       ),
                       child: SparkleAvatar(
                         radius: 30,
-                        backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                        backgroundColor: isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade100,
                         url: option.url,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: DS.xs),
                   Text(
                     option.label,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? AppDesignTokens.primaryBase : null,
+                      color: isSelected ? DS.primaryBase : null,
                     ),
                   ),
                 ],
@@ -125,10 +126,7 @@ class AvatarSelectionDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
+        SparkleButton.ghost(label: '取消', onPressed: () => Navigator.pop(context)),
       ],
     );
   }

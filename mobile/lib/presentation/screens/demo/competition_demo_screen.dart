@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:async';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 /// 竞赛演示模式 - Week 8
 ///
@@ -38,21 +40,21 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
       subtitle: 'Sparkle - AI 时间导师',
       duration: const Duration(seconds: 60),
       icon: Icons.auto_awesome,
-      gradient: [Colors.blue.shade600, Colors.purple.shade600],
+      gradient: [DS.brandPrimary.shade600, Colors.purple.shade600],
     ),
     _DemoStep(
       title: '必杀技 A',
       subtitle: 'GraphRAG 可视化',
       duration: const Duration(seconds: 90),
       icon: Icons.auto_graph,
-      gradient: [Colors.cyan.shade600, Colors.blue.shade600],
+      gradient: [Colors.cyan.shade600, DS.brandPrimary.shade600],
     ),
     _DemoStep(
       title: '必杀技 B',
       subtitle: '交互式时间机器',
       duration: const Duration(seconds: 90),
       icon: Icons.access_time,
-      gradient: [Colors.orange.shade600, Colors.red.shade600],
+      gradient: [DS.brandPrimary.shade600, DS.error.shade600],
     ),
     _DemoStep(
       title: '必杀技 C',
@@ -66,21 +68,21 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
       subtitle: 'Redis 缓存 + 连接池',
       duration: const Duration(seconds: 60),
       icon: Icons.speed,
-      gradient: [Colors.green.shade600, Colors.teal.shade600],
+      gradient: [DS.success.shade600, Colors.teal.shade600],
     ),
     _DemoStep(
       title: '预测分析',
       subtitle: 'AI 驱动的学习洞察',
       duration: const Duration(seconds: 60),
       icon: Icons.analytics,
-      gradient: [Colors.indigo.shade600, Colors.blue.shade600],
+      gradient: [Colors.indigo.shade600, DS.brandPrimary.shade600],
     ),
     _DemoStep(
       title: '总结展望',
       subtitle: '未来发展方向',
       duration: const Duration(seconds: 30),
       icon: Icons.rocket_launch,
-      gradient: [Colors.amber.shade600, Colors.orange.shade600],
+      gradient: [Colors.amber.shade600, DS.brandPrimary.shade600],
     ),
   ];
 
@@ -149,7 +151,7 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
     final currentStep = _steps[_currentStep];
 
     return Scaffold(
-      backgroundColor: AppDesignTokens.deepSpaceStart,
+      backgroundColor: DS.deepSpaceStart,
       body: Stack(
         children: [
           // Background gradient
@@ -192,23 +194,21 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+  Widget _buildHeader() => Padding(
+      padding: const EdgeInsets.all(DS.lg),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: Icon(Icons.close, color: DS.brandPrimary),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   'Sparkle 竞赛演示',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: DS.brandPrimaryConst,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -216,7 +216,7 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
                 Text(
                   '步骤 ${_currentStep + 1}/$_totalSteps',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: DS.brandPrimary.withValues(alpha: 0.8),
                     fontSize: 14,
                   ),
                 ),
@@ -226,19 +226,17 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
           IconButton(
             icon: Icon(
               _isAutoPlaying ? Icons.pause : Icons.play_arrow,
-              color: Colors.white,
+              color: DS.brandPrimaryConst,
             ),
             onPressed: _isAutoPlaying ? _stopAutoPlay : _startAutoPlay,
           ),
         ],
       ),
     );
-  }
 
-  Widget _buildStepContent(_DemoStep step) {
-    return SingleChildScrollView(
+  Widget _buildStepContent(_DemoStep step) => SingleChildScrollView(
       key: ValueKey(_currentStep),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(DS.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -246,34 +244,34 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
           FadeTransition(
             opacity: _animationController,
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(DS.xl),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: DS.brandPrimary.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
                 step.icon,
                 size: 80,
-                color: Colors.white,
+                color: DS.brandPrimaryConst,
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: DS.xxl),
 
           // Title
           FadeTransition(
             opacity: _animationController,
             child: Text(
               step.title,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: DS.brandPrimaryConst,
                 fontSize: 48,
                 fontWeight: FontWeight.bold,
                 height: 1.2,
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
 
           // Subtitle
           FadeTransition(
@@ -281,20 +279,19 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
             child: Text(
               step.subtitle,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: DS.brandPrimary.withValues(alpha: 0.9),
                 fontSize: 28,
                 fontWeight: FontWeight.w300,
               ),
             ),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: DS.xxxl),
 
           // Content
           _buildStepDetails(_currentStep),
         ],
       ),
     );
-  }
 
   Widget _buildStepDetails(int index) {
     switch (index) {
@@ -317,8 +314,7 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
     }
   }
 
-  Widget _buildIntroContent() {
-    return Column(
+  Widget _buildIntroContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBulletPoint('AI 时间导师，帮助大学生高效学习'),
@@ -327,17 +323,15 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         _buildBulletPoint('三大必杀技 + 性能优化 + 预测分析'),
       ],
     );
-  }
 
-  Widget _buildGraphRAGContent() {
-    return Column(
+  Widget _buildGraphRAGContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBulletPoint('混合检索：向量搜索 + 图谱遍历 + 用户兴趣'),
         _buildBulletPoint('实时可视化：右下角显示检索过程'),
         _buildBulletPoint('颜色编码：蓝色=向量，紫色=图谱，绿色=兴趣'),
         _buildBulletPoint('性能提升：相比纯向量检索提升 40%'),
-        const SizedBox(height: 32),
+        const SizedBox(height: DS.xxl),
         _buildDemoBox(
           '演示要点',
           [
@@ -349,17 +343,15 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         ),
       ],
     );
-  }
 
-  Widget _buildTimeMachineContent() {
-    return Column(
+  Widget _buildTimeMachineContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBulletPoint('基于 Ebbinghaus 遗忘曲线的知识衰减预测'),
         _buildBulletPoint('拖动滑块查看未来 0-90 天的知识状态'),
         _buildBulletPoint('"如果现在复习？" - 模拟干预效果'),
         _buildBulletPoint('颜色变化：绿色→橙色→红色（掌握度下降）'),
-        const SizedBox(height: 32),
+        const SizedBox(height: DS.xxl),
         _buildDemoBox(
           '演示要点',
           [
@@ -372,17 +364,15 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         ),
       ],
     );
-  }
 
-  Widget _buildMultiAgentContent() {
-    return Column(
+  Widget _buildMultiAgentContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBulletPoint('4 个专家智能体：数学、代码、写作、科学'),
         _buildBulletPoint('Orchestrator 根据查询路由到最合适的智能体'),
         _buildBulletPoint('可视化推理过程，提高透明度'),
         _buildBulletPoint('支持多智能体协作（例如：代码+数学）'),
-        const SizedBox(height: 32),
+        const SizedBox(height: DS.xxl),
         _buildDemoBox(
           '演示要点',
           [
@@ -394,17 +384,15 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         ),
       ],
     );
-  }
 
-  Widget _buildPerformanceContent() {
-    return Column(
+  Widget _buildPerformanceContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBulletPoint('Redis 语义缓存：SHA256 哈希，TTL 管理'),
         _buildBulletPoint('缓存命中率统计，LRU 驱逐策略'),
         _buildBulletPoint('PostgreSQL 连接池优化：pool_size=20, max_overflow=30'),
         _buildBulletPoint('连接健康检查，Prometheus 监控集成'),
-        const SizedBox(height: 32),
+        const SizedBox(height: DS.xxl),
         _buildMetricsBox([
           _Metric('缓存命中率', '85%', Icons.trending_up),
           _Metric('平均响应时间', '< 100ms', Icons.speed),
@@ -412,17 +400,15 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         ]),
       ],
     );
-  }
 
-  Widget _buildPredictiveContent() {
-    return Column(
+  Widget _buildPredictiveContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildBulletPoint('活跃度预测：基于学习模式预测下次活跃时间'),
         _buildBulletPoint('难度预测：评估主题难度和前置知识'),
         _buildBulletPoint('最佳时间推荐：分析历史数据找出高效时段'),
         _buildBulletPoint('流失风险检测：早期发现学习倦怠'),
-        const SizedBox(height: 32),
+        const SizedBox(height: DS.xxl),
         _buildDemoBox(
           '演示要点',
           [
@@ -434,45 +420,41 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         ),
       ],
     );
-  }
 
-  Widget _buildConclusionContent() {
-    return Column(
+  Widget _buildConclusionContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           '核心亮点',
           style: TextStyle(
-            color: Colors.white,
+            color: DS.brandPrimaryConst,
             fontSize: 32,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: DS.xl),
         _buildBulletPoint('技术栈：Go + Python + Flutter 混合架构'),
         _buildBulletPoint('创新点：GraphRAG、时间机器、多智能体'),
         _buildBulletPoint('工程化：性能优化、监控、测试'),
         _buildBulletPoint('用户体验：可视化、交互式、智能化'),
-        const SizedBox(height: 48),
-        const Text(
+        const SizedBox(height: DS.xxxl),
+        Text(
           '未来方向',
           style: TextStyle(
-            color: Colors.white,
+            color: DS.brandPrimaryConst,
             fontSize: 32,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: DS.xl),
         _buildBulletPoint('增强 AI 推理能力（Agent SDK 集成）'),
         _buildBulletPoint('扩展知识领域（6+1 星域全覆盖）'),
         _buildBulletPoint('社交学习功能（组队、PK、排行榜）'),
         _buildBulletPoint('移动端性能优化（离线模式、增量同步）'),
       ],
     );
-  }
 
-  Widget _buildBulletPoint(String text) {
-    return Padding(
+  Widget _buildBulletPoint(String text) => Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,17 +463,17 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
             margin: const EdgeInsets.only(top: 8),
             width: 8,
             height: 8,
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: DS.brandPrimaryConst,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: DS.lg),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: DS.brandPrimaryConst,
                 fontSize: 20,
                 height: 1.5,
               ),
@@ -500,38 +482,36 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         ],
       ),
     );
-  }
 
-  Widget _buildDemoBox(String title, List<String> points) {
-    return Container(
-      padding: const EdgeInsets.all(24),
+  Widget _buildDemoBox(String title, List<String> points) => Container(
+      padding: const EdgeInsets.all(DS.xl),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: DS.brandPrimary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        border: Border.all(color: DS.brandPrimary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: DS.brandPrimaryConst,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
           ...points.map((point) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.arrow_right, color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(Icons.arrow_right, color: DS.brandPrimaryConst, size: 20),
+                    const SizedBox(width: DS.sm),
                     Expanded(
                       child: Text(
                         point,
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        style: TextStyle(color: DS.brandPrimaryConst, fontSize: 16),
                       ),
                     ),
                   ],
@@ -540,35 +520,33 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
         ],
       ),
     );
-  }
 
-  Widget _buildMetricsBox(List<_Metric> metrics) {
-    return Container(
-      padding: const EdgeInsets.all(24),
+  Widget _buildMetricsBox(List<_Metric> metrics) => Container(
+      padding: const EdgeInsets.all(DS.xl),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: DS.brandPrimary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        border: Border.all(color: DS.brandPrimary.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: metrics.map((m) => Column(
               children: [
-                Icon(m.icon, color: Colors.white, size: 40),
-                const SizedBox(height: 12),
+                Icon(m.icon, color: DS.brandPrimaryConst, size: 40),
+                const SizedBox(height: DS.md),
                 Text(
                   m.value,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: DS.brandPrimaryConst,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: DS.xs),
                 Text(
                   m.label,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: DS.brandPrimary.withValues(alpha: 0.8),
                     fontSize: 14,
                   ),
                 ),
@@ -576,11 +554,9 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
             ),).toList(),
       ),
     );
-  }
 
-  Widget _buildNavigationControls() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+  Widget _buildNavigationControls() => Padding(
+      padding: const EdgeInsets.all(DS.xl),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -590,27 +566,25 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
             icon: const Icon(Icons.arrow_back),
             label: const Text('上一步'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
-              foregroundColor: Colors.white,
+              backgroundColor: DS.brandPrimary.withValues(alpha: 0.2),
+              foregroundColor: DS.brandPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             ),
           ),
 
           // Progress indicator
           Row(
-            children: List.generate(_totalSteps, (index) {
-              return Container(
+            children: List.generate(_totalSteps, (index) => Container(
                 width: index == _currentStep ? 32 : 10,
                 height: 10,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   color: index <= _currentStep
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.3),
+                      ? DS.brandPrimary
+                      : DS.brandPrimary.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(5),
                 ),
-              );
-            }),
+              ),),
           ),
 
           // Next button
@@ -619,48 +593,40 @@ class _CompetitionDemoScreenState extends State<CompetitionDemoScreen>
             icon: const Icon(Icons.arrow_forward),
             label: const Text('下一步'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
-              foregroundColor: Colors.white,
+              backgroundColor: DS.brandPrimary.withValues(alpha: 0.2),
+              foregroundColor: DS.brandPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             ),
           ),
         ],
       ),
     );
-  }
 
-  Widget _buildTimerOverlay(_DemoStep step) {
-    return Positioned(
+  Widget _buildTimerOverlay(_DemoStep step) => Positioned(
       top: 80,
       right: 20,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
+          color: DS.brandPrimary.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.timer, color: Colors.white, size: 16),
-            const SizedBox(width: 8),
+            Icon(Icons.timer, color: DS.brandPrimaryConst, size: 16),
+            const SizedBox(width: DS.sm),
             Text(
               '${step.duration.inSeconds}s',
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: DS.brandPrimaryConst, fontSize: 14),
             ),
           ],
         ),
       ),
     );
-  }
 }
 
 class _DemoStep {
-  final String title;
-  final String subtitle;
-  final Duration duration;
-  final IconData icon;
-  final List<Color> gradient;
 
   _DemoStep({
     required this.title,
@@ -669,12 +635,17 @@ class _DemoStep {
     required this.icon,
     required this.gradient,
   });
+  final String title;
+  final String subtitle;
+  final Duration duration;
+  final IconData icon;
+  final List<Color> gradient;
 }
 
 class _Metric {
+
+  _Metric(this.label, this.value, this.icon);
   final String label;
   final String value;
   final IconData icon;
-
-  _Metric(this.label, this.value, this.icon);
 }

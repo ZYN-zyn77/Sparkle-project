@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 /// 必杀技 A: GraphRAG 检索可视化组件
 ///
@@ -10,6 +12,13 @@ import 'dart:math' as math;
 /// - 颜色编码：蓝色(向量) / 紫色(图) / 绿色(用户兴趣)
 /// - 自动淡出（3秒后）
 class GraphRAGVisualizer extends StatefulWidget {
+
+  const GraphRAGVisualizer({
+    super.key,
+    this.trace,
+    this.alignment = Alignment.bottomRight,
+    this.isVisible = true,
+  });
   /// 检索追踪数据
   final GraphRAGTrace? trace;
 
@@ -18,13 +27,6 @@ class GraphRAGVisualizer extends StatefulWidget {
 
   /// 是否显示
   final bool isVisible;
-
-  const GraphRAGVisualizer({
-    Key? key,
-    this.trace,
-    this.alignment = Alignment.bottomRight,
-    this.isVisible = true,
-  }) : super(key: key);
 
   @override
   State<GraphRAGVisualizer> createState() => _GraphRAGVisualizerState();
@@ -86,13 +88,13 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
   Color _getNodeColor(String source) {
     switch (source) {
       case 'vector':
-        return Colors.blue.shade400;
+        return DS.brandPrimary.shade400;
       case 'graph':
         return Colors.purple.shade400;
       case 'user_interest':
-        return Colors.green.shade400;
+        return DS.success.shade400;
       default:
-        return Colors.grey.shade400;
+        return DS.brandPrimary.shade400;
     }
   }
 
@@ -111,17 +113,16 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
         child: Container(
           width: 200,
           height: 150,
-          margin: const EdgeInsets.all(16),
+          margin: const EdgeInsets.all(DS.lg),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.8),
+            color: DS.brandPrimary.withOpacity(0.8),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
+              color: DS.brandPrimary.withOpacity(0.3),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.5),
+                color: DS.brandPrimary.withOpacity(0.5),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -137,7 +138,7 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: DS.brandPrimary.withOpacity(0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -148,14 +149,14 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
                     Icon(
                       Icons.psychology,
                       size: 16,
-                      color: Colors.white.withOpacity(0.8),
+                      color: DS.brandPrimary.withOpacity(0.8),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'AI 检索中...',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: DS.brandPrimary.withOpacity(0.8),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -168,7 +169,7 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
               // 节点可视化区域
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(DS.md),
                   child: _buildNodeVisualization(trace),
                 ),
               ),
@@ -200,14 +201,13 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
     );
   }
 
-  Widget _buildStats(GraphRAGTrace trace) {
-    return Row(
+  Widget _buildStats(GraphRAGTrace trace) => Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildStatItem(
           '向量',
           trace.vectorSearchCount.toString(),
-          Colors.blue.shade400,
+          DS.brandPrimary.shade400,
         ),
         _buildStatItem(
           '图谱',
@@ -217,14 +217,12 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
         _buildStatItem(
           '时间',
           '${(trace.timing['total'] ?? 0).toStringAsFixed(2)}s',
-          Colors.white70,
+          DS.brandPrimary70,
         ),
       ],
     );
-  }
 
-  Widget _buildStatItem(String label, String value, Color color) {
-    return Column(
+  Widget _buildStatItem(String label, String value, Color color) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
@@ -238,21 +236,16 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
+            color: DS.brandPrimary.withOpacity(0.6),
             fontSize: 10,
           ),
         ),
       ],
     );
-  }
 }
 
 /// 节点图绘制器
 class _NodeGraphPainter extends CustomPainter {
-  final List<NodeInfo> nodes;
-  final Map<String, String> nodeSources;
-  final Animation<double> pulseAnimation;
-  final Color Function(String) getColor;
 
   _NodeGraphPainter({
     required this.nodes,
@@ -260,6 +253,10 @@ class _NodeGraphPainter extends CustomPainter {
     required this.pulseAnimation,
     required this.getColor,
   }) : super(repaint: pulseAnimation);
+  final List<NodeInfo> nodes;
+  final Map<String, String> nodeSources;
+  final Animation<double> pulseAnimation;
+  final Color Function(String) getColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -270,7 +267,7 @@ class _NodeGraphPainter extends CustomPainter {
     final radius = math.min(size.width, size.height) / 3;
 
     // 绘制节点
-    for (int i = 0; i < nodes.length; i++) {
+    for (var i = 0; i < nodes.length; i++) {
       final node = nodes[i];
       final source = nodeSources[node.id] ?? 'vector';
       final color = getColor(source);
@@ -320,7 +317,7 @@ class _NodeGraphPainter extends CustomPainter {
         text: TextSpan(
           text: _truncateName(node.name),
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: DS.brandPrimary.withOpacity(0.7),
             fontSize: 8,
           ),
         ),
@@ -341,23 +338,12 @@ class _NodeGraphPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_NodeGraphPainter oldDelegate) {
-    return oldDelegate.nodes != nodes ||
+  bool shouldRepaint(_NodeGraphPainter oldDelegate) => oldDelegate.nodes != nodes ||
         oldDelegate.nodeSources != nodeSources;
-  }
 }
 
 /// GraphRAG 追踪数据模型
 class GraphRAGTrace {
-  final String traceId;
-  final String query;
-  final DateTime timestamp;
-  final List<NodeInfo> nodesRetrieved;
-  final Map<String, String> nodeSources; // node_id -> source
-  final int vectorSearchCount;
-  final int graphSearchCount;
-  final int userInterestCount;
-  final Map<String, double> timing;
 
   GraphRAGTrace({
     required this.traceId,
@@ -371,8 +357,7 @@ class GraphRAGTrace {
     required this.timing,
   });
 
-  factory GraphRAGTrace.fromJson(Map<String, dynamic> json) {
-    return GraphRAGTrace(
+  factory GraphRAGTrace.fromJson(Map<String, dynamic> json) => GraphRAGTrace(
       traceId: json['trace_id'] as String,
       query: json['query'] as String,
       timestamp: DateTime.parse(json['timestamp'] as String),
@@ -389,14 +374,19 @@ class GraphRAGTrace {
         ),
       ),
     );
-  }
+  final String traceId;
+  final String query;
+  final DateTime timestamp;
+  final List<NodeInfo> nodesRetrieved;
+  final Map<String, String> nodeSources; // node_id -> source
+  final int vectorSearchCount;
+  final int graphSearchCount;
+  final int userInterestCount;
+  final Map<String, double> timing;
 }
 
 /// 节点信息
 class NodeInfo {
-  final String id;
-  final String name;
-  final String? description;
 
   NodeInfo({
     required this.id,
@@ -404,11 +394,12 @@ class NodeInfo {
     this.description,
   });
 
-  factory NodeInfo.fromJson(Map<String, dynamic> json) {
-    return NodeInfo(
+  factory NodeInfo.fromJson(Map<String, dynamic> json) => NodeInfo(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
     );
-  }
+  final String id;
+  final String name;
+  final String? description;
 }

@@ -1,9 +1,27 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 class GlassCard extends StatefulWidget {
+
+  const GlassCard({
+    required this.child,
+    super.key,
+    this.width,
+    this.height,
+    this.margin,
+    this.padding = const EdgeInsets.all(DS.lg),
+    this.borderRadius,
+    this.color,
+    this.blurSigma = 10.0,
+    this.opacity = 0.1,
+    this.shadows,
+    this.onTap,
+    this.enableTapEffect = false,
+  });
   final Widget child;
   final double? width;
   final double? height;
@@ -16,22 +34,6 @@ class GlassCard extends StatefulWidget {
   final List<BoxShadow>? shadows;
   final VoidCallback? onTap;
   final bool enableTapEffect;
-
-  const GlassCard({
-    required this.child,
-    super.key,
-    this.width,
-    this.height,
-    this.margin,
-    this.padding = const EdgeInsets.all(16.0),
-    this.borderRadius,
-    this.color,
-    this.blurSigma = 10.0,
-    this.opacity = 0.1,
-    this.shadows,
-    this.onTap,
-    this.enableTapEffect = false,
-  });
 
   @override
   State<GlassCard> createState() => _GlassCardState();
@@ -66,20 +68,20 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
 
     // Default glass color based on theme
     final defaultColor = widget.color ?? (isDark 
-        ? AppDesignTokens.neutral900.withValues(alpha: widget.opacity)
-        : Colors.white.withValues(alpha: widget.opacity));
+        ? DS.neutral900.withValues(alpha: widget.opacity)
+        : DS.brandPrimary.withValues(alpha: widget.opacity));
 
     final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.white.withValues(alpha: 0.2);
+        ? DS.brandPrimary.withValues(alpha: 0.1)
+        : DS.brandPrimary.withValues(alpha: 0.2);
 
     // Default border radius
-    final defaultBorderRadius = widget.borderRadius ?? AppDesignTokens.borderRadius20;
+    final defaultBorderRadius = widget.borderRadius ?? DS.borderRadius20;
 
     // Default shadows - subtly customized for glass effect
     final defaultShadows = widget.shadows ?? [
       BoxShadow(
-        color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05),
+        color: isDark ? DS.brandPrimary.withValues(alpha: 0.3) : DS.brandPrimary.withValues(alpha: 0.05),
         blurRadius: 16,
         offset: const Offset(0, 8),
       ),
@@ -92,7 +94,7 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
       decoration: BoxDecoration(
         color: defaultColor,
         borderRadius: defaultBorderRadius,
-        border: Border.all(color: borderColor, width: 1),
+        border: Border.all(color: borderColor),
         boxShadow: defaultShadows,
       ),
       child: ClipRRect(

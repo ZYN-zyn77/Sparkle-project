@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 
 class PrivateChatBubble extends ConsumerStatefulWidget {
-  final PrivateMessageInfo message;
 
   const PrivateChatBubble({required this.message, super.key});
+  final PrivateMessageInfo message;
 
   @override
   ConsumerState<PrivateChatBubble> createState() => _PrivateChatBubbleState();
@@ -61,7 +62,7 @@ class _PrivateChatBubbleState extends ConsumerState<PrivateChatBubble> with Sing
             children: [
               if (!isMe) ...[
                 _buildAvatar(widget.message.sender),
-                const SizedBox(width: 8),
+                const SizedBox(width: DS.sm),
               ],
               Flexible(
                 child: Column(
@@ -70,12 +71,12 @@ class _PrivateChatBubbleState extends ConsumerState<PrivateChatBubble> with Sing
                     _buildContent(context, isMe),
                     const SizedBox(height: 2),
                      if (isMe && widget.message.isRead)
-                      const Text('Read', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      Text(brandPrimary),,,),
                   ],
                 ),
               ),
               if (isMe) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: DS.sm),
                 _buildAvatar(widget.message.sender),
               ],
             ],
@@ -94,11 +95,10 @@ class _PrivateChatBubbleState extends ConsumerState<PrivateChatBubble> with Sing
     }
   }
 
-  Widget _buildTextBubble(BuildContext context, bool isMe) {
-    return Container(
-      padding: const EdgeInsets.all(12),
+  Widget _buildTextBubble(BuildContext context, bool isMe) => Container(
+      padding: const EdgeInsets.all(DS.md),
       decoration: BoxDecoration(
-        color: isMe ? AppDesignTokens.primaryBase : Colors.white,
+        color: isMe ? DS.primaryBase : DS.brandPrimary,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(16),
           topRight: const Radius.circular(16),
@@ -106,39 +106,36 @@ class _PrivateChatBubbleState extends ConsumerState<PrivateChatBubble> with Sing
           bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
         ),
         boxShadow: isMe 
-            ? [BoxShadow(color: AppDesignTokens.primaryBase.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))] 
-            : AppDesignTokens.shadowSm,
-        border: isMe ? null : Border.all(color: AppDesignTokens.neutral100),
+            ? [BoxShadow(color: DS.primaryBase.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))] 
+            : DS.shadowSm,
+        border: isMe ? null : Border.all(color: DS.neutral100),
       ),
       child: Text(
         widget.message.content ?? '',
         style: TextStyle(
-          color: isMe ? Colors.white : AppDesignTokens.neutral900,
+          color: isMe ? DS.brandPrimary : DS.neutral900,
           fontSize: 16,
           height: 1.4,
         ),
       ),
     );
-  }
 
-  Widget _buildAvatar(UserBrief user) {
-    return Container(
+  Widget _buildAvatar(UserBrief user) => DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-        boxShadow: AppDesignTokens.shadowSm,
+        border: Border.all(color: DS.brandPrimary, width: 2),
+        boxShadow: DS.shadowSm,
       ),
       child: CircleAvatar(
         radius: 16,
         backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-        backgroundColor: AppDesignTokens.neutral200,
+        backgroundColor: DS.neutral200,
         child: user.avatarUrl == null
             ? Text(
                 user.displayName.substring(0, 1).toUpperCase(),
-                style: const TextStyle(fontSize: 12, color: AppDesignTokens.neutral600),
+                style: const TextStyle(fontSize: 12, color: DS.neutral600),
               )
             : null,
       ),
     );
-  }
 }

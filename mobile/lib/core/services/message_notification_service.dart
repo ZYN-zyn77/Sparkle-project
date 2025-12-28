@@ -1,17 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/screens/community/community_main_screen.dart';
 
 // Notification message model
 class NotificationMessage {
-  final String id;
-  final String senderName;
-  final String? senderAvatarUrl;
-  final String content;
-  final DateTime timestamp;
-  final NotificationType type;
-  final String? targetId;
 
   NotificationMessage({
     required this.id,
@@ -19,14 +14,19 @@ class NotificationMessage {
     required this.content, required this.timestamp, required this.type, this.senderAvatarUrl,
     this.targetId,
   });
+  final String id;
+  final String senderName;
+  final String? senderAvatarUrl;
+  final String content;
+  final DateTime timestamp;
+  final NotificationType type;
+  final String? targetId;
 }
 
 enum NotificationType { privateMessage, groupMessage }
 
 // Unread message count provider
-final unreadMessageCountProvider = StateNotifierProvider<UnreadMessageCountNotifier, int>((ref) {
-  return UnreadMessageCountNotifier();
-});
+final unreadMessageCountProvider = StateNotifierProvider<UnreadMessageCountNotifier, int>((ref) => UnreadMessageCountNotifier());
 
 class UnreadMessageCountNotifier extends StateNotifier<int> {
   UnreadMessageCountNotifier() : super(0);
@@ -38,21 +38,17 @@ class UnreadMessageCountNotifier extends StateNotifier<int> {
 }
 
 // In-app notification stream provider
-final inAppNotificationProvider = StateNotifierProvider<InAppNotificationNotifier, NotificationMessage?>((ref) {
-  return InAppNotificationNotifier();
-});
+final inAppNotificationProvider = StateNotifierProvider<InAppNotificationNotifier, NotificationMessage?>((ref) => InAppNotificationNotifier());
 
 class InAppNotificationNotifier extends StateNotifier<NotificationMessage?> {
-  Timer? _dismissTimer;
 
   InAppNotificationNotifier() : super(null);
+  Timer? _dismissTimer;
 
   void show(NotificationMessage message) {
     _dismissTimer?.cancel();
     state = message;
-    _dismissTimer = Timer(const Duration(seconds: 4), () {
-      dismiss();
-    });
+    _dismissTimer = Timer(const Duration(seconds: 4), dismiss);
   }
 
   void dismiss() {
@@ -69,9 +65,9 @@ class InAppNotificationNotifier extends StateNotifier<NotificationMessage?> {
 
 // In-app notification overlay widget
 class InAppNotificationOverlay extends ConsumerWidget {
-  final Widget child;
 
   const InAppNotificationOverlay({required this.child, super.key});
+  final Widget child;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -110,9 +106,6 @@ final _focusModeProviderOrFalse = Provider<bool>((ref) {
 });
 
 class InAppNotificationBanner extends StatefulWidget {
-  final NotificationMessage notification;
-  final VoidCallback onDismiss;
-  final VoidCallback onTap;
 
   const InAppNotificationBanner({
     required this.notification,
@@ -120,6 +113,9 @@ class InAppNotificationBanner extends StatefulWidget {
     required this.onTap,
     super.key,
   });
+  final NotificationMessage notification;
+  final VoidCallback onDismiss;
+  final VoidCallback onTap;
 
   @override
   State<InAppNotificationBanner> createState() => _InAppNotificationBannerState();
@@ -153,8 +149,7 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
+  Widget build(BuildContext context) => SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
@@ -168,13 +163,13 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
               onTap: widget.onTap,
               borderRadius: BorderRadius.circular(16),
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(DS.md),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
+                      color: DS.brandPrimary.withValues(alpha: 0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -191,7 +186,7 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
                           ? Text(widget.notification.senderName[0])
                           : null,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: DS.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,22 +198,22 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
                                 widget.notification.senderName,
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: DS.sm),
                               if (widget.notification.type == NotificationType.groupMessage)
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.withValues(alpha: 0.1),
+                                    color: DS.brandPrimary.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     '群消息',
-                                    style: TextStyle(fontSize: 10, color: Colors.blue),
+                                    style: TextStyle(fontSize: 10, color: DS.brandPrimaryConst),
                                   ),
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: DS.xs),
                           Text(
                             widget.notification.content,
                             maxLines: 2,
@@ -245,14 +240,13 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
         ),
       ),
     );
-  }
 }
 
 // Message badge widget for navigation bar
 class MessageBadge extends ConsumerWidget {
-  final Widget child;
 
   const MessageBadge({required this.child, super.key});
+  final Widget child;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -269,14 +263,14 @@ class MessageBadge extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.red,
+                color: DS.error,
                 borderRadius: BorderRadius.circular(10),
               ),
               constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
               child: Text(
                 unreadCount > 99 ? '99+' : '$unreadCount',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: DS.brandPrimaryConst,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/knowledge_detail_model.dart';
 import 'package:sparkle/presentation/providers/knowledge_detail_provider.dart';
 import 'package:sparkle/presentation/widgets/galaxy/sector_config.dart';
 import 'package:sparkle/presentation/widgets/learning_path/learning_path_dialog.dart';
 
 class KnowledgeDetailScreen extends ConsumerWidget {
-  final String nodeId;
 
   const KnowledgeDetailScreen({required this.nodeId, super.key});
+  final String nodeId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,11 +24,8 @@ class KnowledgeDetailScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('Error: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(knowledgeDetailProvider(nodeId)),
-                child: const Text('Retry'),
-              ),
+              const SizedBox(height: DS.lg),
+              SparkleButton.primary(label: 'Retry', onPressed: () => ref.invalidate(knowledgeDetailProvider(nodeId))),
             ],
           ),
         ),
@@ -70,14 +68,14 @@ class KnowledgeDetailScreen extends ConsumerWidget {
           pinned: true,
           backgroundColor: sectorStyle.primaryColor,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: DS.brandPrimary),
             onPressed: () => context.pop(),
           ),
           actions: [
             IconButton(
               icon: Icon(
                 detail.userStats.isFavorite ? Icons.star : Icons.star_border,
-                color: Colors.white,
+                color: DS.brandPrimaryConst,
               ),
               onPressed: () {
                 ref.read(toggleFavoriteProvider(nodeId));
@@ -85,7 +83,7 @@ class KnowledgeDetailScreen extends ConsumerWidget {
             ),
           ],
           flexibleSpace: FlexibleSpaceBar(
-            background: Container(
+            background: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -98,7 +96,7 @@ class KnowledgeDetailScreen extends ConsumerWidget {
               ),
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(DS.lg),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,33 +108,33 @@ class KnowledgeDetailScreen extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white24,
+                          color: DS.brandPrimary24,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           sectorStyle.name,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: DS.brandPrimaryConst,
                             fontSize: 12,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: DS.sm),
                       // Node name
                       Text(
                         detail.node.name,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: DS.brandPrimaryConst,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       if (detail.node.nameEn != null) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: DS.xs),
                         Text(
                           detail.node.nameEn!,
                           style: TextStyle(
-                            color: Colors.white.withAlpha(200),
+                            color: DS.brandPrimary.withAlpha(200),
                             fontSize: 14,
                           ),
                         ),
@@ -177,12 +175,10 @@ class KnowledgeDetailScreen extends ConsumerWidget {
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: detail.node.keywords.map((keyword) {
-                  return Chip(
+                children: detail.node.keywords.map((keyword) => Chip(
                     label: Text(keyword),
                     backgroundColor: sectorStyle.glowColor.withAlpha(50),
-                  );
-                }).toList(),
+                  ),).toList(),
               ),
             ),
           ),
@@ -225,13 +221,12 @@ class KnowledgeDetailScreen extends ConsumerWidget {
             child: _SectionCard(
               title: '相关任务',
               child: Column(
-                children: detail.relatedTasks.map((task) {
-                  return ListTile(
+                children: detail.relatedTasks.map((task) => ListTile(
                     leading: Icon(
                       Icons.task_alt,
                       color: task.status.name == 'completed'
-                          ? Colors.green
-                          : Colors.orange,
+                          ? DS.success
+                          : DS.brandPrimary,
                     ),
                     title: Text(task.title),
                     subtitle: Text('预计 ${task.estimatedMinutes} 分钟'),
@@ -239,8 +234,7 @@ class KnowledgeDetailScreen extends ConsumerWidget {
                     onTap: () {
                       context.push('/tasks/${task.id}');
                     },
-                  );
-                }).toList(),
+                  ),).toList(),
               ),
             ),
           ),
@@ -251,8 +245,7 @@ class KnowledgeDetailScreen extends ConsumerWidget {
             child: _SectionCard(
               title: '相关计划',
               child: Column(
-                children: detail.relatedPlans.map((plan) {
-                  return ListTile(
+                children: detail.relatedPlans.map((plan) => ListTile(
                     leading: Icon(
                       plan.planType == 'sprint'
                           ? Icons.bolt
@@ -269,8 +262,7 @@ class KnowledgeDetailScreen extends ConsumerWidget {
                         context.push('/growth');
                       }
                     },
-                  );
-                }).toList(),
+                  ),).toList(),
               ),
             ),
           ),
@@ -304,20 +296,19 @@ IconData _getRelationIcon(String relationType) {
 
 /// Mastery progress card
 class _MasteryCard extends StatelessWidget {
-  final KnowledgeUserStats stats;
-  final Color sectorColor;
 
   const _MasteryCard({
     required this.stats,
     required this.sectorColor,
   });
+  final KnowledgeUserStats stats;
+  final Color sectorColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(16),
+  Widget build(BuildContext context) => Card(
+      margin: const EdgeInsets.all(DS.lg),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DS.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -348,7 +339,7 @@ class _MasteryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // Progress bar
             ClipRRect(
@@ -356,11 +347,11 @@ class _MasteryCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: stats.masteryProgress,
                 minHeight: 12,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: DS.brandPrimary.shade200,
                 valueColor: AlwaysStoppedAnimation<Color>(_getMasteryColor()),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DS.sm),
             Text(
               '${stats.masteryScore.toStringAsFixed(0)}%',
               style: TextStyle(
@@ -369,7 +360,7 @@ class _MasteryCard extends StatelessWidget {
                 fontSize: 18,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // Stats row
             Row(
@@ -396,20 +387,20 @@ class _MasteryCard extends StatelessWidget {
 
             // Decay status
             if (stats.decayPaused) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: DS.lg),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(DS.sm),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withAlpha(30),
+                  color: DS.brandPrimary.withAlpha(30),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.pause_circle, color: Colors.orange, size: 20),
-                    SizedBox(width: 8),
+                    Icon(Icons.pause_circle, color: DS.brandPrimaryConst, size: 20),
+                    const SizedBox(width: DS.smConst),
                     Text(
                       '遗忘衰减已暂停',
-                      style: TextStyle(color: Colors.orange),
+                      style: TextStyle(color: DS.brandPrimaryConst),
                     ),
                   ],
                 ),
@@ -419,14 +410,13 @@ class _MasteryCard extends StatelessWidget {
         ),
       ),
     );
-  }
 
   Color _getMasteryColor() {
     if (stats.masteryScore >= 95) return Colors.purple;
-    if (stats.masteryScore >= 80) return Colors.green;
-    if (stats.masteryScore >= 30) return Colors.blue;
-    if (stats.masteryScore > 0) return Colors.orange;
-    return Colors.grey;
+    if (stats.masteryScore >= 80) return DS.success;
+    if (stats.masteryScore >= 30) return DS.brandPrimary;
+    if (stats.masteryScore > 0) return DS.brandPrimary;
+    return DS.brandPrimary;
   }
 
   String _formatReviewDate(DateTime date) {
@@ -440,22 +430,21 @@ class _MasteryCard extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
 
   const _StatItem({
     required this.icon,
     required this.value,
     required this.label,
   });
+  final IconData icon;
+  final String value;
+  final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       children: [
-        Icon(icon, color: Colors.grey),
-        const SizedBox(height: 4),
+        Icon(icon, color: DS.brandPrimary),
+        const SizedBox(height: DS.xs),
         Text(
           value,
           style: const TextStyle(
@@ -466,30 +455,28 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: Colors.grey.shade600,
+            color: DS.brandPrimary.shade600,
             fontSize: 12,
           ),
         ),
       ],
     );
-  }
 }
 
 class _SectionCard extends StatelessWidget {
-  final String title;
-  final Widget child;
 
   const _SectionCard({
     required this.title,
     required this.child,
   });
+  final String title;
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
+  Widget build(BuildContext context) => Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DS.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -499,11 +486,10 @@ class _SectionCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DS.md),
             child,
           ],
         ),
       ),
     );
-  }
 }

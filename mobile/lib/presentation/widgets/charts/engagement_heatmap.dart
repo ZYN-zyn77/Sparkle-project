@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 /// 学习活跃度热力图 - GitHub 风格
 ///
 /// 显示过去一段时间（默认90天）的学习活跃度
 /// 颜色深度表示学习强度
 class EngagementHeatmap extends StatelessWidget {
-  final Map<DateTime, double> data; // DateTime -> intensity (0-1)
-  final int daysToShow;
-  final Color lowColor;
-  final Color highColor;
-
   const EngagementHeatmap({
     required this.data,
     this.daysToShow = 90,
@@ -18,32 +14,36 @@ class EngagementHeatmap extends StatelessWidget {
     super.key,
   });
 
+  final Map<DateTime, double> data; // DateTime -> intensity (0-1)
+  final int daysToShow;
+  final Color lowColor;
+  final Color highColor;
+
   @override
-  Widget build(BuildContext context) {
-    return Card(
+  Widget build(BuildContext context) => Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DS.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             Row(
               children: [
-                Icon(Icons.calendar_month, color: Colors.blue.shade600, size: 24),
-                const SizedBox(width: 12),
-                const Expanded(
+                Icon(Icons.calendar_month, color: DS.brandPrimary.shade600, size: 24),
+                const SizedBox(width: DS.md),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         '学习活跃度',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         '过去 90 天的学习记录',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: DS.brandPrimary),
                       ),
                     ],
                   ),
@@ -51,12 +51,12 @@ class EngagementHeatmap extends StatelessWidget {
                 _buildLegend(),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
 
             // Heatmap Grid
             _buildHeatmapGrid(),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: DS.md),
 
             // Stats Summary
             _buildStatsSummary(),
@@ -64,7 +64,6 @@ class EngagementHeatmap extends StatelessWidget {
         ),
       ),
     );
-  }
 
   Widget _buildHeatmapGrid() {
     final now = DateTime.now();
@@ -77,8 +76,7 @@ class EngagementHeatmap extends StatelessWidget {
     return SizedBox(
       height: 140, // 7 days * 16px + spacing
       child: Row(
-        children: List.generate(weeks, (weekIndex) {
-          return Expanded(
+        children: List.generate(weeks, (weekIndex) => Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(7, (dayIndex) {
@@ -93,14 +91,12 @@ class EngagementHeatmap extends StatelessWidget {
                 return _buildDayCell(date, intensity);
               }),
             ),
-          );
-        }),
+          ),),
       ),
     );
   }
 
-  Widget _buildDayCell(DateTime date, double intensity) {
-    return Tooltip(
+  Widget _buildDayCell(DateTime date, double intensity) => Tooltip(
       message: '${_formatDate(date)}\n学习强度: ${_getIntensityLabel(intensity)}',
       child: Container(
         width: 14,
@@ -112,31 +108,28 @@ class EngagementHeatmap extends StatelessWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildLegend() {
-    return Row(
+  Widget _buildLegend() => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('少', style: TextStyle(fontSize: 10, color: Colors.grey)),
-        const SizedBox(width: 4),
+        Text('低', style: TextStyle(fontSize: 12, color: DS.brandPrimary)),
+        SizedBox(width: DS.xs),
         ...List.generate(5, (index) {
           final intensity = index / 4;
           return Container(
             width: 12,
             height: 12,
-            margin: const EdgeInsets.symmetric(horizontal: 2),
+            margin: EdgeInsets.only(left: DS.xs),
             decoration: BoxDecoration(
               color: _getColorForIntensity(intensity),
               borderRadius: BorderRadius.circular(2),
             ),
           );
         }),
-        const SizedBox(width: 4),
-        const Text('多', style: TextStyle(fontSize: 10, color: Colors.grey)),
+        SizedBox(width: DS.xs),
+        Text('高', style: TextStyle(fontSize: 12, color: DS.brandPrimary)),
       ],
     );
-  }
 
   Widget _buildStatsSummary() {
     final stats = _calculateStats();
@@ -151,22 +144,20 @@ class EngagementHeatmap extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
+  Widget _buildStatItem(String label, String value, IconData icon) => Column(
       children: [
-        Icon(icon, size: 20, color: Colors.blue.shade600),
-        const SizedBox(height: 4),
+        Icon(icon, size: 20, color: DS.brandPrimary.shade600),
+        const SizedBox(height: DS.xs),
         Text(
           value,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: const TextStyle(fontSize: 10, color: Colors.grey),
+          style: TextStyle(fontSize: 10, color: DS.brandPrimary),
         ),
       ],
     );
-  }
 
   // Helper Methods
   double _getIntensity(DateTime date) {
@@ -179,9 +170,7 @@ class EngagementHeatmap extends StatelessWidget {
     return data[dateKey] ?? 0.0;
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   Color _getColorForIntensity(double intensity) {
     if (intensity == 0) return lowColor;
@@ -196,21 +185,19 @@ class EngagementHeatmap extends StatelessWidget {
     return '非常活跃';
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
+  String _formatDate(DateTime date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   Map<String, int> _calculateStats() {
     final now = DateTime.now();
     final startDate = now.subtract(Duration(days: daysToShow));
 
-    int activeDays = 0;
-    int longestStreak = 0;
-    int currentStreak = 0;
-    int tempStreak = 0;
+    var activeDays = 0;
+    var longestStreak = 0;
+    var currentStreak = 0;
+    var tempStreak = 0;
 
     // Calculate stats
-    for (int i = 0; i < daysToShow; i++) {
+    for (var i = 0; i < daysToShow; i++) {
       final date = startDate.add(Duration(days: i));
       final intensity = _getIntensity(date);
 
@@ -226,7 +213,7 @@ class EngagementHeatmap extends StatelessWidget {
     }
 
     // Calculate current streak (from today backwards)
-    for (int i = 0; i < daysToShow; i++) {
+    for (var i = 0; i < daysToShow; i++) {
       final date = now.subtract(Duration(days: i));
       final intensity = _getIntensity(date);
 

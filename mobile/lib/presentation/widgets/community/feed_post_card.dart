@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/domain/community/community_models.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedPostCard extends StatelessWidget {
+
+  const FeedPostCard({required this.post, super.key, this.onLike});
   final Post post;
   final VoidCallback? onLike;
 
-  const FeedPostCard({super.key, required this.post, this.onLike});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DS.lg),
       decoration: BoxDecoration(
-        color: AppDesignTokens.surface,
+        color: DS.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppDesignTokens.border.withOpacity(0.3),
+          color: DS.border.withOpacity(0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: DS.brandPrimary.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -35,7 +35,7 @@ class FeedPostCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppDesignTokens.primaryBase,
+                backgroundColor: DS.primaryBase,
                 backgroundImage: post.user.avatarUrl != null
                     ? NetworkImage(post.user.avatarUrl!)
                     : null,
@@ -43,14 +43,14 @@ class FeedPostCard extends StatelessWidget {
                     ? Text(post.user.username[0].toUpperCase())
                     : null,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: DS.md),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     post.user.username,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: DS.brandPrimaryConst,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -58,7 +58,7 @@ class FeedPostCard extends StatelessWidget {
                   Text(
                     timeago.format(post.createdAt),
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: DS.brandPrimary400,
                       fontSize: 12,
                     ),
                   ),
@@ -69,7 +69,7 @@ class FeedPostCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppDesignTokens.primaryBase.withOpacity(0.2),
+                    color: DS.primaryBase.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Row(
@@ -79,11 +79,11 @@ class FeedPostCard extends StatelessWidget {
                         height: 12,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
-                      SizedBox(width: 4),
+                      SizedBox(width: DS.xs),
                       Text(
                         'Posting...',
                         style: TextStyle(
-                          color: AppDesignTokens.primaryBase,
+                          color: DS.primaryBase,
                           fontSize: 10,
                         ),
                       ),
@@ -92,18 +92,18 @@ class FeedPostCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: DS.md),
           Text(
             post.content,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: DS.brandPrimaryConst,
               fontSize: 15,
               height: 1.4,
             ),
           ),
           if (post.imageUrls != null && post.imageUrls!.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.top(12),
+              padding: const EdgeInsets.only(top: 12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
@@ -113,13 +113,13 @@ class FeedPostCard extends StatelessWidget {
                   height: 200,
                   errorBuilder: (ctx, err, stack) => Container(
                     height: 200,
-                    color: Colors.grey[800],
+                    color: DS.brandPrimary800,
                     child: const Center(child: Icon(Icons.broken_image)),
                   ),
                 ),
               ),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
           Row(
             children: [
               _ActionButton(
@@ -127,7 +127,7 @@ class FeedPostCard extends StatelessWidget {
                 label: '${post.likeCount}',
                 onTap: onLike,
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: DS.xl),
               const _ActionButton(
                 icon: Icons.chat_bubble_outline,
                 label: 'Comment',
@@ -137,13 +137,13 @@ class FeedPostCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppDesignTokens.secondaryBase.withOpacity(0.2),
+                    color: DS.secondaryBase.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '#${post.topic}',
                     style: const TextStyle(
-                      color: AppDesignTokens.secondaryBase,
+                      color: DS.secondaryBase,
                       fontSize: 12,
                     ),
                   ),
@@ -153,33 +153,30 @@ class FeedPostCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _ActionButton extends StatelessWidget {
+
+  const _ActionButton({required this.icon, required this.label, this.onTap});
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
 
-  const _ActionButton({required this.icon, required this.label, this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey[400], size: 20),
+          Icon(icon, color: DS.brandPrimary400, size: 20),
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              color: Colors.grey[400],
+              color: DS.brandPrimary400,
               fontSize: 14,
             ),
           ),
         ],
       ),
     );
-  }
 }

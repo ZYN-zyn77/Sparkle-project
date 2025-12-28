@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/providers/settings_provider.dart';
 
 class ChatInput extends ConsumerStatefulWidget {
-  final bool enabled;
-  final String? hintText;
-  final Function(String text, {String? replyToId})? onSend;
-  final PrivateMessageInfo? quotedMessage;
-  final VoidCallback? onCancelQuote;
 
   const ChatInput({
     super.key,
@@ -19,6 +15,11 @@ class ChatInput extends ConsumerStatefulWidget {
     this.quotedMessage,
     this.onCancelQuote,
   });
+  final bool enabled;
+  final String? hintText;
+  final Function(String text, {String? replyToId})? onSend;
+  final PrivateMessageInfo? quotedMessage;
+  final VoidCallback? onCancelQuote;
 
   @override
   ConsumerState<ChatInput> createState() => _ChatInputState();
@@ -76,8 +77,8 @@ class _ChatInputState extends ConsumerState<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
-    final bool canSend = widget.enabled && !_isSending && _controller.text.trim().isNotEmpty;
-    final bool enterToSend = ref.watch(enterToSendProvider);
+    final canSend = widget.enabled && !_isSending && _controller.text.trim().isNotEmpty;
+    final enterToSend = ref.watch(enterToSendProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -89,17 +90,17 @@ class _ChatInputState extends ConsumerState<ChatInput> {
           if (widget.quotedMessage != null) _buildQuotePreview(isDark),
           
           Padding(
-            padding: const EdgeInsets.all(AppDesignTokens.spacing8),
+            padding: const EdgeInsets.all(DS.spacing8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
-                  child: Container(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: isDark ? AppDesignTokens.neutral800 : AppDesignTokens.neutral100,
+                      color: isDark ? DS.neutral800 : DS.neutral100,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: isDark ? AppDesignTokens.neutral700 : AppDesignTokens.neutral300,
+                        color: isDark ? DS.neutral700 : DS.neutral300,
                       ),
                     ),
                     child: TextField(
@@ -111,11 +112,11 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                       decoration: InputDecoration(
                         hintText: widget.hintText ?? 'Type a message...',
                         hintStyle: TextStyle(
-                          color: isDark ? AppDesignTokens.neutral400 : AppDesignTokens.neutral500,
+                          color: isDark ? DS.neutral400 : DS.neutral500,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppDesignTokens.spacing16,
-                          vertical: AppDesignTokens.spacing10,
+                          horizontal: DS.spacing16,
+                          vertical: DS.spacing10,
                         ),
                         border: InputBorder.none,
                         isDense: true,
@@ -124,7 +125,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                     ),
                   ),
                 ),
-                const SizedBox(width: AppDesignTokens.spacing12),
+                const SizedBox(width: DS.spacing12),
                 GestureDetector(
                   onTapDown: (_) => setState(() => _isButtonPressed = true),
                   onTapUp: (_) => setState(() => _isButtonPressed = false),
@@ -139,13 +140,13 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: canSend ? AppDesignTokens.primaryGradient : null,
-                        color: canSend ? null : (isDark ? AppDesignTokens.neutral800 : AppDesignTokens.neutral200),
+                        gradient: canSend ? DS.primaryGradient : null,
+                        color: canSend ? null : (isDark ? DS.neutral800 : DS.neutral200),
                         shape: BoxShape.circle,
                         boxShadow: canSend 
                           ? [
                               BoxShadow(
-                                color: AppDesignTokens.primaryBase.withValues(alpha: 0.3),
+                                color: DS.brandPrimary.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -154,14 +155,14 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                       ),
                       child: Center(
                         child: _isSending
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 22,
                                 height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: DS.brandPrimary),
                               )
                             : Icon(
                                 Icons.arrow_upward_rounded,
-                                color: canSend ? Colors.white : (isDark ? Colors.white30 : Colors.black38),
+                                color: canSend ? DS.brandPrimary : (isDark ? DS.brandPrimary30 : DS.brandPrimary38),
                                 size: 24,
                               ),
                       ),
@@ -176,16 +177,15 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     );
   }
 
-  Widget _buildQuotePreview(bool isDark) {
-    return Container(
+  Widget _buildQuotePreview(bool isDark) => Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? AppDesignTokens.neutral800 : Colors.grey[200],
+        color: isDark ? DS.neutral800 : DS.brandPrimary200,
         borderRadius: BorderRadius.circular(12),
         border: const Border(
-          left: BorderSide(color: AppDesignTokens.primaryBase, width: 4),
+          left: BorderSide(color: DS.brandPrimary, width: 4),
         ),
       ),
       child: Row(
@@ -197,31 +197,31 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                 Text(
                   '引用 ${widget.quotedMessage!.sender.displayName}',
                   style: const TextStyle(
-                    fontSize: AppDesignTokens.fontSizeXs,
-                    fontWeight: AppDesignTokens.fontWeightBold,
-                    color: AppDesignTokens.primaryBase,
+                    fontSize: DS.fontSizeXs,
+                    fontWeight: DS.fontWeightBold,
+                    color: DS.brandPrimary,
                   ),
                 ),
-                const SizedBox(height: AppDesignTokens.spacing4),
+                const SizedBox(height: DS.spacing4),
                 Text(
                   widget.quotedMessage!.content ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: AppDesignTokens.fontSizeXs,
-                    color: isDark ? AppDesignTokens.neutral400 : AppDesignTokens.neutral600,
+                    fontSize: DS.fontSizeXs,
+                    color: isDark ? DS.neutral400 : DS.neutral600,
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            width: AppDesignTokens.touchTargetMinSize,
-            height: AppDesignTokens.touchTargetMinSize,
+          SizedBox(
+            width: DS.touchTargetMinSize,
+            height: DS.touchTargetMinSize,
             child: IconButton(
-              icon: Icon(Icons.close_rounded,
-                size: AppDesignTokens.iconSizeSm,
-                color: AppDesignTokens.neutral600),
+              icon: const Icon(Icons.close_rounded,
+                size: DS.iconSizeSm,
+                color: DS.neutral600,),
               onPressed: widget.onCancelQuote,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -230,5 +230,4 @@ class _ChatInputState extends ConsumerState<ChatInput> {
         ],
       ),
     );
-  }
 }

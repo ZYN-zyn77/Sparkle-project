@@ -1,15 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/galaxy_model.dart';
 import 'package:sparkle/presentation/providers/galaxy_provider.dart';
 
 class GalaxySearchDialog extends ConsumerStatefulWidget {
-  final Function(String nodeId) onNodeSelected;
 
   const GalaxySearchDialog({
     required this.onNodeSelected, super.key,
   });
+  final Function(String nodeId) onNodeSelected;
 
   @override
   ConsumerState<GalaxySearchDialog> createState() => _GalaxySearchDialogState();
@@ -63,20 +65,19 @@ class _GalaxySearchDialogState extends ConsumerState<GalaxySearchDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Dialog(
+  Widget build(BuildContext context) => Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(24),
+      insetPadding: const EdgeInsets.all(DS.xl),
       child: Container(
         width: double.infinity,
         height: 400,
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E1E).withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white24),
+          border: Border.all(color: DS.brandPrimary24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: DS.brandPrimary.withValues(alpha: 0.5),
               blurRadius: 20,
               spreadRadius: 5,
             ),
@@ -85,20 +86,20 @@ class _GalaxySearchDialogState extends ConsumerState<GalaxySearchDialog> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(DS.lg),
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: DS.brandPrimary),
                 decoration: InputDecoration(
                   hintText: '搜索星系...',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                  hintStyle: TextStyle(color: DS.brandPrimary.withValues(alpha: 0.5)),
+                  prefixIcon: Icon(Icons.search, color: DS.brandPrimary70),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.1),
+                  fillColor: DS.brandPrimary.withValues(alpha: 0.1),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 onChanged: _onSearchChanged,
@@ -110,11 +111,11 @@ class _GalaxySearchDialogState extends ConsumerState<GalaxySearchDialog> {
                 child: Center(child: CircularProgressIndicator()),
               )
             else if (_results.isEmpty && _searchController.text.isNotEmpty)
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: Text(
                     '未找到相关节点',
-                    style: TextStyle(color: Colors.white54),
+                    style: TextStyle(color: DS.brandPrimary54),
                   ),
                 ),
               )
@@ -127,12 +128,12 @@ class _GalaxySearchDialogState extends ConsumerState<GalaxySearchDialog> {
                     return ListTile(
                       title: Text(
                         item.node.name,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: DS.brandPrimary),
                       ),
                       subtitle: item.node.description != null
                           ? Text(
                               item.node.description!,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                              style: TextStyle(color: DS.brandPrimary.withValues(alpha: 0.6)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             )
@@ -150,7 +151,6 @@ class _GalaxySearchDialogState extends ConsumerState<GalaxySearchDialog> {
         ),
       ),
     );
-  }
 
   Widget _buildMatchScore(double similarity) {
     // Visual indicator of match quality
@@ -158,7 +158,7 @@ class _GalaxySearchDialogState extends ConsumerState<GalaxySearchDialog> {
     return Text(
       '$percentage%',
       style: TextStyle(
-        color: similarity > 0.8 ? Colors.greenAccent : Colors.white54,
+        color: similarity > 0.8 ? DS.successAccent : DS.brandPrimary54,
         fontSize: 12,
       ),
     );

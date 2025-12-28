@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
 class BreathingTool extends StatefulWidget {
@@ -107,12 +109,11 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppDesignTokens.spacing24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(DS.spacing24),
+      decoration: BoxDecoration(
+        color: DS.brandPrimaryConst,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -122,14 +123,14 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(DS.sm),
                 decoration: BoxDecoration(
                   color: Colors.indigo.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.air, color: Colors.indigo),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: DS.md),
               const Text(
                 '呼吸练习',
                 style: TextStyle(
@@ -144,7 +145,7 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: DS.xxl),
 
           // Breathing Circle Animation
           Center(
@@ -171,7 +172,7 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
                     animation: _controller,
                     builder: (context, child) {
                       // Scale from 0.4 to 1.0
-                      final double scale = 0.4 + (_controller.value * 0.6);
+                      final scale = 0.4 + (_controller.value * 0.6);
                       return Transform.scale(
                         scale: scale,
                         child: Container(
@@ -209,7 +210,7 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
                             '$_completedRounds / $_totalRounds',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey.shade600,
+                              color: DS.brandPrimary.shade600,
                             ),
                           ),
                         ),
@@ -220,7 +221,7 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
             ),
           ),
           
-          const SizedBox(height: 48),
+          const SizedBox(height: DS.xxxl),
 
           // Duration Selector
           if (!_isPlaying)
@@ -241,13 +242,13 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.indigo : Colors.grey.shade100,
+                        color: isSelected ? Colors.indigo : DS.brandPrimary.shade100,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '${_durations[index]}分钟',
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey.shade600,
+                          color: isSelected ? DS.brandPrimary : DS.brandPrimary.shade600,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -257,7 +258,7 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
               }),
             ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: DS.xl),
 
           // Control Button
           CustomButton.primary(
@@ -265,11 +266,10 @@ class _BreathingToolState extends State<BreathingTool> with SingleTickerProvider
             icon: _isPlaying ? Icons.stop : Icons.play_arrow,
             onPressed: _isPlaying ? _stopBreathing : _startBreathing,
             customGradient: _isPlaying 
-              ? AppDesignTokens.warningGradient 
-              : const LinearGradient(colors: [Colors.indigo, Colors.blue]),
+              ? DS.warningGradient 
+              : LinearGradient(colors: [Colors.indigo, DS.brandPrimaryConst]),
           ),
         ],
       ),
     );
-  }
 }

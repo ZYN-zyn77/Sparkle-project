@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/task_provider.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
-import 'package:sparkle/presentation/widgets/common/loading_indicator.dart';
 import 'package:sparkle/presentation/widgets/common/error_widget.dart';
+import 'package:sparkle/presentation/widgets/common/loading_indicator.dart';
 
 class TaskDetailScreen extends ConsumerWidget {
-  final String taskId;
 
   const TaskDetailScreen({required this.taskId, super.key});
+  final String taskId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,13 +40,12 @@ class TaskDetailScreen extends ConsumerWidget {
 }
 
 class _TaskDetailView extends ConsumerWidget {
-  final TaskModel task;
 
   const _TaskDetailView({required this.task});
+  final TaskModel task;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
+  Widget build(BuildContext context, WidgetRef ref) => Column(
       children: [
         Expanded(
           child: CustomScrollView(
@@ -53,19 +53,19 @@ class _TaskDetailView extends ConsumerWidget {
               _buildSliverAppBar(context),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+                  padding: const EdgeInsets.all(DS.spacing16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildInfoSection(context),
-                      const SizedBox(height: AppDesignTokens.spacing24),
+                      const SizedBox(height: DS.spacing24),
                       Text(
                         '执行指南',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: AppDesignTokens.fontWeightBold,
+                          fontWeight: DS.fontWeightBold,
                         ),
                       ),
-                      const SizedBox(height: AppDesignTokens.spacing12),
+                      const SizedBox(height: DS.spacing12),
                       _buildGuideSection(context),
                       const SizedBox(height: 100), // Space for bottom bar
                     ],
@@ -78,27 +78,25 @@ class _TaskDetailView extends ConsumerWidget {
         _BottomActionBar(task: task),
       ],
     );
-  }
 
   LinearGradient _getBackgroundGradient(TaskType type) {
     switch (type) {
       case TaskType.learning:
-        return LinearGradient(colors: [Colors.blue.shade50, Colors.white], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        return LinearGradient(colors: [DS.brandPrimary.shade50, DS.brandPrimary], begin: Alignment.topLeft, end: Alignment.bottomRight);
       case TaskType.training:
-        return LinearGradient(colors: [Colors.orange.shade50, Colors.white], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        return LinearGradient(colors: [DS.brandPrimary.shade50, DS.brandPrimary], begin: Alignment.topLeft, end: Alignment.bottomRight);
       case TaskType.errorFix:
-        return LinearGradient(colors: [Colors.red.shade50, Colors.white], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        return LinearGradient(colors: [DS.error.shade50, DS.brandPrimary], begin: Alignment.topLeft, end: Alignment.bottomRight);
       case TaskType.reflection:
-        return LinearGradient(colors: [Colors.purple.shade50, Colors.white], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        return LinearGradient(colors: [Colors.purple.shade50, DS.brandPrimary], begin: Alignment.topLeft, end: Alignment.bottomRight);
       case TaskType.social:
-        return LinearGradient(colors: [Colors.green.shade50, Colors.white], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        return LinearGradient(colors: [DS.success.shade50, DS.brandPrimary], begin: Alignment.topLeft, end: Alignment.bottomRight);
       case TaskType.planning:
-        return LinearGradient(colors: [Colors.teal.shade50, Colors.white], begin: Alignment.topLeft, end: Alignment.bottomRight);
+        return LinearGradient(colors: [Colors.teal.shade50, DS.brandPrimary], begin: Alignment.topLeft, end: Alignment.bottomRight);
     }
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
-    return SliverAppBar(
+  Widget _buildSliverAppBar(BuildContext context) => SliverAppBar(
       expandedHeight: 200.0,
       pinned: true,
       flexibleSpace: FlexibleSpaceBar(
@@ -106,13 +104,13 @@ class _TaskDetailView extends ConsumerWidget {
           tag: 'task-${task.id}',
           child: Material(
             type: MaterialType.transparency,
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: _getBackgroundGradient(task.type),
               ),
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+                  padding: const EdgeInsets.all(DS.spacing16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,18 +118,18 @@ class _TaskDetailView extends ConsumerWidget {
                       Text(
                         task.title,
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: AppDesignTokens.fontWeightBold,
-                          color: AppDesignTokens.neutral900,
+                          fontWeight: DS.fontWeightBold,
+                          color: DS.neutral900,
                         ),
                       ),
-                      const SizedBox(height: AppDesignTokens.spacing8),
+                      const SizedBox(height: DS.spacing8),
                       Wrap(
-                        spacing: AppDesignTokens.spacing8,
+                        spacing: DS.spacing8,
                         children: [
                           Chip(
                             label: Text(toBeginningOfSentenceCase(task.type.name) ?? task.type.name),
-                            backgroundColor: Colors.white.withValues(alpha: 0.8),
-                            avatar: const Icon(Icons.category, size: 16, color: AppDesignTokens.primaryBase),
+                            backgroundColor: DS.brandPrimary.withValues(alpha: 0.8),
+                            avatar: const Icon(Icons.category, size: 16, color: DS.primaryBase),
                           ),
                           Chip(
                             label: Text(toBeginningOfSentenceCase(task.status.name) ?? task.status.name),
@@ -149,18 +147,16 @@ class _TaskDetailView extends ConsumerWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildInfoSection(BuildContext context) {
-    return Column(
+  Widget _buildInfoSection(BuildContext context) => Column(
       children: [
         _InfoTileCard(
           icon: Icons.timer_outlined,
           title: '预计时长',
           content: '${task.estimatedMinutes} 分钟',
-          gradient: AppDesignTokens.primaryGradient,
+          gradient: DS.primaryGradient,
         ),
-        const SizedBox(height: AppDesignTokens.spacing12),
+        const SizedBox(height: DS.spacing12),
         Row(
           children: [
             Expanded(
@@ -168,85 +164,83 @@ class _TaskDetailView extends ConsumerWidget {
                 icon: Icons.star_border,
                 title: '难度',
                 content: '${task.difficulty} / 5',
-                gradient: AppDesignTokens.warningGradient,
+                gradient: DS.warningGradient,
               ),
             ),
-            const SizedBox(width: AppDesignTokens.spacing12),
+            const SizedBox(width: DS.spacing12),
             Expanded(
               child: _InfoTileCard(
                 icon: Icons.local_fire_department,
                 title: '消耗能量',
                 content: '${task.energyCost} / 5',
-                gradient: AppDesignTokens.errorGradient,
+                gradient: DS.errorGradient,
               ),
             ),
           ],
         ),
         if (task.dueDate != null) ...[
-          const SizedBox(height: AppDesignTokens.spacing12),
+          const SizedBox(height: DS.spacing12),
           _InfoTileCard(
             icon: Icons.calendar_today,
             title: '截止日期',
             content: DateFormat.yMMMd().format(task.dueDate!),
-            gradient: AppDesignTokens.infoGradient,
+            gradient: DS.infoGradient,
           ),
         ],
       ],
     );
-  }
 
-  Widget _buildGuideSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+  Widget _buildGuideSection(BuildContext context) => Container(
+      padding: const EdgeInsets.all(DS.spacing16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: AppDesignTokens.borderRadius12,
-        border: Border.all(color: AppDesignTokens.neutral200),
-        boxShadow: AppDesignTokens.shadowSm,
+        color: DS.brandPrimary,
+        borderRadius: DS.borderRadius12,
+        border: Border.all(color: DS.neutral200),
+        boxShadow: DS.shadowSm,
       ),
       child: MarkdownBody(
         data: task.guideContent ?? '暂无执行指南',
         styleSheet: MarkdownStyleSheet(
           h1: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: AppDesignTokens.fontWeightBold,
-            color: AppDesignTokens.neutral900,
+            fontWeight: DS.fontWeightBold,
+            color: DS.neutral900,
           ),
           h2: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: AppDesignTokens.fontWeightBold,
-            color: AppDesignTokens.neutral800,
+            fontWeight: DS.fontWeightBold,
+            color: DS.neutral800,
           ),
           h3: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: AppDesignTokens.fontWeightBold,
-            color: AppDesignTokens.neutral700,
+            fontWeight: DS.fontWeightBold,
+            color: DS.neutral700,
           ),
           p: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppDesignTokens.neutral700,
+            color: DS.neutral700,
             height: 1.6,
           ),
           listBullet: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppDesignTokens.primaryBase,
+            color: DS.primaryBase,
           ),
           code: const TextStyle(
-            backgroundColor: AppDesignTokens.neutral100,
-            color: AppDesignTokens.primaryDark,
+            backgroundColor: DS.neutral100,
+            color: DS.primaryDark,
             fontFamily: 'monospace',
-            fontSize: AppDesignTokens.fontSizeSm,
+            fontSize: DS.fontSizeSm,
           ),
           codeblockDecoration: BoxDecoration(
-            color: AppDesignTokens.neutral50,
-            borderRadius: AppDesignTokens.borderRadius8,
-            border: Border.all(color: AppDesignTokens.neutral200),
+            color: DS.neutral50,
+            borderRadius: DS.borderRadius8,
+            border: Border.all(color: DS.neutral200),
           ),
           blockquote: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppDesignTokens.neutral600,
+            color: DS.neutral600,
             fontStyle: FontStyle.italic,
           ),
           blockquoteDecoration: BoxDecoration(
-            color: AppDesignTokens.neutral50,
-            borderRadius: AppDesignTokens.borderRadius8,
+            color: DS.neutral50,
+            borderRadius: DS.borderRadius8,
             border: const Border(
               left: BorderSide(
-                color: AppDesignTokens.primaryBase,
+                color: DS.primaryBase,
                 width: 4,
               ),
             ),
@@ -254,23 +248,18 @@ class _TaskDetailView extends ConsumerWidget {
         ),
       ),
     );
-  }
 
   Color _getStatusColor(TaskStatus status) {
     switch (status) {
-      case TaskStatus.pending: return AppDesignTokens.warning;
-      case TaskStatus.inProgress: return AppDesignTokens.info;
-      case TaskStatus.completed: return AppDesignTokens.success;
-      case TaskStatus.abandoned: return AppDesignTokens.neutral500;
+      case TaskStatus.pending: return DS.warning;
+      case TaskStatus.inProgress: return DS.info;
+      case TaskStatus.completed: return DS.success;
+      case TaskStatus.abandoned: return DS.neutral500;
     }
   }
 }
 
 class _InfoTileCard extends StatefulWidget {
-  final IconData icon;
-  final String title;
-  final String content;
-  final LinearGradient gradient;
 
   const _InfoTileCard({
     required this.icon,
@@ -278,6 +267,10 @@ class _InfoTileCard extends StatefulWidget {
     required this.content,
     required this.gradient,
   });
+  final IconData icon;
+  final String title;
+  final String content;
+  final LinearGradient gradient;
 
   @override
   State<_InfoTileCard> createState() => _InfoTileCardState();
@@ -306,18 +299,17 @@ class _InfoTileCardState extends State<_InfoTileCard> with SingleTickerProviderS
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) => _controller.reverse(),
       onTapCancel: () => _controller.reverse(),
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
-          padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+          padding: const EdgeInsets.all(DS.spacing16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: AppDesignTokens.borderRadius12,
+            color: DS.brandPrimary,
+            borderRadius: DS.borderRadius12,
             boxShadow: [
               BoxShadow(
                 color: widget.gradient.colors.first.withValues(alpha: 0.15),
@@ -325,14 +317,13 @@ class _InfoTileCardState extends State<_InfoTileCard> with SingleTickerProviderS
                 offset: const Offset(0, 4),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: DS.brandPrimary.withValues(alpha: 0.05),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
             ],
             border: Border.all(
               color: widget.gradient.colors.first.withValues(alpha: 0.1),
-              width: 1,
             ),
           ),
           child: Row(
@@ -341,7 +332,7 @@ class _InfoTileCardState extends State<_InfoTileCard> with SingleTickerProviderS
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: widget.gradient,
-                  borderRadius: AppDesignTokens.borderRadius8,
+                  borderRadius: DS.borderRadius8,
                   boxShadow: [
                     BoxShadow(
                       color: widget.gradient.colors.first.withValues(alpha: 0.3),
@@ -350,9 +341,9 @@ class _InfoTileCardState extends State<_InfoTileCard> with SingleTickerProviderS
                     ),
                   ],
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 22),
+                child: Icon(widget.icon, color: DS.brandPrimary, size: 22),
               ),
-              const SizedBox(width: AppDesignTokens.spacing16),
+              const SizedBox(width: DS.spacing16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,17 +351,17 @@ class _InfoTileCardState extends State<_InfoTileCard> with SingleTickerProviderS
                     Text(
                       widget.title,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppDesignTokens.neutral600,
-                        fontWeight: AppDesignTokens.fontWeightMedium,
+                        color: DS.neutral600,
+                        fontWeight: DS.fontWeightMedium,
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: DS.xs),
                     Text(
                       widget.content,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: AppDesignTokens.fontWeightBold,
-                        color: AppDesignTokens.neutral900,
+                        fontWeight: DS.fontWeightBold,
+                        color: DS.neutral900,
                       ),
                     ),
                   ],
@@ -381,25 +372,22 @@ class _InfoTileCardState extends State<_InfoTileCard> with SingleTickerProviderS
         ),
       ),
     );
-  }
 }
 
 class _BottomActionBar extends ConsumerWidget {
-  final TaskModel task;
   const _BottomActionBar({required this.task});
+  final TaskModel task;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return SafeArea(
+  Widget build(BuildContext context, WidgetRef ref) => SafeArea(
       child: Container(
-        padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+        padding: const EdgeInsets.all(DS.spacing16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: AppDesignTokens.shadowMd,
+          color: DS.brandPrimary,
+          boxShadow: DS.shadowMd,
           border: const Border(
             top: BorderSide(
-              color: AppDesignTokens.neutral200,
-              width: 1,
+              color: DS.neutral200,
             ),
           ),
         ),
@@ -411,12 +399,12 @@ class _BottomActionBar extends ConsumerWidget {
                 icon: Icons.edit_outlined,
                 onPressed: () {
                   HapticFeedback.mediumImpact();
-                  // TODO: Navigate to Edit Screen
+                  // TODO: 需要创建任务编辑页面，暂时导航到创建页面
+                  context.push('/tasks/new');
                 },
-                size: ButtonSize.medium,
               ),
             ),
-            const SizedBox(width: AppDesignTokens.spacing12),
+            const SizedBox(width: DS.spacing12),
             Expanded(
               flex: 2,
               child: CustomButton.primary(
@@ -427,32 +415,31 @@ class _BottomActionBar extends ConsumerWidget {
                   ref.read(activeTaskProvider.notifier).state = task;
                   context.push('/tasks/${task.id}/execute');
                 },
-                size: ButtonSize.medium,
               ),
             ),
-            const SizedBox(width: AppDesignTokens.spacing12),
-            Container(
+            const SizedBox(width: DS.spacing12),
+            DecoratedBox(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppDesignTokens.error.withValues(alpha: 0.3),
+                  color: DS.error.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
-                borderRadius: AppDesignTokens.borderRadius12,
+                borderRadius: DS.borderRadius12,
               ),
               child: IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppDesignTokens.error),
+                icon: const Icon(Icons.delete_outline, color: DS.error),
                 onPressed: () {
                   HapticFeedback.mediumImpact();
                   showDialog(
                     context: context,
                     builder: (ctx) => AlertDialog(
                       shape: RoundedRectangleBorder(
-                        borderRadius: AppDesignTokens.borderRadius20,
+                        borderRadius: DS.borderRadius20,
                       ),
                       title: const Text(
                         '删除任务',
                         style: TextStyle(
-                          fontWeight: AppDesignTokens.fontWeightBold,
+                          fontWeight: DS.fontWeightBold,
                         ),
                       ),
                       content: const Text('确定要删除这个任务吗？此操作无法撤销。'),
@@ -470,8 +457,8 @@ class _BottomActionBar extends ConsumerWidget {
                             ref.read(taskListProvider.notifier).deleteTask(task.id);
                             context.pop();
                           },
-                          customGradient: AppDesignTokens.errorGradient,
-                          size: ButtonSize.small,
+                          customGradient: DS.errorGradient,
+                          size: CustomButtonSize.small,
                         ),
                       ],
                     ),
@@ -483,5 +470,4 @@ class _BottomActionBar extends ConsumerWidget {
         ),
       ),
     );
-  }
 }

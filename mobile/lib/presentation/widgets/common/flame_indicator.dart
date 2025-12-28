@@ -1,12 +1,22 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 /// 火焰等级指示器组件
 ///
 /// 用于可视化用户的火焰等级和亮度
 /// 包含圆环进度条、火焰图标和脉冲动画
 class FlameIndicator extends StatefulWidget {
+
+  const FlameIndicator({
+    required this.level, required this.brightness, super.key,
+    this.size = 120.0,
+    this.showLabel = true,
+    this.animate = true,
+    this.customGradient,
+    this.onTap,
+  });
   /// 火焰等级 (0-100)
   final int level;
 
@@ -27,15 +37,6 @@ class FlameIndicator extends StatefulWidget {
 
   /// 点击回调
   final VoidCallback? onTap;
-
-  const FlameIndicator({
-    required this.level, required this.brightness, super.key,
-    this.size = 120.0,
-    this.showLabel = true,
-    this.animate = true,
-    this.customGradient,
-    this.onTap,
-  });
 
   @override
   State<FlameIndicator> createState() => _FlameIndicatorState();
@@ -101,11 +102,11 @@ class _FlameIndicatorState extends State<FlameIndicator>
     if (widget.brightness >= 80) {
       return const Color(0xFFFFD700); // 金色
     } else if (widget.brightness >= 60) {
-      return AppDesignTokens.accent; // 黄色
+      return DS.accent; // 黄色
     } else if (widget.brightness >= 40) {
-      return AppDesignTokens.primaryBase; // 橙色
+      return DS.primaryBase; // 橙色
     } else {
-      return AppDesignTokens.warning; // 浅橙色
+      return DS.warning; // 浅橙色
     }
   }
 
@@ -121,15 +122,14 @@ class _FlameIndicatorState extends State<FlameIndicator>
         end: Alignment.bottomRight,
       );
     } else if (widget.brightness >= 60) {
-      return AppDesignTokens.accentGradient;
+      return DS.accentGradient;
     } else {
-      return AppDesignTokens.primaryGradient;
+      return DS.primaryGradient;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: widget.onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -137,8 +137,7 @@ class _FlameIndicatorState extends State<FlameIndicator>
           // 火焰指示器主体
           AnimatedBuilder(
             animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
+            builder: (context, child) => Transform.scale(
                 scale: widget.animate ? _pulseAnimation.value : 1.0,
                 child: SizedBox(
                   width: widget.size,
@@ -167,7 +166,7 @@ class _FlameIndicatorState extends State<FlameIndicator>
                         painter: _CircularProgressPainter(
                           progress: widget.brightness / 100.0,
                           gradient: _getProgressGradient(),
-                          backgroundColor: AppDesignTokens.neutral200,
+                          backgroundColor: DS.neutral200,
                           strokeWidth: 8.0,
                         ),
                       ),
@@ -176,24 +175,20 @@ class _FlameIndicatorState extends State<FlameIndicator>
                     ],
                   ),
                 ),
-              );
-            },
+              ),
           ),
           // 标签
           if (widget.showLabel) ...[
-            const SizedBox(height: AppDesignTokens.spacing12),
+            const SizedBox(height: DS.spacing12),
             _buildLabel(),
           ],
         ],
       ),
     );
-  }
 
-  Widget _buildFlameIcon() {
-    return AnimatedBuilder(
+  Widget _buildFlameIcon() => AnimatedBuilder(
       animation: _rotationController,
-      builder: (context, child) {
-        return Transform.rotate(
+      builder: (context, child) => Transform.rotate(
           angle: widget.animate
               ? _rotationController.value * 2 * math.pi * 0.1
               : 0.0,
@@ -214,16 +209,13 @@ class _FlameIndicatorState extends State<FlameIndicator>
             child: Icon(
               Icons.local_fire_department_rounded,
               size: widget.size * 0.3,
-              color: Colors.white,
+              color: DS.brandPrimaryConst,
             ),
           ),
-        );
-      },
+        ),
     );
-  }
 
-  Widget _buildLabel() {
-    return Column(
+  Widget _buildLabel() => Column(
       children: [
         // 等级
         Row(
@@ -231,40 +223,35 @@ class _FlameIndicatorState extends State<FlameIndicator>
           children: [
             Icon(
               Icons.whatshot_rounded,
-              size: AppDesignTokens.iconSizeSm,
+              size: DS.iconSizeSm,
               color: _getFlameColor(),
             ),
-            const SizedBox(width: AppDesignTokens.spacing4),
+            const SizedBox(width: DS.spacing4),
             Text(
               'Lv.${widget.level}',
               style: const TextStyle(
-                fontSize: AppDesignTokens.fontSizeLg,
-                fontWeight: AppDesignTokens.fontWeightBold,
-                color: AppDesignTokens.neutral900,
+                fontSize: DS.fontSizeLg,
+                fontWeight: DS.fontWeightBold,
+                color: DS.neutral900,
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppDesignTokens.spacing4),
+        const SizedBox(height: DS.spacing4),
         // 亮度
         Text(
           '亮度 ${widget.brightness}%',
           style: const TextStyle(
-            fontSize: AppDesignTokens.fontSizeSm,
-            color: AppDesignTokens.neutral600,
+            fontSize: DS.fontSizeSm,
+            color: DS.neutral600,
           ),
         ),
       ],
     );
-  }
 }
 
 /// 圆环进度条绘制器
 class _CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final LinearGradient gradient;
-  final Color backgroundColor;
-  final double strokeWidth;
 
   _CircularProgressPainter({
     required this.progress,
@@ -272,6 +259,10 @@ class _CircularProgressPainter extends CustomPainter {
     required this.backgroundColor,
     required this.strokeWidth,
   });
+  final double progress;
+  final LinearGradient gradient;
+  final Color backgroundColor;
+  final double strokeWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -316,7 +307,7 @@ class _CircularProgressPainter extends CustomPainter {
         final endPoint = Offset(endX, endY);
 
         final glowPaint = Paint()
-          ..color = Colors.white.withValues(alpha: 0.8)
+          ..color = DS.brandPrimary.withValues(alpha: 0.8)
           ..style = PaintingStyle.fill;
 
         canvas.drawCircle(endPoint, strokeWidth / 2, glowPaint);
@@ -325,54 +316,50 @@ class _CircularProgressPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
+  bool shouldRepaint(_CircularProgressPainter oldDelegate) => oldDelegate.progress != progress ||
         oldDelegate.gradient != gradient ||
         oldDelegate.backgroundColor != backgroundColor ||
         oldDelegate.strokeWidth != strokeWidth;
-  }
 }
 
 /// 紧凑型火焰指示器
 ///
 /// 用于在小空间中显示火焰状态
 class CompactFlameIndicator extends StatelessWidget {
-  final int level;
-  final int brightness;
-  final VoidCallback? onTap;
 
   const CompactFlameIndicator({
     required this.level, required this.brightness, super.key,
     this.onTap,
   });
+  final int level;
+  final int brightness;
+  final VoidCallback? onTap;
 
   Color _getFlameColor() {
     if (brightness >= 80) {
       return const Color(0xFFFFD700);
     } else if (brightness >= 60) {
-      return AppDesignTokens.accent;
+      return DS.accent;
     } else if (brightness >= 40) {
-      return AppDesignTokens.primaryBase;
+      return DS.primaryBase;
     } else {
-      return AppDesignTokens.warning;
+      return DS.warning;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppDesignTokens.spacing12,
-          vertical: AppDesignTokens.spacing8,
+          horizontal: DS.spacing12,
+          vertical: DS.spacing8,
         ),
         decoration: BoxDecoration(
           color: _getFlameColor().withValues(alpha: 0.1),
-          borderRadius: AppDesignTokens.borderRadius12,
+          borderRadius: DS.borderRadius12,
           border: Border.all(
             color: _getFlameColor().withValues(alpha: 0.3),
-            width: 1.0,
           ),
         ),
         child: Row(
@@ -380,10 +367,10 @@ class CompactFlameIndicator extends StatelessWidget {
           children: [
             Icon(
               Icons.local_fire_department_rounded,
-              size: AppDesignTokens.iconSizeSm,
+              size: DS.iconSizeSm,
               color: _getFlameColor(),
             ),
-            const SizedBox(width: AppDesignTokens.spacing8),
+            const SizedBox(width: DS.spacing8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -391,16 +378,16 @@ class CompactFlameIndicator extends StatelessWidget {
                 Text(
                   'Lv.$level',
                   style: const TextStyle(
-                    fontSize: AppDesignTokens.fontSizeSm,
-                    fontWeight: AppDesignTokens.fontWeightBold,
-                    color: AppDesignTokens.neutral900,
+                    fontSize: DS.fontSizeSm,
+                    fontWeight: DS.fontWeightBold,
+                    color: DS.neutral900,
                   ),
                 ),
                 Text(
                   '$brightness%',
                   style: const TextStyle(
-                    fontSize: AppDesignTokens.fontSizeXs,
-                    color: AppDesignTokens.neutral600,
+                    fontSize: DS.fontSizeXs,
+                    color: DS.neutral600,
                   ),
                 ),
               ],
@@ -409,5 +396,4 @@ class CompactFlameIndicator extends StatelessWidget {
         ),
       ),
     );
-  }
 }

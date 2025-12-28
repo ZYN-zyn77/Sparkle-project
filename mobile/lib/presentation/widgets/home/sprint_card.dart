@@ -1,8 +1,10 @@
-import 'dart:ui';
 import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 
 /// SprintCard - Sprint Progress Card for v2.3 dashboard
@@ -12,9 +14,9 @@ import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 /// - Days remaining
 /// - Sprint name
 class SprintCard extends ConsumerWidget {
-  final VoidCallback? onTap;
 
   const SprintCard({super.key, this.onTap});
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,16 +26,16 @@ class SprintCard extends ConsumerWidget {
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: AppDesignTokens.borderRadius20,
+        borderRadius: DS.borderRadius20,
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: AppDesignTokens.glassBackground,
-              borderRadius: AppDesignTokens.borderRadius20,
-              border: Border.all(color: AppDesignTokens.glassBorder),
+              color: DS.glassBackground,
+              borderRadius: DS.borderRadius20,
+              border: Border.all(color: DS.glassBorder),
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             child: sprint != null
                 ? _buildSprintContent(sprint)
                 : _buildEmptyState(),
@@ -52,12 +54,12 @@ class SprintCard extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header
-        const Text(
+        Text(
           '冲刺',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.white70,
+            color: DS.brandPrimary70,
           ),
         ),
 
@@ -86,14 +88,14 @@ class SprintCard extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: isUrgent ? Colors.red : Colors.white,
+                        color: isUrgent ? DS.error : DS.brandPrimary,
                       ),
                     ),
                     Text(
                       '天',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withAlpha(180),
+                        color: DS.brandPrimary.withAlpha(180),
                       ),
                     ),
                   ],
@@ -108,10 +110,10 @@ class SprintCard extends ConsumerWidget {
         // Sprint name
         Text(
           sprint.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: DS.brandPrimaryConst,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -121,61 +123,59 @@ class SprintCard extends ConsumerWidget {
           '${(progress * 100).toInt()}% 完成',
           style: TextStyle(
             fontSize: 10,
-            color: Colors.white.withAlpha(150),
+            color: DS.brandPrimary.withAlpha(150),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Column(
+  Widget _buildEmptyState() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(DS.sm),
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(20),
+            color: DS.brandPrimary.withAlpha(20),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.flash_on_rounded,
-            color: Colors.white54,
+            color: DS.brandPrimary54,
             size: 20,
           ),
         ),
 
         const Spacer(),
 
-        const Text(
+        Text(
           '无冲刺计划',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.white70,
+            color: DS.brandPrimary70,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: DS.xs),
         Text(
           '点击创建',
           style: TextStyle(
             fontSize: 11,
-            color: Colors.white.withAlpha(120),
+            color: DS.brandPrimary.withAlpha(120),
           ),
         ),
       ],
     );
-  }
 }
 
 class _CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final bool isUrgent;
 
   _CircularProgressPainter({
     required this.progress,
     required this.isUrgent,
   });
+  final double progress;
+  final bool isUrgent;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -184,14 +184,14 @@ class _CircularProgressPainter extends CustomPainter {
 
     // Background circle
     final bgPaint = Paint()
-      ..color = Colors.white.withAlpha(30)
+      ..color = DS.brandPrimary.withAlpha(30)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6;
     canvas.drawCircle(center, radius, bgPaint);
 
     // Progress arc
     final progressPaint = Paint()
-      ..color = isUrgent ? Colors.red : AppDesignTokens.primaryBase
+      ..color = isUrgent ? DS.error : DS.primaryBase
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
@@ -207,7 +207,5 @@ class _CircularProgressPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.isUrgent != isUrgent;
-  }
+  bool shouldRepaint(covariant _CircularProgressPainter oldDelegate) => oldDelegate.progress != progress || oldDelegate.isUrgent != isUrgent;
 }

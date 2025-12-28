@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/repositories/omnibar_repository.dart';
-import 'package:sparkle/presentation/providers/task_provider.dart';
-import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 import 'package:sparkle/presentation/providers/cognitive_provider.dart';
+import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 import 'package:sparkle/presentation/providers/settings_provider.dart';
-import 'package:sparkle/app/theme.dart';
+import 'package:sparkle/presentation/providers/task_provider.dart';
 
 /// OmniBar - Project Cockpit Floating Dock
 class OmniBar extends ConsumerStatefulWidget {
-  final String? hintText;
   const OmniBar({super.key, this.hintText});
+  final String? hintText;
 
   @override
   ConsumerState<OmniBar> createState() => _OmniBarState();
@@ -90,7 +91,7 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('发送失败: $e'), backgroundColor: AppDesignTokens.error),
+          SnackBar(content: Text('发送失败: $e'), backgroundColor: DS.error),
         );
       }
     } finally {
@@ -101,23 +102,21 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
   Future<void> _handleResult(Map<String, dynamic> result) async {
     final type = result['action_type'] as String?;
     switch (type) {
-      case 'CHAT': context.push('/chat'); break;
+      case 'CHAT': context.push('/chat');
       case 'TASK':
         await ref.read(taskListProvider.notifier).refreshTasks();
         await ref.read(dashboardProvider.notifier).refresh();
-        break;
       case 'CAPSULE':
         await ref.read(cognitiveProvider.notifier).loadFragments();
         await ref.read(dashboardProvider.notifier).refresh();
-        break;
     }
   }
 
   Color _getIntentColor() {
     switch (_intentType) {
-      case 'TASK': return Colors.greenAccent;
+      case 'TASK': return DS.successAccent;
       case 'CAPSULE': return Colors.purpleAccent;
-      case 'CHAT': return Colors.blueAccent;
+      case 'CHAT': return DS.brandPrimaryAccent;
       default: return AppColors.textOnDark(context).withValues(alpha: 0.15);
     }
   }
@@ -133,7 +132,7 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.8),
+            color: DS.brandPrimary.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(32),
             border: Border.all(
               color: color.withValues(alpha: 0.3 + _glowAnimation.value * 0.4),
@@ -161,7 +160,7 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
                         : (widget.hintText ?? 'Tell me what you think...'),
                     hintStyle: TextStyle(
                       color: _isListening 
-                          ? AppDesignTokens.primaryBase 
+                          ? DS.primaryBase 
                           : AppColors.textOnDark(context).withAlpha(80), 
                       fontSize: 14,
                     ),
@@ -173,7 +172,7 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
                 const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
               else if (_controller.text.isEmpty && !_isListening)
                  IconButton(
-                  icon: const Icon(Icons.mic, color: AppDesignTokens.primaryBase),
+                  icon: const Icon(Icons.mic, color: DS.primaryBase),
                   onPressed: _toggleListening,
                   tooltip: '语音输入',
                 )
@@ -184,7 +183,7 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
                         ? Icons.stop_circle_outlined 
                         : (_intentType == 'CHAT' ? Icons.auto_awesome : Icons.arrow_upward_rounded),
                     color: _isListening 
-                        ? Colors.redAccent 
+                        ? DS.errorAccent 
                         : (_intentType != null ? color : AppColors.textOnDark(context).withValues(alpha: 0.7)),
                     size: 20,
                   ),
@@ -206,7 +205,8 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
 
     if (_isListening) {
       _glowController.repeat(reverse: true);
-      // TODO: Implement actual WebSocket audio streaming
+      // Feature: Implement WebSocket audio streaming
+      // See: lib/core/services/websocket_service.dart
       // For UI demo, simulate text input after 2 seconds
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted && _isListening) {

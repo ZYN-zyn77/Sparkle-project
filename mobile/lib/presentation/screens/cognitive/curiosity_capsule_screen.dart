@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/capsule_provider.dart';
 import 'package:sparkle/presentation/widgets/home/curiosity_capsule_card.dart';
 
@@ -24,9 +25,7 @@ class CuriosityCapsuleScreen extends ConsumerWidget {
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   itemCount: capsules.length,
-                  itemBuilder: (context, index) {
-                    return CuriosityCapsuleCard(capsule: capsules[index]);
-                  },
+                  itemBuilder: (context, index) => CuriosityCapsuleCard(capsule: capsules[index]),
                 ),
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -35,24 +34,22 @@ class CuriosityCapsuleScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
+  Widget _buildEmptyState() => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.lightbulb_outline, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          const Text(
+          Icon(Icons.lightbulb_outline, size: 64, color: DS.brandPrimary.withValues(alpha: 0.3)),
+          const SizedBox(height: DS.lg),
+          Text(
             '今天还没有新的好奇心胶囊',
-            style: TextStyle(color: Colors.grey, fontSize: 16),
+            style: TextStyle(color: DS.brandPrimaryConst, fontSize: 16),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          const SizedBox(height: DS.sm),
+          Text(
             '继续学习，激发更多灵感吧！',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: TextStyle(color: DS.brandPrimaryConst, fontSize: 14),
           ),
         ],
       ),
     );
-  }
 }

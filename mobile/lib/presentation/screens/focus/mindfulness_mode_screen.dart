@@ -2,20 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/mindfulness_provider.dart';
-import 'package:sparkle/presentation/widgets/focus/star_background.dart';
-import 'package:sparkle/presentation/widgets/focus/flip_clock.dart';
 import 'package:sparkle/presentation/widgets/focus/exit_confirmation_dialog.dart';
+import 'package:sparkle/presentation/widgets/focus/flip_clock.dart';
+import 'package:sparkle/presentation/widgets/focus/star_background.dart';
 
 /// 正念模式屏幕
 class MindfulnessModeScreen extends ConsumerStatefulWidget {
-  final TaskModel task;
 
   const MindfulnessModeScreen({
     required this.task, super.key,
   });
+  final TaskModel task;
 
   @override
   ConsumerState<MindfulnessModeScreen> createState() => _MindfulnessModeScreenState();
@@ -102,17 +103,17 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white),
-            const SizedBox(width: 12),
+            Icon(Icons.warning_amber_rounded, color: DS.brandPrimary),
+            const SizedBox(width: DS.md),
             Expanded(
               child: Text(
                 '检测到分心行为 (第 ${state.interruptionCount} 次)',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: DS.brandPrimary),
               ),
             ),
           ],
         ),
-        backgroundColor: AppDesignTokens.warning,
+        backgroundColor: DS.warning,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
@@ -154,7 +155,7 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: AppDesignTokens.deepSpaceStart,
+        backgroundColor: DS.deepSpaceStart,
         body: Stack(
           children: [
             // 1. 星空背景
@@ -184,7 +185,7 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
                             ),
                           ),
 
-                          const SizedBox(height: 48),
+                          const SizedBox(height: DS.xxxl),
 
                           // 翻页时钟
                           FadeTransition(
@@ -195,7 +196,7 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
                             ),
                           ),
 
-                          const SizedBox(height: 32),
+                          const SizedBox(height: DS.xxl),
 
                           // 火焰动画
                           FadeTransition(
@@ -218,8 +219,7 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
     );
   }
 
-  Widget _buildStatusBar(MindfulnessState state) {
-    return Padding(
+  Widget _buildStatusBar(MindfulnessState state) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -229,21 +229,21 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppDesignTokens.warning.withValues(alpha: 0.2),
+                color: DS.warning.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 children: [
                   const Icon(
                     Icons.visibility_off_rounded,
-                    color: AppDesignTokens.warning,
+                    color: DS.warning,
                     size: 16,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     '分心 ${state.interruptionCount} 次',
                     style: const TextStyle(
-                      color: AppDesignTokens.warning,
+                      color: DS.warning,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -259,14 +259,14 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
             children: [
               Icon(
                 Icons.self_improvement_rounded,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: DS.brandPrimary.withValues(alpha: 0.7),
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: DS.sm),
               Text(
                 '正念模式',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: DS.brandPrimary.withValues(alpha: 0.7),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -278,7 +278,7 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
           IconButton(
             icon: Icon(
               state.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-              color: Colors.white.withValues(alpha: 0.7),
+              color: DS.brandPrimary.withValues(alpha: 0.7),
             ),
             onPressed: () {
               if (state.isPaused) {
@@ -291,21 +291,19 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
         ],
       ),
     );
-  }
 
-  Widget _buildTaskCard() {
-    return Container(
+  Widget _buildTaskCard() => Container(
       margin: const EdgeInsets.symmetric(horizontal: 40),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(DS.xl),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: DS.brandPrimary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
+          color: DS.brandPrimary.withValues(alpha: 0.15),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: DS.brandPrimary.withValues(alpha: 0.3),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -317,8 +315,8 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
           // 任务标题
           Text(
             widget.task.title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: DS.brandPrimaryConst,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
@@ -327,17 +325,17 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
             overflow: TextOverflow.ellipsis,
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: DS.md),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              gradient: AppDesignTokens.primaryGradient,
+              gradient: DS.primaryGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               widget.task.type.name.toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: DS.brandPrimaryConst,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -346,19 +344,15 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
         ],
       ),
     );
-  }
 
-  Widget _buildFlameAnimation() {
-    return TweenAnimationBuilder<double>(
+  Widget _buildFlameAnimation() => TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.9, end: 1.1),
       duration: const Duration(milliseconds: 1500),
       curve: Curves.easeInOut,
-      builder: (context, scale, child) {
-        return Transform.scale(
+      builder: (context, scale, child) => Transform.scale(
           scale: scale,
           child: child,
-        );
-      },
+        ),
       onEnd: () {
         // 循环动画
         if (mounted) {
@@ -369,43 +363,40 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          gradient: AppDesignTokens.flameGradient,
+          gradient: DS.flameGradient,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppDesignTokens.flameCore.withValues(alpha: 0.6),
+              color: DS.flameCore.withValues(alpha: 0.6),
               blurRadius: 20,
               spreadRadius: 5,
             ),
           ],
         ),
-        child: const Icon(
+        child: Icon(
           Icons.local_fire_department_rounded,
-          color: Colors.white,
+          color: DS.brandPrimaryConst,
           size: 32,
         ),
       ),
     );
-  }
 
-  Widget _buildExitButton() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+  Widget _buildExitButton() => Padding(
+      padding: const EdgeInsets.all(DS.xl),
       child: TextButton(
         onPressed: _handleExit,
         style: TextButton.styleFrom(
-          foregroundColor: Colors.white.withValues(alpha: 0.5),
+          foregroundColor: DS.brandPrimary.withValues(alpha: 0.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.exit_to_app_rounded, size: 18),
-            SizedBox(width: 8),
+            SizedBox(width: DS.sm),
             Text('退出正念模式'),
           ],
         ),
       ),
     );
-  }
 }

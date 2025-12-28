@@ -1,8 +1,10 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 
 class DashboardCuriosityCard extends ConsumerWidget {
@@ -16,29 +18,29 @@ class DashboardCuriosityCard extends ConsumerWidget {
     return GestureDetector(
       onTap: () => context.push('/curiosity-capsule'),
       child: ClipRRect(
-        borderRadius: AppDesignTokens.borderRadius20,
+        borderRadius: DS.borderRadius20,
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: AppDesignTokens.glassBackground,
-              borderRadius: AppDesignTokens.borderRadius20,
-              border: Border.all(color: AppDesignTokens.glassBorder),
+              color: DS.glassBackground,
+              borderRadius: DS.borderRadius20,
+              border: Border.all(color: DS.glassBorder),
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.lightbulb_outline, color: AppDesignTokens.accent, size: 20),
+                    const Icon(Icons.lightbulb_outline, color: DS.accent, size: 20),
                     if (cognitive.hasNewInsight)
                       Container(
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: AppDesignTokens.error,
+                          color: DS.error,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -49,22 +51,22 @@ class DashboardCuriosityCard extends ConsumerWidget {
                 
                 Text(
                   cognitive.weeklyPattern ?? '探索未知',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: DS.brandPrimaryConst,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 
-                const SizedBox(height: 4),
+                const SizedBox(height: DS.xs),
                 
                 Text(
                   '好奇心胶囊',
                   style: TextStyle(
                     fontSize: 10,
-                    color: Colors.white.withAlpha(150),
+                    color: DS.brandPrimary.withAlpha(150),
                   ),
                 ),
               ],

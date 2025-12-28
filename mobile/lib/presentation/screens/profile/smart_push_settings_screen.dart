@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/services/notification_service.dart';
 import 'package:sparkle/data/models/user_model.dart';
 import 'package:sparkle/data/repositories/user_repository.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
-import 'package:sparkle/core/services/notification_service.dart';
-import 'package:logger/logger.dart';
 
 class SmartPushSettingsScreen extends ConsumerStatefulWidget {
   const SmartPushSettingsScreen({super.key});
@@ -50,7 +51,6 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
         personaType: _persona,
         dailyCap: _dailyCap,
         activeSlots: _activeSlots,
-        timezone: 'Asia/Shanghai', // TODO: Get from device
       );
 
       await ref.read(userRepositoryProvider).updatePushPreferences(prefs);
@@ -111,8 +111,7 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('智能推送设置'),
         actions: [
@@ -129,25 +128,25 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(DS.lg),
         children: [
           _buildSectionTitle('角色设定 (Persona)'),
-          const SizedBox(height: 8),
+          const SizedBox(height: DS.sm),
           _buildPersonaSelector(),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: DS.xl),
           _buildSectionTitle('频控设置 (每日上限)'),
           _buildFrequencySlider(),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: DS.xl),
           _buildSectionTitle('活跃时间段 (Active Slots)'),
-          const Text(
+          Text(
             '仅在这些时间段内发送推送，避开休息时间。',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+            style: TextStyle(color: DS.brandPrimaryConst, fontSize: 12),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: DS.sm),
           _buildActiveSlotsList(),
-          const SizedBox(height: 8),
+          const SizedBox(height: DS.sm),
           ElevatedButton.icon(
             onPressed: _addSlot,
             icon: const Icon(Icons.add),
@@ -168,25 +167,21 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
                    const SnackBar(content: Text('测试通知已发送 (需退回桌面查看)')),
                 );
               },
-              icon: const Icon(Icons.bug_report, color: Colors.grey),
-              label: const Text('发送测试通知 (Dev)', style: TextStyle(color: Colors.grey)),
+              icon: Icon(Icons.bug_report, color: DS.brandPrimary),
+              label: Text('发送测试通知 (Dev)', style: TextStyle(color: DS.brandPrimaryConst)),
             ),
           ),
           const SizedBox(height: 20),
         ],
       ),
     );
-  }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
+  Widget _buildSectionTitle(String title) => Text(
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
     );
-  }
 
-  Widget _buildPersonaSelector() {
-    return Row(
+  Widget _buildPersonaSelector() => Row(
       children: [
         Expanded(
           child: _buildPersonaChip(
@@ -196,7 +191,7 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
             description: '督促、强调纪律',
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: DS.md),
         Expanded(
           child: _buildPersonaChip(
             value: 'anime',
@@ -207,7 +202,6 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
         ),
       ],
     );
-  }
 
   Widget _buildPersonaChip({
     required String value,
@@ -222,7 +216,7 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
       onTap: () => setState(() => _persona = value),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(DS.md),
         decoration: BoxDecoration(
           color: isSelected ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
@@ -231,9 +225,9 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
         child: Column(
           children: [
             Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant),
-            const SizedBox(height: 8),
+            const SizedBox(height: DS.sm),
             Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
+            const SizedBox(height: DS.xs),
             Text(
               description,
               style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant),
@@ -245,8 +239,7 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
     );
   }
 
-  Widget _buildFrequencySlider() {
-    return Column(
+  Widget _buildFrequencySlider() => Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -266,7 +259,6 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
         ),
       ],
     );
-  }
 
   Widget _buildActiveSlotsList() {
     if (_activeSlots.isEmpty) {
@@ -282,11 +274,11 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(DS.sm),
             child: Row(
               children: [
                 const Icon(Icons.access_time, size: 20),
-                const SizedBox(width: 12),
+                const SizedBox(width: DS.md),
                 Expanded(
                   child: Row(
                     children: [
@@ -300,7 +292,7 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  icon: Icon(Icons.delete, color: DS.errorAccent),
                   onPressed: () => _removeSlot(index),
                 ),
               ],
@@ -311,14 +303,13 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
     );
   }
 
-  Widget _buildTimeButton(String time, int index, bool isStart) {
-    return InkWell(
+  Widget _buildTimeButton(String time, int index, bool isStart) => InkWell(
       onTap: () => _selectTime(index, isStart),
       borderRadius: BorderRadius.circular(4),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade400),
+          border: Border.all(color: DS.brandPrimary.shade400),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
@@ -327,5 +318,4 @@ class _SmartPushSettingsScreenState extends ConsumerState<SmartPushSettingsScree
         ),
       ),
     );
-  }
 }

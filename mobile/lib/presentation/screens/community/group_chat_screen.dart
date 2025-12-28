@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/providers/community_provider.dart';
 import 'package:sparkle/presentation/widgets/chat/chat_input.dart';
-import 'package:sparkle/presentation/widgets/community/group_chat_bubble.dart';
-import 'package:sparkle/presentation/widgets/common/loading_indicator.dart';
 import 'package:sparkle/presentation/widgets/common/error_widget.dart';
+import 'package:sparkle/presentation/widgets/common/loading_indicator.dart';
+import 'package:sparkle/presentation/widgets/community/group_chat_bubble.dart';
 
 class GroupChatScreen extends ConsumerStatefulWidget {
-  final String groupId;
 
   const GroupChatScreen({required this.groupId, super.key});
+  final String groupId;
 
   @override
   ConsumerState<GroupChatScreen> createState() => _GroupChatScreenState();
@@ -39,7 +39,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen> {
               ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DS.lg),
             TextField(
               controller: messageController,
               decoration: const InputDecoration(
@@ -50,10 +50,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          SparkleButton.ghost(label: 'Cancel', onPressed: () => Navigator.pop(context)),
           TextButton(
             onPressed: () async {
               final duration = int.tryParse(durationController.text) ?? 0;
@@ -95,7 +92,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(group.name, style: const TextStyle(fontSize: 16)),
-                Text('${group.memberCount} members', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                Text('${group.memberCount} members', style: TextStyle(fontSize: 12, color: DS.brandPrimary54)),
               ],
             ),
           ),
@@ -104,7 +101,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.local_fire_department, color: Colors.orange),
+            icon: Icon(Icons.local_fire_department, color: DS.brandPrimary),
             onPressed: _showCheckinDialog,
             tooltip: 'Check-in',
           ),
@@ -128,7 +125,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen> {
                 }
                 return ListView.builder(
                   reverse: true,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(DS.lg),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];

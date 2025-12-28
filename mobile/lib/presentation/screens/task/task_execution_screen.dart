@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
-import 'package:sparkle/data/models/task_model.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_completion_result.dart';
+import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/task_provider.dart';
-import 'package:sparkle/presentation/widgets/task/timer_widget.dart';
-import 'package:sparkle/presentation/widgets/success_animation.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
+import 'package:sparkle/presentation/widgets/success_animation.dart';
+import 'package:sparkle/presentation/widgets/task/blocking_interceptor_dialog.dart';
 import 'package:sparkle/presentation/widgets/task/quick_tools_panel.dart';
 import 'package:sparkle/presentation/widgets/task/task_chat_panel.dart';
 import 'package:sparkle/presentation/widgets/task/task_feedback_dialog.dart';
-
-import 'package:sparkle/presentation/widgets/task/blocking_interceptor_dialog.dart';
+import 'package:sparkle/presentation/widgets/task/timer_widget.dart';
 
 class TaskExecutionScreen extends ConsumerStatefulWidget {
   const TaskExecutionScreen({super.key});
@@ -50,12 +50,12 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: AppDesignTokens.borderRadius20,
+          borderRadius: DS.borderRadius20,
         ),
         title: const Text(
           '离开任务？',
           style: TextStyle(
-            fontWeight: AppDesignTokens.fontWeightBold,
+            fontWeight: DS.fontWeightBold,
           ),
         ),
         content: const Text('计时器仍在运行，确定要离开吗？您的进度将被保存。'),
@@ -71,8 +71,8 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
               HapticFeedback.mediumImpact();
               Navigator.of(context).pop(true);
             },
-            customGradient: AppDesignTokens.warningGradient,
-            size: ButtonSize.small,
+            customGradient: DS.warningGradient,
+            size: CustomButtonSize.small,
           ),
         ],
       ),
@@ -80,7 +80,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
     return shouldPop ?? false;
   }
 
-  void _handleCompletion(int minutes, String? note) async {
+  Future<void> _handleCompletion(int minutes, String? note) async {
     // 1. Stop Timer
     setState(() {
       _isTimerRunning = false;
@@ -178,7 +178,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
         appBar: AppBar(
           flexibleSpace: Container(
             decoration: const BoxDecoration(
-              gradient: AppDesignTokens.primaryGradient,
+              gradient: DS.primaryGradient,
             ),
           ),
         ),
@@ -189,22 +189,21 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
               const Icon(
                 Icons.error_outline_rounded,
                 size: 80,
-                color: AppDesignTokens.neutral400,
+                color: DS.neutral400,
               ),
-              const SizedBox(height: AppDesignTokens.spacing16),
+              const SizedBox(height: DS.spacing16),
               Text(
                 '未选择任务',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: AppDesignTokens.fontWeightBold,
-                  color: AppDesignTokens.neutral700,
+                  fontWeight: DS.fontWeightBold,
+                  color: DS.neutral700,
                 ),
               ),
-              const SizedBox(height: AppDesignTokens.spacing24),
+              const SizedBox(height: DS.spacing24),
               CustomButton.primary(
                 text: '返回',
                 icon: Icons.arrow_back,
                 onPressed: () => context.pop(),
-                size: ButtonSize.medium,
               ),
             ],
           ),
@@ -229,19 +228,19 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
-              iconTheme: const IconThemeData(color: AppDesignTokens.neutral900),
+              iconTheme: const IconThemeData(color: DS.neutral900),
               title: Text(
                 activeTask.title, 
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppDesignTokens.neutral900),
+                style: const TextStyle(color: DS.neutral900),
               ),
             ),
-            body: Container(
+            body: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppDesignTokens.primaryBase.withValues(alpha: 0.05),
-                    AppDesignTokens.secondaryBase.withValues(alpha: 0.05),
+                    DS.primaryBase.withValues(alpha: 0.05),
+                    DS.secondaryBase.withValues(alpha: 0.05),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -252,11 +251,11 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                   children: [
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+                        padding: const EdgeInsets.all(DS.spacing16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const SizedBox(height: AppDesignTokens.spacing16),
+                            const SizedBox(height: DS.spacing16),
                             // 1. Timer Area
                             Center(
                               child: TimerWidget(
@@ -269,7 +268,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                                 onComplete: _onPomodoroComplete, // Call only for Pomodoro
                               ),
                             ),
-                            const SizedBox(height: AppDesignTokens.spacing24),
+                            const SizedBox(height: DS.spacing24),
 
                             // Timer Controls
                             _TimerControls(
@@ -277,48 +276,47 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                               onTogglePomodoro: _togglePomodoro,
                               onSetPreset: _setPresetDuration,
                             ),
-                            const SizedBox(height: AppDesignTokens.spacing40),
+                            const SizedBox(height: DS.spacing40),
 
                             // 2. Task Guide Area
-                            Container(
+                            DecoratedBox(
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: AppDesignTokens.borderRadius16,
-                                boxShadow: AppDesignTokens.shadowMd,
+                                color: DS.brandPrimary,
+                                borderRadius: DS.borderRadius16,
+                                boxShadow: DS.shadowMd,
                                 border: Border.all(
-                                  color: AppDesignTokens.neutral200,
-                                  width: 1,
+                                  color: DS.neutral200,
                                 ),
                               ),
                               child: ExpansionTile(
                                 shape: const Border(), // Remove default borders
                                 tilePadding: const EdgeInsets.symmetric(
-                                  horizontal: AppDesignTokens.spacing16,
-                                  vertical: AppDesignTokens.spacing12,
+                                  horizontal: DS.spacing16,
+                                  vertical: DS.spacing12,
                                 ),
                                 title: Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        gradient: AppDesignTokens.infoGradient,
+                                        gradient: DS.infoGradient,
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppDesignTokens.info.withValues(alpha: 0.3),
+                                            color: DS.info.withValues(alpha: 0.3),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
                                           ),
                                         ],
                                       ),
-                                      child: const Icon(Icons.description_outlined, color: Colors.white, size: 22),
+                                      child: Icon(Icons.description_outlined, color: DS.brandPrimary, size: 22),
                                     ),
-                                    const SizedBox(width: AppDesignTokens.spacing12),
+                                    const SizedBox(width: DS.spacing12),
                                     Text(
                                       '执行指南',
                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: AppDesignTokens.fontWeightBold,
-                                        color: AppDesignTokens.neutral900,
+                                        fontWeight: DS.fontWeightBold,
+                                        color: DS.neutral900,
                                       ),
                                     ),
                                   ],
@@ -326,9 +324,9 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                                 children: [
                                   Container(
                                     width: double.infinity,
-                                    padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+                                    padding: const EdgeInsets.all(DS.spacing16),
                                     decoration: const BoxDecoration(
-                                      color: AppDesignTokens.neutral50,
+                                      color: DS.neutral50,
                                       borderRadius: BorderRadius.only(
                                         bottomLeft: Radius.circular(16),
                                         bottomRight: Radius.circular(16),
@@ -338,20 +336,20 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                                       data: activeTask.guideContent ?? '暂无执行指南',
                                       styleSheet: MarkdownStyleSheet(
                                         p: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          color: AppDesignTokens.neutral700,
+                                          color: DS.neutral700,
                                           height: 1.6,
                                         ),
                                         h1: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontWeight: AppDesignTokens.fontWeightBold,
+                                          fontWeight: DS.fontWeightBold,
                                         ),
                                         h2: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: AppDesignTokens.fontWeightBold,
+                                          fontWeight: DS.fontWeightBold,
                                         ),
                                         code: const TextStyle(
-                                          backgroundColor: AppDesignTokens.neutral100,
-                                          color: AppDesignTokens.primaryDark,
+                                          backgroundColor: DS.neutral100,
+                                          color: DS.primaryDark,
                                           fontFamily: 'monospace',
-                                          fontSize: AppDesignTokens.fontSizeSm,
+                                          fontSize: DS.fontSizeSm,
                                         ),
                                       ),
                                     ),
@@ -359,11 +357,11 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: AppDesignTokens.spacing16),
+                            const SizedBox(height: DS.spacing16),
 
                             // 3. Quick Tools Panel
                             QuickToolsPanel(taskId: activeTask.id),
-                            const SizedBox(height: AppDesignTokens.spacing16),
+                            const SizedBox(height: DS.spacing16),
 
                             // 4. Task Chat Panel
                             TaskChatPanel(taskId: activeTask.id),
@@ -385,12 +383,12 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
           // Celebration Overlay
           if (_showCelebration)
             Positioned.fill(
-              child: Container(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.black.withValues(alpha: 0.7),
-                      AppDesignTokens.primaryBase.withValues(alpha: 0.3),
+                      DS.brandPrimary.withValues(alpha: 0.7),
+                      DS.primaryBase.withValues(alpha: 0.3),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -404,48 +402,48 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(DS.xl),
                           decoration: BoxDecoration(
-                            gradient: AppDesignTokens.successGradient,
+                            gradient: DS.successGradient,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: AppDesignTokens.success.withValues(alpha: 0.5),
+                                color: DS.success.withValues(alpha: 0.5),
                                 blurRadius: 30,
                                 spreadRadius: 10,
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.check_circle,
-                            color: Colors.white,
+                            color: DS.brandPrimary,
                             size: 80,
                           ),
                         ),
-                        const SizedBox(height: AppDesignTokens.spacing24),
+                        const SizedBox(height: DS.spacing24),
                         Text(
                           '任务完成！',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: AppDesignTokens.fontWeightBold,
+                            color: DS.brandPrimary,
+                            fontWeight: DS.fontWeightBold,
                           ),
                         ),
-                        const SizedBox(height: AppDesignTokens.spacing12),
+                        const SizedBox(height: DS.spacing12),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: AppDesignTokens.spacing20,
-                            vertical: AppDesignTokens.spacing8,
+                            horizontal: DS.spacing20,
+                            vertical: DS.spacing8,
                           ),
                           decoration: BoxDecoration(
-                            gradient: AppDesignTokens.warningGradient,
-                            borderRadius: AppDesignTokens.borderRadius20,
-                            boxShadow: AppDesignTokens.shadowLg,
+                            gradient: DS.warningGradient,
+                            borderRadius: DS.borderRadius20,
+                            boxShadow: DS.shadowLg,
                           ),
                           child: Text(
                             '+${activeTask.difficulty * 10} 经验值',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: AppDesignTokens.fontWeightBold,
+                              color: DS.brandPrimary,
+                              fontWeight: DS.fontWeightBold,
                             ),
                           ),
                         ),
@@ -462,39 +460,38 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
 }
 
 class _TimerControls extends StatelessWidget {
-  final bool isPomodoroMode;
-  final VoidCallback onTogglePomodoro;
-  final Function(int minutes) onSetPreset;
 
   const _TimerControls({
     required this.isPomodoroMode,
     required this.onTogglePomodoro,
     required this.onSetPreset,
   });
+  final bool isPomodoroMode;
+  final VoidCallback onTogglePomodoro;
+  final Function(int minutes) onSetPreset;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       children: [
         Wrap(
           alignment: WrapAlignment.center,
-          spacing: AppDesignTokens.spacing8,
-          runSpacing: AppDesignTokens.spacing8,
+          spacing: DS.spacing8,
+          runSpacing: DS.spacing8,
           children: [
             CustomButton.secondary(
               text: '番茄钟',
               icon: Icons.timer,
               onPressed: onTogglePomodoro,
-              size: ButtonSize.small,
+              size: CustomButtonSize.small,
             ),
             ...[15, 25, 45, 60].map((minutes) => CustomButton.secondary(
               text: '$minutes 分钟',
               onPressed: () => onSetPreset(minutes),
-              size: ButtonSize.small,
+              size: CustomButtonSize.small,
             ),),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: DS.lg),
         CustomButton.primary(
           text: '进入正念模式',
           icon: Icons.self_improvement,
@@ -504,23 +501,22 @@ class _TimerControls extends StatelessWidget {
               context.push('/focus/mindfulness', extra: activeTask);
             }
           },
-          customGradient: AppDesignTokens.primaryGradient,
+          customGradient: DS.primaryGradient,
         ),
       ],
     );
-  }
 }
 
 class _BottomControls extends ConsumerWidget {
-  final TaskModel task;
-  final int elapsedSeconds;
-  final Function(int minutes, String? note) onComplete;
 
   const _BottomControls({
     required this.task, 
     required this.elapsedSeconds,
     required this.onComplete,
   });
+  final TaskModel task;
+  final int elapsedSeconds;
+  final Function(int minutes, String? note) onComplete;
 
   void _showCompleteDialog(BuildContext context, WidgetRef ref) {
     final noteController = TextEditingController();
@@ -530,23 +526,23 @@ class _BottomControls extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: AppDesignTokens.borderRadius20,
+          borderRadius: DS.borderRadius20,
         ),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(DS.sm),
               decoration: const BoxDecoration(
-                gradient: AppDesignTokens.successGradient,
+                gradient: DS.successGradient,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_circle_outline, color: Colors.white, size: 24),
+              child: Icon(Icons.check_circle_outline, color: DS.brandPrimary, size: 24),
             ),
-            const SizedBox(width: AppDesignTokens.spacing12),
+            const SizedBox(width: DS.spacing12),
             const Text(
               '完成任务',
               style: TextStyle(
-                fontWeight: AppDesignTokens.fontWeightBold,
+                fontWeight: DS.fontWeightBold,
               ),
             ),
           ],
@@ -556,38 +552,38 @@ class _BottomControls extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(AppDesignTokens.spacing12),
+              padding: const EdgeInsets.all(DS.spacing12),
               decoration: BoxDecoration(
-                color: AppDesignTokens.neutral50,
-                borderRadius: AppDesignTokens.borderRadius12,
+                color: DS.neutral50,
+                borderRadius: DS.borderRadius12,
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.timer_outlined, color: AppDesignTokens.primaryBase),
-                  const SizedBox(width: AppDesignTokens.spacing8),
+                  const Icon(Icons.timer_outlined, color: DS.primaryBase),
+                  const SizedBox(width: DS.spacing8),
                   Text(
                     '用时：$minutes 分钟',
                     style: const TextStyle(
-                      fontWeight: AppDesignTokens.fontWeightMedium,
-                      color: AppDesignTokens.neutral700,
+                      fontWeight: DS.fontWeightMedium,
+                      color: DS.neutral700,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: AppDesignTokens.spacing16),
+            const SizedBox(height: DS.spacing16),
             TextField(
               controller: noteController,
               decoration: InputDecoration(
                 labelText: '笔记（选填）',
                 hintText: '记录一些学习心得...',
                 border: OutlineInputBorder(
-                  borderRadius: AppDesignTokens.borderRadius12,
+                  borderRadius: DS.borderRadius12,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: AppDesignTokens.borderRadius12,
+                  borderRadius: DS.borderRadius12,
                   borderSide: const BorderSide(
-                    color: AppDesignTokens.primaryBase,
+                    color: DS.primaryBase,
                     width: 2,
                   ),
                 ),
@@ -609,8 +605,8 @@ class _BottomControls extends ConsumerWidget {
               Navigator.of(ctx).pop();
               onComplete(minutes, noteController.text.trim().isEmpty ? null : noteController.text.trim());
             },
-            customGradient: AppDesignTokens.successGradient,
-            size: ButtonSize.small,
+            customGradient: DS.successGradient,
+            size: CustomButtonSize.small,
           ),
         ],
       ),
@@ -632,14 +628,13 @@ class _BottomControls extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+  Widget build(BuildContext context, WidgetRef ref) => Container(
+      padding: const EdgeInsets.all(DS.spacing16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: DS.brandPrimary,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: DS.brandPrimary.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -648,24 +643,22 @@ class _BottomControls extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            flex: 1,
             child: CustomButton.text(
               text: '放弃',
               onPressed: () => _abandonTask(context, ref),
               // Use error color for text if possible, or leave as primary/custom
             ),
           ),
-          const SizedBox(width: AppDesignTokens.spacing16),
+          const SizedBox(width: DS.spacing16),
           Expanded(
             flex: 2,
             child: CustomButton.primary(
               text: '完成任务',
               onPressed: () => _showCompleteDialog(context, ref),
-              customGradient: AppDesignTokens.successGradient,
+              customGradient: DS.successGradient,
             ),
           ),
         ],
       ),
     );
-  }
 }

@@ -37,56 +37,56 @@ class TypographySystem {
   static const double trackingWide = 0.02;
 
   /// 标准文本样式
-  static TextStyle displayLarge() => TextStyle(
+  static TextStyle displayLarge() => const TextStyle(
     fontSize: size3xl,
     fontWeight: weightExtrabold,
     height: leadingTight,
     letterSpacing: trackingTight,
   );
 
-  static TextStyle headingLarge() => TextStyle(
+  static TextStyle headingLarge() => const TextStyle(
     fontSize: size2xl,
     fontWeight: weightBold,
     height: leadingTight,
     letterSpacing: trackingTight,
   );
 
-  static TextStyle headingMedium() => TextStyle(
+  static TextStyle headingMedium() => const TextStyle(
     fontSize: sizeXl,
     fontWeight: weightSemibold,
     height: leadingTight,
     letterSpacing: trackingNormal,
   );
 
-  static TextStyle titleLarge() => TextStyle(
+  static TextStyle titleLarge() => const TextStyle(
     fontSize: sizeLg,
     fontWeight: weightSemibold,
     height: leadingNormal,
     letterSpacing: trackingNormal,
   );
 
-  static TextStyle bodyLarge() => TextStyle(
+  static TextStyle bodyLarge() => const TextStyle(
     fontSize: sizeMd,
     fontWeight: weightRegular,
     height: leadingNormal,
     letterSpacing: trackingNormal,
   );
 
-  static TextStyle bodyMedium() => TextStyle(
+  static TextStyle bodyMedium() => const TextStyle(
     fontSize: sizeSm,
     fontWeight: weightRegular,
     height: leadingNormal,
     letterSpacing: trackingNormal,
   );
 
-  static TextStyle labelLarge() => TextStyle(
+  static TextStyle labelLarge() => const TextStyle(
     fontSize: sizeSm,
     fontWeight: weightMedium,
     height: leadingTight,
     letterSpacing: trackingWide,
   );
 
-  static TextStyle labelSmall() => TextStyle(
+  static TextStyle labelSmall() => const TextStyle(
     fontSize: sizeXs,
     fontWeight: weightMedium,
     height: leadingTight,
@@ -97,46 +97,38 @@ class TypographySystem {
 /// 排版令牌 - 语义化样式
 @immutable
 class TypographyToken {
+
+  const TypographyToken(this.name, this.style);
   final String name;
   final TextStyle style;
 
-  const TypographyToken(this.name, this.style);
-
   /// 应用颜色
-  TypographyToken withColor(Color color) {
-    return TypographyToken(
+  TypographyToken withColor(Color color) => TypographyToken(
       name,
       style.copyWith(color: color),
     );
-  }
 
   /// 应用字重
-  TypographyToken withWeight(FontWeight weight) {
-    return TypographyToken(
+  TypographyToken withWeight(FontWeight weight) => TypographyToken(
       name,
       style.copyWith(fontWeight: weight),
     );
-  }
 
   /// 应用字号
-  TypographyToken withSize(double size) {
-    return TypographyToken(
+  TypographyToken withSize(double size) => TypographyToken(
       name,
       style.copyWith(fontSize: size),
     );
-  }
 
   /// 响应式变体
   TypographyTokenVariant variant({
     required TextStyle tablet,
     required TextStyle desktop,
-  }) {
-    return TypographyTokenVariant(
+  }) => TypographyTokenVariant(
       mobile: style,
       tablet: tablet,
       desktop: desktop,
     );
-  }
 
   @override
   bool operator ==(Object other) =>
@@ -150,15 +142,15 @@ class TypographyToken {
 /// 响应式排版变体
 @immutable
 class TypographyTokenVariant {
-  final TextStyle mobile;
-  final TextStyle tablet;
-  final TextStyle desktop;
 
   const TypographyTokenVariant({
     required this.mobile,
     required this.tablet,
     required this.desktop,
   });
+  final TextStyle mobile;
+  final TextStyle tablet;
+  final TextStyle desktop;
 
   TextStyle resolve(BuildContext context) {
     final width = MediaQuery.of(context).size.width;

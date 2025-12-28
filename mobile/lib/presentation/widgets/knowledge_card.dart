@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 /// 知识卡片组件
 /// 用于在聊天中显示 AI 生成的知识节点
 class KnowledgeCard extends StatelessWidget {
-  final Map<String, dynamic> data;
 
   const KnowledgeCard({
     required this.data, super.key,
   });
+  final Map<String, dynamic> data;
 
   @override
   Widget build(BuildContext context) {
@@ -32,14 +33,14 @@ class KnowledgeCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DS.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Icon(Icons.lightbulb_outline, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: DS.sm),
                   Expanded(
                     child: Text(
                       title,
@@ -53,7 +54,7 @@ class KnowledgeCard extends StatelessWidget {
               ),
               
               if (summary != null && summary.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: DS.sm),
                 Text(
                   summary,
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -63,7 +64,7 @@ class KnowledgeCard extends StatelessWidget {
               ],
 
               if (tags.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: DS.sm),
                 Wrap(
                   spacing: 8.0,
                   runSpacing: 4.0,
@@ -74,7 +75,7 @@ class KnowledgeCard extends StatelessWidget {
                   ),).toList(),
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: DS.md),
               Align(
                 alignment: Alignment.bottomRight,
                 child: TextButton.icon(
@@ -98,16 +99,16 @@ class KnowledgeCard extends StatelessWidget {
     String label;
 
     if (masteryLevel >= 80) {
-      color = Colors.green;
+      color = DS.success;
       label = '已掌握';
     } else if (masteryLevel >= 50) {
-      color = Colors.orange;
+      color = DS.brandPrimary;
       label = '熟练中';
     } else if (masteryLevel > 0) {
-      color = Colors.blue;
+      color = DS.brandPrimary;
       label = '初涉';
     } else {
-      color = Colors.grey;
+      color = DS.brandPrimary;
       label = '未学习';
     }
 

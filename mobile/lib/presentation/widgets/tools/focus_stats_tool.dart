@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 class FocusStatsTool extends StatelessWidget {
   const FocusStatsTool({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppDesignTokens.spacing24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(DS.spacing24),
+      decoration: BoxDecoration(
+        color: DS.brandPrimaryConst,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -20,14 +20,14 @@ class FocusStatsTool extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(DS.sm),
                 decoration: BoxDecoration(
                   color: Colors.deepPurple.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.bar_chart, color: Colors.deepPurple),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: DS.md),
               const Text(
                 '专注统计',
                 style: TextStyle(
@@ -42,7 +42,7 @@ class FocusStatsTool extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: DS.xl),
 
           // Overview Cards
           Row(
@@ -54,18 +54,18 @@ class FocusStatsTool extends StatelessWidget {
                   Colors.deepPurple,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: DS.md),
               Expanded(
                 child: _buildStatCard(
                   '本周累计',
                   '12h 40m',
-                  Colors.blue,
+                  DS.brandPrimary,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: DS.xxl),
 
           // Weekly Trend Chart
           const Text(
@@ -75,7 +75,7 @@ class FocusStatsTool extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
           SizedBox(
             height: 120,
             child: Row(
@@ -93,13 +93,13 @@ class FocusStatsTool extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: DS.xxl),
 
           // Detailed Stats
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             decoration: BoxDecoration(
-              color: AppDesignTokens.neutral50,
+              color: DS.neutral50,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -114,11 +114,9 @@ class FocusStatsTool extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildStatCard(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
+  Widget _buildStatCard(String label, String value, Color color) => Container(
+      padding: const EdgeInsets.all(DS.lg),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
@@ -135,7 +133,7 @@ class FocusStatsTool extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: DS.xs),
           Text(
             value,
             style: TextStyle(
@@ -147,10 +145,8 @@ class FocusStatsTool extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildBar(String label, double percentage) {
-    return Column(
+  Widget _buildBar(String label, double percentage) => Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Container(
@@ -161,39 +157,36 @@ class FocusStatsTool extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DS.sm),
         Text(
           label,
           style: const TextStyle(
             fontSize: 10,
-            color: AppDesignTokens.neutral500,
+            color: DS.neutral500,
           ),
         ),
       ],
     );
-  }
 
-  Widget _buildDetailStat(IconData icon, String value, String label) {
-    return Column(
+  Widget _buildDetailStat(IconData icon, String value, String label) => Column(
       children: [
-        Icon(icon, color: AppDesignTokens.neutral600, size: 24),
-        const SizedBox(height: 4),
+        Icon(icon, color: DS.neutral600, size: 24),
+        const SizedBox(height: DS.xs),
         Text(
           value,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: AppDesignTokens.neutral900,
+            color: DS.neutral900,
           ),
         ),
         Text(
           label,
           style: const TextStyle(
             fontSize: 12,
-            color: AppDesignTokens.neutral500,
+            color: DS.neutral500,
           ),
         ),
       ],
     );
-  }
 }

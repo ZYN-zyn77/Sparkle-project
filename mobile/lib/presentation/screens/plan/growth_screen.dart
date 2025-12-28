@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/plan_model.dart';
 import 'package:sparkle/presentation/providers/plan_provider.dart';
 
@@ -20,7 +22,9 @@ class GrowthScreen extends ConsumerWidget {
         child: _buildBody(context, planState, growthPlans),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () { /* TODO: Navigate to create plan screen */ },
+        onPressed: () {
+          context.push('/plans/new?type=growth');
+        },
         icon: const Icon(Icons.add),
         label: const Text('New Plan'),
       ),
@@ -39,37 +43,35 @@ class GrowthScreen extends ConsumerWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(DS.sm),
       itemCount: plans.length,
-      itemBuilder: (context, index) {
-        return _GrowthPlanCard(plan: plans[index]);
-      },
+      itemBuilder: (context, index) => _GrowthPlanCard(plan: plans[index]),
     );
   }
 }
 
 class _GrowthPlanCard extends StatelessWidget {
-  final PlanModel plan;
   const _GrowthPlanCard({required this.plan});
+  final PlanModel plan;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
+  Widget build(BuildContext context) => Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to plan detail screen
+          // Navigation: Consider creating dedicated plan detail screen
+          context.push('/plans/${plan.id}/edit');
         },
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(DS.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(plan.name, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 4),
+              const SizedBox(height: DS.xs),
               if (plan.description != null) Text(plan.description!, style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 16),
+              const SizedBox(height: DS.lg),
               _buildStatRow(
                 context,
                 'Mastery',
@@ -77,23 +79,21 @@ class _GrowthPlanCard extends StatelessWidget {
                 plan.masteryLevel,
                 Colors.purple,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: DS.sm),
               _buildStatRow(
                 context,
                 'Progress',
                 '${(plan.progress * 100).toStringAsFixed(0)}%',
                 plan.progress,
-                Colors.blue,
+                DS.brandPrimary,
               ),
             ],
           ),
         ),
       ),
     );
-  }
 
-  Widget _buildStatRow(BuildContext context, String label, String valueText, double progressValue, Color color) {
-    return Column(
+  Widget _buildStatRow(BuildContext context, String label, String valueText, double progressValue, Color color) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
          Row(
@@ -103,7 +103,7 @@ class _GrowthPlanCard extends StatelessWidget {
             Text(valueText, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: DS.xs),
         LinearProgressIndicator(
           value: progressValue,
           backgroundColor: color.withValues(alpha: 0.2),
@@ -111,5 +111,4 @@ class _GrowthPlanCard extends StatelessWidget {
         ),
       ],
     );
-  }
 }

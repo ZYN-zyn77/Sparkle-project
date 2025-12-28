@@ -1,8 +1,10 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 
 /// PrismCard - Cognitive Prism Card (2x1 wide)
@@ -45,23 +47,23 @@ class _PrismCardState extends ConsumerState<PrismCard>
     return GestureDetector(
       onTap: () => context.push('/cognitive/patterns'),
       child: ClipRRect(
-        borderRadius: AppDesignTokens.borderRadius20,
+        borderRadius: DS.borderRadius20,
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppDesignTokens.prismPurple.withAlpha(40),
-                  AppDesignTokens.glassBackground,
+                  DS.prismPurple.withAlpha(40),
+                  DS.glassBackground,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: AppDesignTokens.borderRadius20,
-              border: Border.all(color: AppDesignTokens.glassBorder),
+              borderRadius: DS.borderRadius20,
+              border: Border.all(color: DS.glassBorder),
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             child: Stack(
               children: [
                 // Prism refraction effect (animated)
@@ -70,21 +72,19 @@ class _PrismCardState extends ConsumerState<PrismCard>
                   bottom: -20,
                   child: AnimatedBuilder(
                     animation: _breathingAnimation,
-                    builder: (context, child) {
-                      return Container(
+                    builder: (context, child) => Container(
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              AppDesignTokens.prismPurple.withValues(alpha: _breathingAnimation.value),
+                              DS.prismPurple.withValues(alpha: _breathingAnimation.value),
                               Colors.transparent,
                             ],
                           ),
                         ),
-                      );
-                    },
+                      ),
                   ),
                 ),
                 
@@ -93,14 +93,14 @@ class _PrismCardState extends ConsumerState<PrismCard>
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.diamond_outlined, color: Colors.white, size: 18),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Icon(Icons.diamond_outlined, color: DS.brandPrimaryConst, size: 18),
+                        const SizedBox(width: DS.sm),
+                        Text(
                           '认知棱镜',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: DS.brandPrimaryConst,
                           ),
                         ),
                         const Spacer(),
@@ -109,7 +109,7 @@ class _PrismCardState extends ConsumerState<PrismCard>
                             width: 6,
                             height: 6,
                             decoration: const BoxDecoration(
-                              color: AppDesignTokens.prismPurple,
+                              color: DS.prismPurple,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -124,20 +124,20 @@ class _PrismCardState extends ConsumerState<PrismCard>
                           if (dashboardState.weather.type == 'rainy') _buildTag('#焦虑波峰'),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: DS.xs),
                       Text(
                         '行为定式分析已更新',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withAlpha(150),
+                          color: DS.brandPrimary.withAlpha(150),
                         ),
                       ),
                     ] else ...[
-                      const Text(
+                      Text(
                         '点击同步闪念，发现你的行为定式',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white70,
+                          color: DS.brandPrimary70Const,
                         ),
                       ),
                     ],
@@ -151,22 +151,20 @@ class _PrismCardState extends ConsumerState<PrismCard>
     );
   }
 
-  Widget _buildTag(String text) {
-    return Container(
+  Widget _buildTag(String text) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(20),
+        color: DS.brandPrimary.withAlpha(20),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withAlpha(30)),
+        border: Border.all(color: DS.brandPrimary.withAlpha(30)),
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: DS.brandPrimaryConst,
         ),
       ),
     );
-  }
 }

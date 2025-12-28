@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
-import 'package:sparkle/presentation/providers/task_provider.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_model.dart';
+import 'package:sparkle/presentation/providers/task_provider.dart';
 
 class FocusMainScreen extends ConsumerWidget {
   const FocusMainScreen({super.key});
@@ -14,24 +15,24 @@ class FocusMainScreen extends ConsumerWidget {
     final todayTasks = taskState.todayTasks.where((t) => t.status != TaskStatus.completed).toList();
 
     return Scaffold(
-      backgroundColor: AppDesignTokens.deepSpaceStart,
+      backgroundColor: DS.deepSpaceStart,
       appBar: AppBar(
         title: const Text('选择专注任务'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.white,
+        foregroundColor: DS.brandPrimary,
       ),
       body: SafeArea(
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.all(24.0),
+            Padding(
+              padding: const EdgeInsets.all(DS.xl),
               child: Text(
                 '准备好开始专注了吗？',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: DS.brandPrimaryConst,
                 ),
               ),
             ),
@@ -55,52 +56,44 @@ class FocusMainScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
+  Widget _buildEmptyState(BuildContext context) => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.assignment_turned_in_outlined, size: 64, color: Colors.white.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          const Text(
+          Icon(Icons.assignment_turned_in_outlined, size: 64, color: DS.brandPrimary.withValues(alpha: 0.3)),
+          const SizedBox(height: DS.lg),
+          Text(
             '没有待办任务',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(color: DS.brandPrimary70Const, fontSize: 16),
           ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => context.push('/tasks/new'),
-            child: const Text('创建一个新任务'),
-          ),
+          const SizedBox(height: DS.sm),
+          SparkleButton.ghost(label: '创建一个新任务', onPressed: () => context.push('/tasks/new')),
         ],
       ),
     );
-  }
 
-  Widget _buildTaskItem(BuildContext context, TaskModel task) {
-    return Card(
+  Widget _buildTaskItem(BuildContext context, TaskModel task) => Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: Colors.white.withValues(alpha: 0.1),
+      color: DS.brandPrimary.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         title: Text(
           task.title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: DS.brandPrimaryConst, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
           '预计 ${task.estimatedMinutes} 分钟',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+          style: TextStyle(color: DS.brandPrimary.withValues(alpha: 0.6)),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+        trailing: Icon(Icons.arrow_forward_ios, color: DS.brandPrimary54, size: 16),
         onTap: () {
           context.push('/focus/mindfulness', extra: task);
         },
       ),
     );
-  }
 
-  Widget _buildQuickFocusButton(BuildContext context) {
-    return Padding(
+  Widget _buildQuickFocusButton(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: ElevatedButton(
         onPressed: () {
@@ -122,13 +115,12 @@ class FocusMainScreen extends ConsumerWidget {
           context.push('/focus/mindfulness', extra: dummyTask);
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppDesignTokens.primaryBase,
-          foregroundColor: Colors.white,
+          backgroundColor: DS.primaryBase,
+          foregroundColor: DS.brandPrimary,
           minimumSize: const Size(double.infinity, 56),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: const Text('快速开启专注 (25min)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
-  }
 }

@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/app/theme.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/design/motion.dart';
 
 /// 计划卡片组件
 /// 用于在聊天中显示 AI 生成的计划
 class PlanCard extends StatefulWidget {
-  final Map<String, dynamic> data;
 
   const PlanCard({
     required this.data, super.key,
   });
+  final Map<String, dynamic> data;
 
   @override
   State<PlanCard> createState() => _PlanCardState();
@@ -67,14 +68,14 @@ class _PlanCardState extends State<PlanCard> with SingleTickerProviderStateMixin
           // Remove InkWell as we handle taps on GestureDetector
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     _buildTypeIcon(planType),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: DS.sm),
                     Expanded(
                       child: Text(
                         title,
@@ -88,7 +89,7 @@ class _PlanCardState extends State<PlanCard> with SingleTickerProviderStateMixin
                 ),
                 
                 if (description != null && description.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DS.sm),
                   Text(
                     description,
                     style: Theme.of(context).textTheme.bodyMedium,
@@ -97,29 +98,29 @@ class _PlanCardState extends State<PlanCard> with SingleTickerProviderStateMixin
                   ),
                 ],
 
-                const SizedBox(height: 12),
+                const SizedBox(height: DS.md),
                 Row(
                   children: [
                     if (targetDate != null) ...[
                       Icon(Icons.calendar_today,
-                        size: AppDesignTokens.iconSizeSm,
-                        color: Theme.of(context).hintColor),
-                      const SizedBox(width: AppDesignTokens.spacing4),
+                        size: DS.iconSizeSm,
+                        color: Theme.of(context).hintColor,),
+                      const SizedBox(width: DS.spacing4),
                       Text('目标日期: $targetDate'),
-                      const SizedBox(width: AppDesignTokens.spacing16),
+                      const SizedBox(width: DS.spacing16),
                     ],
                     if (mastery != null) ...[
                       Icon(Icons.grade,
-                        size: AppDesignTokens.iconSizeSm,
-                        color: Theme.of(context).hintColor),
-                      const SizedBox(width: AppDesignTokens.spacing4),
+                        size: DS.iconSizeSm,
+                        color: Theme.of(context).hintColor,),
+                      const SizedBox(width: DS.spacing4),
                       Text('目标掌握度: ${(mastery * 100).toInt()}%'),
                     ],
                     const Spacer(),
                     // Just a visual indicator now - not interactive so smaller is acceptable
-                    Icon(Icons.arrow_forward_ios,
-                      size: AppDesignTokens.iconSizeXs,
-                      color: AppDesignTokens.neutral400),
+                    const Icon(Icons.arrow_forward_ios,
+                      size: DS.iconSizeXs,
+                      color: DS.neutral400,),
                   ],
                 ),
               ],
@@ -137,27 +138,25 @@ class _PlanCardState extends State<PlanCard> with SingleTickerProviderStateMixin
     switch (type) {
       case 'sprint':
         icon = Icons.directions_run;
-        color = AppDesignTokens.warning;
-        break;
+        color = DS.warning;
       case 'growth':
         icon = Icons.trending_up;
-        color = AppDesignTokens.success;
-        break;
+        color = DS.success;
       default:
         icon = Icons.assignment;
-        color = AppDesignTokens.neutral500;
+        color = DS.neutral500;
     }
 
     // Ensure minimum 48x48 touch target
     return Container(
-      width: AppDesignTokens.touchTargetMinSize,
-      height: AppDesignTokens.touchTargetMinSize,
-      padding: const EdgeInsets.all(AppDesignTokens.spacing8),
+      width: DS.touchTargetMinSize,
+      height: DS.touchTargetMinSize,
+      padding: const EdgeInsets.all(DS.spacing8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: AppDesignTokens.borderRadius8,
+        borderRadius: DS.borderRadius8,
       ),
-      child: Icon(icon, size: AppDesignTokens.iconSizeBase, color: color),
+      child: Icon(icon, size: DS.iconSizeBase, color: color),
     );
   }
 
@@ -167,19 +166,19 @@ class _PlanCardState extends State<PlanCard> with SingleTickerProviderStateMixin
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDesignTokens.spacing8,
-        vertical: AppDesignTokens.spacing4,
+        horizontal: DS.spacing8,
+        vertical: DS.spacing4,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: AppDesignTokens.borderRadius12,
+        borderRadius: DS.borderRadius12,
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: color,
-          fontSize: AppDesignTokens.fontSizeXs,
+          fontSize: DS.fontSizeXs,
         ),
       ),
     );

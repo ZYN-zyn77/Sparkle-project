@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:sparkle/core/services/quad_tree.dart';
 import 'package:sparkle/data/models/galaxy_model.dart';
 import 'package:sparkle/presentation/widgets/galaxy/sector_config.dart';
 
@@ -27,15 +28,15 @@ class GalaxyLayoutEngine {
     required List<GalaxyEdgeModel> edges,
     Map<String, Offset>? existingPositions,
   }) {
-    final Map<String, Offset> positions = {};
-    final Random random = Random(42);
+    final positions = <String, Offset>{};
+    final random = Random(42);
 
     // 1. 建立父子索引和星域分组
-    final Map<String, List<String>> childrenMap = {};
-    final Map<SectorEnum, List<GalaxyNodeModel>> sectorRoots = {};
+    final childrenMap = <String, List<String>>{};
+    final sectorRoots = <SectorEnum, List<GalaxyNodeModel>>{};
     
     // 初始化 map
-    for (var sector in SectorEnum.values) {
+    for (final sector in SectorEnum.values) {
       sectorRoots[sector] = [];
     }
 
@@ -60,7 +61,7 @@ class GalaxyLayoutEngine {
       final centerAngleRad = (style.baseAngle + style.sweepAngle / 2 - 90) * pi / 180;
       
       // 将多个根节点分布在扇形中心附近
-      for (int i = 0; i < roots.length; i++) {
+      for (var i = 0; i < roots.length; i++) {
         final node = roots[i];
         
         // 优先复用现有位置
@@ -80,7 +81,7 @@ class GalaxyLayoutEngine {
         }
 
         // 计算根节点位置 - 增加随机散布范围
-        double angle = centerAngleRad;
+        var angle = centerAngleRad;
         if (roots.length > 1) {
           final spread = (style.sweepAngle * 0.6) * pi / 180; // 更宽的分布
           final step = spread / (roots.length + 1);
@@ -147,10 +148,10 @@ class GalaxyLayoutEngine {
     final parentDist = parentPos.distance;
 
     // 扇形分布范围 - 随距离增加而减小
-    double spreadAngle = pi / 2.5; // 72度 - 初始更宽
+    var spreadAngle = pi / 2.5; // 72度 - 初始更宽
     if (parentDist > 800) spreadAngle = pi / 4;
 
-    for (int i = 0; i < children.length; i++) {
+    for (var i = 0; i < children.length; i++) {
       final child = children[i];
       
       if (existingPositions != null && existingPositions.containsKey(child.id)) {
@@ -184,26 +185,62 @@ class GalaxyLayoutEngine {
     }
   }
 
-  /// 解决节点重叠
+  /// 解决节点重叠 - 使用四叉树优化碰撞检测
   static void _resolveOverlaps(
     Map<String, Offset> positions,
     List<GalaxyNodeModel> nodes,
   ) {
-    const int maxIterations = 50;
-    const double pushForce = 0.8; // 增强推力
+    const maxIterations = 50;
+    const pushForce = 0.8;
 
-    for (int iter = 0; iter < maxIterations; iter++) {
-      bool hasOverlap = false;
+    // 使用四叉树加速碰撞检测
+    for (var iter = 0; iter < maxIterations; iter++) {
+      var hasOverlap = false;
 
-      for (int i = 0; i < nodes.length; i++) {
-        for (int j = i + 1; j < nodes.length; j++) {
-          final nodeA = nodes[i];
-          final nodeB = nodes[j];
-          final posA = positions[nodeA.id]!;
-          final posB = positions[nodeB.id]!;
+      // 构建四叉树
+      final tree = QuadTree<_LayoutNode>(
+        bounds: const Rect.fromLTWH(
+          -outerRadius * 1.5,
+          -outerRadius * 1.5,
+          outerRadius * 3,
+          outerRadius * 3,
+        ),
+        capacity: 8,
+      );
 
-          // 增加安全边距
-          final minDist = minNodeSpacing + nodeA.radius + nodeB.radius;
+      // 插入所有节点
+      for (final node in nodes) {
+        final pos = positions[node.id];
+        if (pos != null) {
+          tree.insert(_LayoutNode(
+            id: node.id,
+            position: pos,
+            radius: node.radius,
+          ),);
+        }
+      }
+
+      // 使用四叉树查询邻近节点进行碰撞检测
+      for (final node in nodes) {
+        final posA = positions[node.id];
+        if (posA == null) continue;
+
+        // 查询可能碰撞的邻近节点
+        final searchRadius = minNodeSpacing + node.radius * 2;
+        final neighbors = tree.queryCircle(posA, searchRadius);
+
+        for (final neighbor in neighbors) {
+          if (neighbor.id == node.id) continue;
+
+          final posB = positions[neighbor.id];
+          if (posB == null) continue;
+
+          final nodeB = nodes.firstWhere(
+            (n) => n.id == neighbor.id,
+            orElse: () => node,
+          );
+
+          final minDist = minNodeSpacing + node.radius + nodeB.radius;
           final delta = posA - posB;
           final dist = delta.distance;
 
@@ -211,10 +248,10 @@ class GalaxyLayoutEngine {
             hasOverlap = true;
             final overlap = minDist - dist;
             final direction = Offset(delta.dx / dist, delta.dy / dist);
-            final push = direction * overlap * pushForce;
+            final push = direction * overlap * pushForce * 0.5;
 
-            positions[nodeA.id] = posA + push;
-            positions[nodeB.id] = posB - push;
+            positions[node.id] = posA + push;
+            positions[neighbor.id] = posB - push;
           }
         }
       }
@@ -222,7 +259,27 @@ class GalaxyLayoutEngine {
       if (!hasOverlap) break;
     }
   }
+}
 
+/// 布局节点包装器（用于四叉树）
+class _LayoutNode implements QuadTreeItem {
+  _LayoutNode({
+    required this.id,
+    required this.position,
+    required this.radius,
+  });
+
+  @override
+  final String id;
+
+  @override
+  final Offset position;
+
+  final double radius;
+}
+
+/// GalaxyLayoutEngine的扩展方法
+extension GalaxyLayoutEngineAsync on GalaxyLayoutEngine {
   /// 在 Isolate 中进行力导向优化
   static Future<Map<String, Offset>> optimizeLayoutAsync({
     required List<GalaxyNodeModel> nodes,
@@ -250,41 +307,41 @@ class GalaxyLayoutEngine {
 
 /// 简化的节点数据（用于 Isolate）
 class _SimpleNode {
-  final String id;
-  final String? parentId;
-  final SectorEnum sector;
-  final int importance;
 
   _SimpleNode({
     required this.id,
     required this.sector, required this.importance, this.parentId,
   });
+  final String id;
+  final String? parentId;
+  final SectorEnum sector;
+  final int importance;
 }
 
 /// 简化的边数据（用于 Isolate）
 class _SimpleEdge {
-  final String sourceId;
-  final String targetId;
-  final double strength;
 
   _SimpleEdge({
     required this.sourceId,
     required this.targetId,
     required this.strength,
   });
+  final String sourceId;
+  final String targetId;
+  final double strength;
 }
 
 /// 布局优化数据
 class _LayoutOptimizationData {
-  final List<_SimpleNode> nodes;
-  final List<_SimpleEdge> edges;
-  final Map<String, Offset> initialPositions;
 
   _LayoutOptimizationData({
     required this.nodes,
     required this.edges,
     required this.initialPositions,
   });
+  final List<_SimpleNode> nodes;
+  final List<_SimpleEdge> edges;
+  final Map<String, Offset> initialPositions;
 }
 
 /// 力导向布局优化（在 Isolate 中运行）
@@ -296,17 +353,17 @@ Map<String, Offset> _forceDirectedOptimization(_LayoutOptimizationData data) {
   if (nodes.isEmpty) return positions;
 
   // 优化参数 - 针对分散布局调整
-  const int iterations = 150; // 更多迭代次数以达到平衡
-  const double repulsionStrength = 8000.0; // 极强的斥力，推开节点
-  const double edgeAttractionStrength = 0.02; // 很弱的引力，允许边拉长
-  const double parentAttractionStrength = 0.03;
-  const double minDistance = 300.0; // 斥力作用范围显著增大
-  const double maxDisplacement = 50.0; // 允许更大的单步位移
-  const double damping = 0.88;
-  const double coolingFactor = 0.96; // 冷却稍慢
+  const iterations = 150; // 更多迭代次数以达到平衡
+  const repulsionStrength = 8000.0; // 极强的斥力，推开节点
+  const edgeAttractionStrength = 0.02; // 很弱的引力，允许边拉长
+  const parentAttractionStrength = 0.03;
+  const minDistance = 300.0; // 斥力作用范围显著增大
+  const maxDisplacement = 50.0; // 允许更大的单步位移
+  const damping = 0.88;
+  const coolingFactor = 0.96; // 冷却稍慢
 
   // 构建连接图
-  final Map<String, List<_SimpleEdge>> nodeEdges = {};
+  final nodeEdges = <String, List<_SimpleEdge>>{};
   for (final edge in edges) {
     nodeEdges.putIfAbsent(edge.sourceId, () => []);
     nodeEdges.putIfAbsent(edge.targetId, () => []);
@@ -315,7 +372,7 @@ Map<String, Offset> _forceDirectedOptimization(_LayoutOptimizationData data) {
   }
 
   // 构建父子关系
-  final Map<String, List<String>> children = {};
+  final children = <String, List<String>>{};
   for (final node in nodes) {
     if (node.parentId != null) {
       children.putIfAbsent(node.parentId!, () => []);
@@ -339,9 +396,9 @@ Map<String, Offset> _forceDirectedOptimization(_LayoutOptimizationData data) {
     velocity[node.id] = Offset.zero;
   }
 
-  double temperature = 1.0;
+  var temperature = 1.0;
 
-  for (int iter = 0; iter < iterations; iter++) {
+  for (var iter = 0; iter < iterations; iter++) {
     for (final nodeA in nodes) {
       var force = Offset.zero;
       final posA = positions[nodeA.id]!;
@@ -439,7 +496,7 @@ Map<String, Offset> _forceDirectedOptimization(_LayoutOptimizationData data) {
       final nodeAngle = atan2(newPos.dy, newPos.dx);
       final endAngle = baseAngle + sweepAngle;
 
-      double normalizedAngle = nodeAngle;
+      var normalizedAngle = nodeAngle;
       while (normalizedAngle < baseAngle) {
         normalizedAngle += 2 * pi;
       }
@@ -480,39 +537,34 @@ Map<String, Offset> _forceDirectedOptimization(_LayoutOptimizationData data) {
 
 /// 视口裁剪工具
 class ViewportCuller {
-  final Rect viewport;
-  final double margin;
 
   ViewportCuller({
     required this.viewport,
     this.margin = 50.0,
   });
+  final Rect viewport;
+  final double margin;
 
   /// 检查位置是否在视口内
-  bool isVisible(Offset position) {
-    return position.dx >= viewport.left - margin &&
+  bool isVisible(Offset position) => position.dx >= viewport.left - margin &&
            position.dx <= viewport.right + margin &&
            position.dy >= viewport.top - margin &&
            position.dy <= viewport.bottom + margin;
-  }
 
   /// 过滤可见节点
   List<GalaxyNodeModel> filterVisibleNodes(
     List<GalaxyNodeModel> nodes,
     Map<String, Offset> positions,
-  ) {
-    return nodes.where((node) {
+  ) => nodes.where((node) {
       final pos = positions[node.id];
       return pos != null && isVisible(pos);
     }).toList();
-  }
 
   /// 过滤可见边
   List<GalaxyEdgeModel> filterVisibleEdges(
     List<GalaxyEdgeModel> edges,
     Map<String, Offset> positions,
-  ) {
-    return edges.where((edge) {
+  ) => edges.where((edge) {
       final startPos = positions[edge.sourceId];
       final endPos = positions[edge.targetId];
       if (startPos == null || endPos == null) return false;
@@ -522,7 +574,6 @@ class ViewportCuller {
              isVisible(endPos) ||
              _lineIntersectsRect(startPos, endPos, viewport);
     }).toList();
-  }
 
   /// 检查线段是否与矩形相交
   bool _lineIntersectsRect(Offset p1, Offset p2, Rect rect) {

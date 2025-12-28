@@ -13,7 +13,7 @@ class AnimationSystem {
   static const Curve easeIn = Curves.easeIn;
 
   // 语义化时长
-  static const Duration instant = Duration(milliseconds: 0);
+  static const Duration instant = Duration();
   static const Duration quick = Duration(milliseconds: 150);
   static const Duration normal = Duration(milliseconds: 250);
   static const Duration slow = Duration(milliseconds: 400);
@@ -60,12 +60,6 @@ enum AnimationPurpose {
 
 @immutable
 class AnimationConfig {
-  final Duration duration;
-  final Curve curve;
-  final double? scale;
-  final Offset? offset;
-  final double? rotation;
-  final double? opacity;
 
   const AnimationConfig({
     required this.duration,
@@ -75,76 +69,55 @@ class AnimationConfig {
     this.rotation,
     this.opacity,
   });
+  final Duration duration;
+  final Curve curve;
+  final double? scale;
+  final Offset? offset;
+  final double? rotation;
+  final double? opacity;
 
   /// 创建动画Tween序列
-  List<TweenSequence<dynamic>> createTweenSequence() {
-    final sequences = <TweenSequence<dynamic>>[];
+  List<TweenSequenceItem<double>> createTweenSequence() {
+    final items = <TweenSequenceItem<double>>[];
 
     if (scale != null) {
-      sequences.add(TweenSequence<double>(
-        [
-          TweenSequenceItem(
-            tween: Tween(begin: 1.0, end: scale!),
-            weight: 1,
-          ),
-          TweenSequenceItem(
-            tween: Tween(begin: scale!, end: 1.0),
-            weight: 1,
-          ),
-        ],
-      ));
-    }
-
-    if (offset != null) {
-      sequences.add(TweenSequence<Offset>(
-        [
-          TweenSequenceItem(
-            tween: Tween(begin: Offset.zero, end: offset!),
-            weight: 1,
-          ),
-          TweenSequenceItem(
-            tween: Tween(begin: offset!, end: Offset.zero),
-            weight: 1,
-          ),
-        ],
-      ));
+      items.add(TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.0, end: scale),
+        weight: 1,
+      ),);
     }
 
     if (opacity != null) {
-      sequences.add(TweenSequence<double>(
-        [
-          TweenSequenceItem(
-            tween: Tween(begin: 1.0, end: opacity!),
-            weight: 1,
-          ),
-          TweenSequenceItem(
-            tween: Tween(begin: opacity!, end: 1.0),
-            weight: 1,
-          ),
-        ],
-      ));
+      items.add(TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.0, end: opacity),
+        weight: 1,
+      ),);
     }
 
-    return sequences;
+    // 如果没有任何动画，返回默认的
+    if (items.isEmpty) {
+      items.add(TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.0, end: 1.0),
+        weight: 1,
+      ),);
+    }
+
+    return items;
   }
 
   /// 应用动画到Widget
   Widget animate({
     required Widget child,
     required AnimationController controller,
-  }) {
-    final animation = controller.drive(
-      TweenSequence(createTweenSequence()),
-    );
-
-    return AnimatedBuilder(
-      animation: animation,
+  }) => AnimatedBuilder(
+      animation: controller,
       builder: (context, child) {
-        Widget result = child!;
+        var result = child!;
 
         if (scale != null) {
+          final scaleTween = Tween<double>(begin: 1.0, end: scale);
           result = Transform.scale(
-            scale: animation.value,
+            scale: scaleTween.evaluate(controller),
             child: result,
           );
         }
@@ -153,7 +126,7 @@ class AnimationConfig {
           result = Transform.translate(
             offset: Offset.lerp(
               Offset.zero,
-              offset!,
+              offset,
               controller.value,
             )!,
             child: result,
@@ -168,8 +141,9 @@ class AnimationConfig {
         }
 
         if (opacity != null) {
+          final opacityTween = Tween<double>(begin: 1.0, end: opacity);
           result = Opacity(
-            opacity: animation.value,
+            opacity: opacityTween.evaluate(controller),
             child: result,
           );
         }
@@ -178,33 +152,28 @@ class AnimationConfig {
       },
       child: child,
     );
-  }
 }
 
 /// 动画令牌 - 语义化命名
 @immutable
 class AnimationToken {
+
+  const AnimationToken(this.name, this.duration, this.curve);
   final String name;
   final Duration duration;
   final Curve curve;
 
-  const AnimationToken(this.name, this.duration, this.curve);
-
   /// 创建动画控制器配置
-  AnimationConfig toConfig({double? scale, Offset? offset, double? rotation}) {
-    return AnimationConfig(
+  AnimationConfig toConfig({double? scale, Offset? offset, double? rotation}) => AnimationConfig(
       duration: duration,
       curve: curve,
       scale: scale,
       offset: offset,
       rotation: rotation,
     );
-  }
 
   /// 应用到动画
-  Animation<double> apply(AnimationController controller) {
-    return controller.drive(CurveTween(curve: curve));
-  }
+  Animation<double> apply(AnimationController controller) => controller.drive(CurveTween(curve: curve));
 
   @override
   bool operator ==(Object other) =>
@@ -221,49 +190,41 @@ class AnimationToken {
 /// 便捷动画扩展
 extension AnimationExtensions on Widget {
   /// 淡入动画
-  Widget fadeIn({Duration duration = AnimationSystem.normal}) {
-    return AnimatedOpacity(
+  Widget fadeIn({Duration duration = AnimationSystem.normal}) => AnimatedOpacity(
       opacity: 1.0,
       duration: duration,
       child: this,
     );
-  }
 
   /// 上滑动画
-  Widget slideUp({Duration duration = AnimationSystem.normal}) {
-    return AnimatedSlide(
+  Widget slideUp({Duration duration = AnimationSystem.normal}) => AnimatedSlide(
       offset: const Offset(0, 0),
       from: const Offset(0, 0.2),
       duration: duration,
       child: this,
     );
-  }
 
   /// 缩放动画
-  Widget scaleIn({Duration duration = AnimationSystem.normal}) {
-    return AnimatedScale(
+  Widget scaleIn({Duration duration = AnimationSystem.normal}) => SparkleAnimatedScale(
       scale: 1.0,
       from: 0.8,
       duration: duration,
       child: this,
     );
-  }
 }
 
 /// 自定义AnimatedSlide扩展
 class AnimatedSlide extends ImplicitlyAnimatedWidget {
-  final Widget child;
-  final Offset offset;
-  final Offset from;
 
   const AnimatedSlide({
-    super.key,
-    required this.child,
-    required this.offset,
+    required this.child, required this.offset, super.key,
     this.from = Offset.zero,
     super.duration = AnimationSystem.normal,
     super.curve = Curves.easeOut,
   });
+  final Widget child;
+  final Offset offset;
+  final Offset from;
 
   @override
   ImplicitlyAnimatedWidgetState<AnimatedSlide> createState() => _AnimatedSlideState();
@@ -288,34 +249,30 @@ class _AnimatedSlideState extends ImplicitlyAnimatedWidgetState<AnimatedSlide> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
+  Widget build(BuildContext context) => SlideTransition(
       position: _offsetAnimation!,
       child: widget.child,
     );
-  }
 }
 
-/// 自定义AnimatedScale扩展
-class AnimatedScale extends ImplicitlyAnimatedWidget {
-  final Widget child;
-  final double scale;
-  final double from;
+/// 自定义AnimatedScale扩展 - renamed to avoid conflict with Flutter's AnimatedScale
+class SparkleAnimatedScale extends ImplicitlyAnimatedWidget {
 
-  const AnimatedScale({
-    super.key,
-    required this.child,
-    required this.scale,
+  const SparkleAnimatedScale({
+    required this.child, required this.scale, super.key,
     this.from = 1.0,
     super.duration = AnimationSystem.normal,
     super.curve = Curves.easeOut,
   });
+  final Widget child;
+  final double scale;
+  final double from;
 
   @override
-  ImplicitlyAnimatedWidgetState<AnimatedScale> createState() => _AnimatedScaleState();
+  ImplicitlyAnimatedWidgetState<SparkleAnimatedScale> createState() => _SparkleAnimatedScaleState();
 }
 
-class _AnimatedScaleState extends ImplicitlyAnimatedWidgetState<AnimatedScale> {
+class _SparkleAnimatedScaleState extends ImplicitlyAnimatedWidgetState<SparkleAnimatedScale> {
   Tween<double>? _scaleTween;
   Animation<double>? _scaleAnimation;
 
@@ -334,10 +291,8 @@ class _AnimatedScaleState extends ImplicitlyAnimatedWidgetState<AnimatedScale> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
+  Widget build(BuildContext context) => ScaleTransition(
       scale: _scaleAnimation!,
       child: widget.child,
     );
-  }
 }

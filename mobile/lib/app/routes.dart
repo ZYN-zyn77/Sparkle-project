@@ -3,66 +3,81 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/services/notification_service.dart';
+import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
-import 'package:sparkle/presentation/screens/splash/splash_screen.dart';
 import 'package:sparkle/presentation/screens/auth/login_screen.dart';
 import 'package:sparkle/presentation/screens/auth/register_screen.dart';
-import 'package:sparkle/presentation/screens/home/home_screen.dart';
-import 'package:sparkle/presentation/screens/task/task_create_screen.dart';
-import 'package:sparkle/presentation/screens/task/task_list_screen.dart';
-import 'package:sparkle/presentation/screens/task/task_detail_screen.dart';
-import 'package:sparkle/presentation/screens/task/task_execution_screen.dart';
 import 'package:sparkle/presentation/screens/chat/chat_screen.dart';
-import 'package:sparkle/presentation/screens/plan/sprint_screen.dart';
-import 'package:sparkle/presentation/screens/plan/growth_screen.dart';
-import 'package:sparkle/presentation/screens/profile/learning_mode_screen.dart';
+import 'package:sparkle/presentation/screens/cognitive/curiosity_capsule_screen.dart';
+import 'package:sparkle/presentation/screens/cognitive/pattern_list_screen.dart';
 import 'package:sparkle/presentation/screens/community/community_main_screen.dart';
-import 'package:sparkle/presentation/screens/galaxy_screen.dart';
-import 'package:sparkle/presentation/screens/knowledge/knowledge_detail_screen.dart';
-import 'package:sparkle/presentation/screens/community/group_list_screen.dart';
-import 'package:sparkle/presentation/screens/community/group_detail_screen.dart';
-import 'package:sparkle/presentation/screens/community/group_chat_screen.dart';
 import 'package:sparkle/presentation/screens/community/create_group_screen.dart';
+import 'package:sparkle/presentation/screens/community/friends_screen.dart';
+import 'package:sparkle/presentation/screens/community/group_chat_screen.dart';
+import 'package:sparkle/presentation/screens/community/group_detail_screen.dart';
+import 'package:sparkle/presentation/screens/community/group_list_screen.dart';
 import 'package:sparkle/presentation/screens/community/group_search_screen.dart';
 import 'package:sparkle/presentation/screens/community/group_tasks_screen.dart';
-import 'package:sparkle/presentation/screens/community/friends_screen.dart';
 import 'package:sparkle/presentation/screens/community/private_chat_screen.dart';
-import 'package:sparkle/presentation/screens/cognitive/pattern_list_screen.dart';
-import 'package:sparkle/presentation/screens/cognitive/curiosity_capsule_screen.dart';
-import 'package:sparkle/presentation/screens/focus/mindfulness_mode_screen.dart';
 import 'package:sparkle/presentation/screens/focus/focus_main_screen.dart';
+import 'package:sparkle/presentation/screens/focus/mindfulness_mode_screen.dart';
+import 'package:sparkle/presentation/screens/galaxy_screen.dart';
+import 'package:sparkle/presentation/screens/home/home_screen.dart';
+import 'package:sparkle/presentation/screens/insights/learning_forecast_screen.dart';
+import 'package:sparkle/presentation/screens/knowledge/knowledge_detail_screen.dart';
+import 'package:sparkle/presentation/screens/plan/growth_screen.dart';
+import 'package:sparkle/presentation/screens/plan/plan_create_screen.dart';
+import 'package:sparkle/presentation/screens/plan/plan_edit_screen.dart';
+import 'package:sparkle/presentation/screens/plan/sprint_screen.dart';
+import 'package:sparkle/presentation/screens/profile/learning_mode_screen.dart';
+import 'package:sparkle/presentation/screens/splash/splash_screen.dart';
 import 'package:sparkle/presentation/screens/stats/calendar_stats_screen.dart';
-import 'package:sparkle/data/models/task_model.dart';
+import 'package:sparkle/presentation/screens/task/task_create_screen.dart';
+import 'package:sparkle/presentation/screens/task/task_detail_screen.dart';
+import 'package:sparkle/presentation/screens/task/task_execution_screen.dart';
+import 'package:sparkle/presentation/screens/task/task_list_screen.dart';
 
 /// Helper to build pages with transitions
 Page<dynamic> _buildTransitionPage({
   required GoRouterState state,
   required Widget child,
   SharedAxisTransitionType type = SharedAxisTransitionType.horizontal,
-}) {
-  return CustomTransitionPage<void>(
+}) => CustomTransitionPage<void>(
     key: state.pageKey,
     child: child,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return SharedAxisTransition(
+    transitionsBuilder: (context, animation, secondaryAnimation, child) => SharedAxisTransition(
         animation: animation,
         secondaryAnimation: secondaryAnimation,
         transitionType: type,
         child: child,
-      );
-    },
+      ),
   );
-}
 
 /// Router configuration provider
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  // Create a notifier to sync auth state with GoRouter without rebuilding the router itself
+  final authStateNotifier = ValueNotifier<AuthState>(ref.read(authProvider));
+
+  // Update the notifier when auth state changes
+  ref.listen<AuthState>(
+    authProvider,
+    (_, next) {
+      authStateNotifier.value = next;
+    },
+  );
+
+  // Dispose the notifier when the provider is disposed
+  ref.onDispose(authStateNotifier.dispose);
 
   return GoRouter(
     navigatorKey: navigatorKey, // Set the global navigator key
     initialLocation: '/',
     debugLogDiagnostics: true,
+    refreshListenable: authStateNotifier,
     redirect: (context, state) {
+      // Access the latest value from the notifier
+      final authState = authStateNotifier.value;
+      
       final isAuthenticated = authState.isAuthenticated;
       final isLoading = authState.isLoading;
       final isOnSplash = state.uri.path == '/';
@@ -70,15 +85,18 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Still loading authentication state
       if (isLoading) {
+        // If we are already on an auth page, let the page handle the loading UI
+        if (isOnAuth) return null;
+
         return isOnSplash ? null : '/';
       }
 
-      // Not authenticated and not on auth pages
+      // Not authenticated and trying to access protected routes
       if (!isAuthenticated && !isOnAuth) {
         return '/login';
       }
 
-      // Authenticated but on auth pages or splash
+      // Authenticated but trying to access auth pages or splash
       if (isAuthenticated && (isOnAuth || isOnSplash)) {
         return '/home';
       }
@@ -113,7 +131,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _buildTransitionPage(
           state: state,
           child: const RegisterScreen(),
-          type: SharedAxisTransitionType.horizontal,
         ),
       ),
 
@@ -160,13 +177,48 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/tasks/:id/execute',
         name: 'taskExecution',
-        pageBuilder: (context, state) {
-          return _buildTransitionPage(
+        pageBuilder: (context, state) => _buildTransitionPage(
             state: state,
             child: const TaskExecutionScreen(),
             type: SharedAxisTransitionType.scaled, // Special mode
+          ),
+      ),
+
+      // Plan Routes
+      GoRoute(
+        path: '/plans/new',
+        name: 'createPlan',
+        pageBuilder: (context, state) {
+          final planType = state.uri.queryParameters['type'];
+          return _buildTransitionPage(
+            state: state,
+            child: PlanCreateScreen(planType: planType),
+            type: SharedAxisTransitionType.scaled,
           );
         },
+      ),
+      GoRoute(
+        path: '/plans/:id/edit',
+        name: 'editPlan',
+        pageBuilder: (context, state) {
+          final planId = state.pathParameters['id']!;
+          return _buildTransitionPage(
+            state: state,
+            child: PlanEditScreen(planId: planId),
+            type: SharedAxisTransitionType.scaled,
+          );
+        },
+      ),
+
+      // Insights Routes
+      GoRoute(
+        path: '/learning/forecast',
+        name: 'learningForecast',
+        pageBuilder: (context, state) => _buildTransitionPage(
+          state: state,
+          child: const LearningForecastScreen(),
+          type: SharedAxisTransitionType.scaled,
+        ),
       ),
 
       // Focus Routes

@@ -1,256 +1,518 @@
-# CLAUDE.md
+# CLAUDE.md — Opus 4.5 Optimized Edition
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> **Model Target**: Claude Opus 4.5 | **Project**: Sparkle (星火) AI Learning Assistant
+> **Architecture**: Go Gateway + Python Engine + Flutter Mobile | **Scale**: Large Monorepo
 
-## Project Overview
+---
 
-**Sparkle (星火)** - AI Learning Assistant for university students with a "AI Time Tutor" concept. The project uses a hybrid architecture:
+## 🧠 Cognitive Protocol for Opus 4.5
 
-- **Go Gateway**: High-performance WebSocket gateway (Gin + Gorilla WebSocket)
-- **Python Agent Engine**: AI推理、工具调用、向量检索 (gRPC)
-- **Flutter Mobile**: Cross-platform mobile app (Riverpod state management)
-- **Database**: PostgreSQL 16 + pgvector for vector search
+This section defines how Claude should think and operate in this complex codebase.
 
-## Common Development Commands
+### Mental Model: The Three-Layer Sandwich
 
-### Make Commands (Recommended)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  FLUTTER (Presentation)  →  User intent, UI state, UX flow     │
+├─────────────────────────────────────────────────────────────────┤
+│  GO GATEWAY (Coordination) →  Auth, routing, caching, streams  │
+├─────────────────────────────────────────────────────────────────┤
+│  PYTHON ENGINE (Intelligence) →  AI logic, RAG, tools, LLM     │
+└─────────────────────────────────────────────────────────────────┘
+         ↕ PostgreSQL + pgvector    ↕ Redis    ↕ gRPC/WebSocket
+```
+
+### Task Complexity Classification
+
+Before any action, classify the task:
+
+| Level | Indicators | Protocol |
+|-------|-----------|----------|
+| **L1 Atomic** | Single file, <50 lines, typo/config | Execute immediately, no explanation |
+| **L2 Local** | 2-5 files, same language, single feature | Brief intent statement → Execute |
+| **L3 Cross-Boundary** | Proto change, Go↔Python, DB schema | 🔍 **Plan Required** (see below) |
+| **L4 Architectural** | New subsystem, major refactor, design pattern | 📋 **Deep Analysis Required** |
+
+### 🔍 Planning Protocol (L3+)
+
+For cross-boundary or architectural tasks, output this structure BEFORE any tool calls:
+
+```
+## 🔍 Analysis
+
+**Impact Scope**: [List affected layers: Go/Python/Flutter/DB/Proto]
+**Risk Assessment**: [Low/Medium/High] — [One-line justification]
+**Dependency Chain**: [A → B → C order of changes]
+
+## 📋 Execution Plan
+
+1. [Verification step - what to check first]
+2. [Primary change - the core modification]
+3. [Propagation - downstream updates]
+4. [Validation - how to verify success]
+```
+
+---
+
+## 🚫 Anti-Patterns (Hard Rules)
+
+These rules are NON-NEGOTIABLE. Violating them causes cascading failures.
+
+### Code Generation Anti-Patterns
+```
+❌ NEVER wrap XML tool tags in markdown code blocks
+❌ NEVER say "I will now..." or "Here is the code..." — just execute
+❌ NEVER assume file paths exist — verify with `ls` or `find` if >20% uncertain
+❌ NEVER modify generated files directly (see Source of Truth below)
+❌ NEVER make partial edits that leave code in broken state
+```
+
+### Architectural Anti-Patterns
+```
+❌ NEVER add direct DB calls in Go handlers (use service layer)
+❌ NEVER add business logic in Go Gateway (belongs in Python)
+❌ NEVER call Python REST from Python gRPC (internal only)
+❌ NEVER store secrets in code (use .env files)
+❌ NEVER skip proto regeneration after proto changes
+```
+
+---
+
+## 📜 Source of Truth Hierarchy
+
+Understanding this hierarchy prevents 90% of bugs in this codebase.
+
+### The Golden Rule
+```
+Proto Definition  →  Generated Code  →  Implementation
+     (Edit)              (Generate)        (Edit)
+```
+
+### Detailed Truth Table
+
+| Domain | Source of Truth | Generated From | Never Edit Directly |
+|--------|-----------------|----------------|---------------------|
+| **API Contract** | `proto/agent_service.proto` | `make proto-gen` | `backend/gateway/gen/`, `backend/app/gen/` |
+| **DB Schema (Go)** | `backend/gateway/internal/db/schema.sql` | `make sync-db` | `backend/gateway/internal/db/models.go` |
+| **DB Schema (Py)** | Alembic migrations | `alembic upgrade head` | SQLAlchemy models (must match) |
+| **Design Tokens** | `mobile/lib/core/design/design_system.dart` | Manual | Component hardcoded values |
+
+### Change Propagation Flowchart
+
+```
+Proto Change?
+    │
+    ├─→ make proto-gen
+    │       │
+    │       ├─→ Update Go client (backend/gateway/internal/agent/client.go)
+    │       └─→ Update Python service (backend/app/services/agent_grpc_service.py)
+    │
+DB Schema Change?
+    │
+    ├─→ Create Alembic migration (alembic revision -m "...")
+    ├─→ Apply migration (alembic upgrade head)
+    └─→ If Go needs data: Update queries → make sync-db
+```
+
+---
+
+## 🗺 Codebase Navigation Map
+
+### Critical Path Analysis
+
+These are the files you'll touch most often. Memorize their roles.
+
+#### Request Flow (Chat Message)
+```
+1. mobile/lib/core/services/chat_service.dart     # WebSocket client
+   ↓ WebSocket message
+2. backend/gateway/internal/handler/websocket.go  # Connection handler
+   ↓ Parse & validate
+3. backend/gateway/internal/handler/chat_orchestrator.go  # Flow control
+   ↓ gRPC call
+4. backend/gateway/internal/agent/client.go       # gRPC client wrapper
+   ↓ StreamChat RPC
+5. backend/app/services/agent_grpc_service.py     # gRPC service impl
+   ↓ Orchestrate
+6. backend/app/orchestration/orchestrator.py      # FSM state machine
+   ↓ Tool calls / LLM
+7. backend/app/services/llm_service.py            # LLM abstraction
+```
+
+#### State Management Layers
+```
+Flutter State:    Riverpod providers → mobile/lib/presentation/providers/
+Go State:         Redis cache → backend/gateway/internal/service/chat_history.go
+Python State:     FSM context → backend/app/orchestration/orchestrator.py
+Persistent State: PostgreSQL → backend/gateway/internal/db/queries/
+```
+
+### File Importance Ranking
+
+When exploring unfamiliar territory, prioritize these files:
+
+```
+★★★★★ (Core Logic)
+├── proto/agent_service.proto              # API contract
+├── backend/app/orchestration/orchestrator.py  # AI brain
+├── backend/gateway/internal/handler/websocket.go  # Real-time hub
+└── mobile/lib/core/services/chat_service.dart  # Client connection
+
+★★★★☆ (Integration Points)
+├── backend/gateway/internal/agent/client.go   # Go→Python bridge
+├── backend/app/services/agent_grpc_service.py # Python gRPC impl
+├── backend/gateway/internal/service/*.go      # Business services
+└── mobile/lib/presentation/providers/*.dart   # State providers
+
+★★★☆☆ (Supporting Infrastructure)
+├── backend/gateway/internal/db/schema.sql     # DB structure
+├── backend/app/orchestration/dynamic_tool_registry.py  # Tool system
+├── docker-compose.yml                         # Service definitions
+└── mobile/lib/core/design/design_system.dart  # UI tokens
+```
+
+---
+
+## 🔧 Command Reference (Optimized)
+
+### Quick Reference Card
+
 ```bash
-# Start full development environment (3 terminals needed)
-make dev-all
+# === DAILY WORKFLOW ===
+make dev-all              # Start everything (3 terminals)
+make proto-gen            # After proto changes
+make sync-db              # After DB changes
 
-# Individual components:
-make dev-up              # Start Docker (PostgreSQL, Redis)
-make grpc-server         # Start Python gRPC server (port 50051)
-make gateway-run         # Start Go Gateway (port 8080)
-make gateway-dev         # Start Go Gateway with auto-rebuild
+# === COMPONENT STARTUP ===
+make gateway-dev          # Go Gateway with hot reload
+make grpc-server          # Python gRPC server
+flutter run               # Mobile app
 
-# Code generation
-make proto-gen           # Generate gRPC code from protobuf
-make sync-db             # Sync DB schema → Go SQLC code
+# === DEBUGGING ===
+docker compose logs -f gateway      # Go logs
+docker compose logs -f grpc-server  # Python logs
+grpcurl -plaintext localhost:50051 list  # List gRPC services
 
-# Testing
-make integration-test    # Run WebSocket integration tests
-make grpc-test           # Test gRPC server
+# === TESTING ===
+cd backend && pytest                    # Python tests
+cd backend/gateway && go test ./...     # Go tests
+cd mobile && flutter test               # Flutter tests
+
+# === UTILITIES ===
+cd mobile && ./fix_final_const.sh       # Fix Flutter const errors
+alembic revision -m "desc"              # New migration
+alembic upgrade head                    # Apply migrations
 ```
 
-### Manual Commands
+### Command Decision Tree
+
+```
+What changed?
+│
+├─→ Proto file? → make proto-gen → Update implementations
+│
+├─→ SQL schema? → alembic revision → alembic upgrade head → make sync-db
+│
+├─→ Go code? → make gateway-dev (auto-reload)
+│
+├─→ Python code? → Restart grpc-server
+│
+└─→ Flutter code? → Hot reload (r) or Hot restart (R)
+```
+
+---
+
+## 🏗 Architectural Invariants
+
+These rules define the system's structural integrity. Never violate them.
+
+### Layer Responsibility Matrix
+
+| Layer | MUST Do | MUST NOT Do |
+|-------|---------|-------------|
+| **Flutter** | UI rendering, local state, user input | Business logic, direct API calls to Python |
+| **Go Gateway** | Auth, WebSocket, caching, routing | AI reasoning, LLM calls, vector search |
+| **Python Engine** | AI orchestration, RAG, tool execution | User auth, session management |
+| **PostgreSQL** | Persistent storage, vector similarity | Caching (use Redis) |
+| **Redis** | Session cache, rate limiting, pub/sub | Long-term storage |
+
+### Interface Contracts
+
+```
+Flutter ←→ Go Gateway
+  Protocol: WebSocket (ws://localhost:8080/ws/chat)
+  Format: JSON messages with type field
+  Auth: JWT in connection header
+
+Go Gateway ←→ Python Engine
+  Protocol: gRPC (localhost:50051)
+  Contract: proto/agent_service.proto
+  Streaming: Server-side streaming for chat
+
+Python Engine ←→ Database
+  ORM: SQLAlchemy (async)
+  Vectors: pgvector with L2/Cosine distance
+  Migrations: Alembic
+```
+
+---
+
+## 🔄 Common Refactoring Patterns
+
+### Pattern 1: Adding a New AI Tool
+
+```
+1. Create tool file: backend/app/tools/my_tool.py
+   - Inherit from BaseTool
+   - Implement execute() method
+   - Define schema for LLM function calling
+
+2. Register tool: backend/app/orchestration/dynamic_tool_registry.py
+   - Add to tool registry
+   - Tool auto-available to orchestrator
+
+3. (Optional) Expose via API: proto/agent_service.proto
+   - Only if direct client access needed
+```
+
+### Pattern 2: Adding a New API Endpoint
+
+```
+1. Define in proto: proto/agent_service.proto
+   - Add message types
+   - Add RPC method
+
+2. Regenerate: make proto-gen
+
+3. Implement Python: backend/app/services/agent_grpc_service.py
+   - Add method matching proto definition
+
+4. Implement Go client: backend/gateway/internal/agent/client.go
+   - Add wrapper method
+
+5. Expose endpoint: backend/gateway/internal/handler/
+   - REST: Add Gin handler
+   - WebSocket: Add message type handler
+```
+
+### Pattern 3: Database Schema Migration
+
+```
+1. Plan migration: Consider both Go and Python access patterns
+
+2. Create Alembic migration:
+   cd backend && alembic revision -m "add_user_preferences"
+
+3. Write migration: backend/alembic/versions/xxxx_add_user_preferences.py
+   - def upgrade(): ADD changes
+   - def downgrade(): REVERSE changes
+
+4. Apply: alembic upgrade head
+
+5. If Go needs access:
+   - Update queries: backend/gateway/internal/db/queries/
+   - Regenerate: make sync-db
+```
+
+### Pattern 4: Cross-Language Feature
+
+```
+Example: Add "learning streak" feature
+
+1. Database Layer:
+   - Alembic migration for streak table
+   - SQLC queries if Go needs direct access
+
+2. Python Layer:
+   - Service in backend/app/services/streak_service.py
+   - Integrate with orchestrator if AI-aware
+
+3. Proto Layer:
+   - Define GetStreak RPC in proto
+   - make proto-gen
+
+4. Go Layer:
+   - Client wrapper in agent/client.go
+   - Handler in handler/ directory
+   - WebSocket message type if real-time
+
+5. Flutter Layer:
+   - Provider in presentation/providers/
+   - UI widget in presentation/widgets/
+```
+
+---
+
+## 🐛 Debugging Strategies
+
+### Symptom → Diagnosis Table
+
+| Symptom | Likely Cause | Diagnostic Command |
+|---------|--------------|-------------------|
+| WebSocket won't connect | Gateway not running | `curl http://localhost:8080/health` |
+| gRPC timeout | Python server down | `grpcurl -plaintext localhost:50051 list` |
+| "Field not found" error | Proto out of sync | `make proto-gen` then restart |
+| DB query fails | Migration not applied | `alembic current` vs `alembic heads` |
+| Flutter type error | Outdated generated code | `flutter pub get && flutter clean` |
+| Redis connection refused | Docker not running | `docker compose ps` |
+
+### Log Correlation Strategy
+
 ```bash
-# Backend - Python gRPC
-cd backend
-python grpc_server.py
+# Trace a request across layers
+# 1. Get request ID from Flutter logs
+# 2. Search Go Gateway logs
+docker compose logs gateway 2>&1 | grep "request_id"
 
-# Backend - Go Gateway
-cd backend/gateway
-go run cmd/server/main.go
-go build -o bin/gateway ./cmd/server  # Build binary
+# 3. Search Python logs
+docker compose logs grpc-server 2>&1 | grep "request_id"
 
-# Mobile - Flutter
-cd mobile
-flutter pub get
-flutter run
-flutter analyze
+# 4. Check database if needed
+docker compose exec postgres psql -U sparkle -c "SELECT * FROM chat_messages ORDER BY created_at DESC LIMIT 5;"
 ```
 
-## High-Level Architecture
+---
 
-### System Flow
+## 📊 Performance Considerations
+
+### Hot Paths (Optimize First)
+1. **WebSocket message parsing** — Every chat message goes through here
+2. **Orchestrator state transitions** — FSM bottleneck
+3. **Vector similarity search** — pgvector query performance
+4. **LLM token streaming** — Real-time responsiveness
+
+### Caching Layers
 ```
-Mobile (Flutter)
-    ↓ WebSocket (port 8080)
-Go Gateway (Gin)
-    ↓ gRPC (port 50051)
-Python Agent Engine (FastAPI)
-    ↓
-PostgreSQL + pgvector
-    ↓
-Redis (caching, sessions, queues)
-```
-
-### Key Components
-
-#### 1. Go Gateway (`backend/gateway/`)
-- **WebSocket Handler**: Real-time bidirectional communication with mobile
-- **Auth Middleware**: JWT validation, rate limiting
-- **Reverse Proxy**: Forwards REST API requests to Python backend
-- **Services**: Quota, chat history, semantic cache
-- **Chaos Engineering**: Fault injection for testing
-
-#### 2. Python Agent Engine (`backend/app/`)
-- **Orchestration Layer**:
-  - `ChatOrchestrator`: Core request processing with FSM states
-  - `RequestValidator`: Input validation & security checks
-  - `ContextPruner`: Conversation history pruning (keeps last 10 messages)
-  - `TokenTracker`: Usage quota management
-  - `ResponseComposer`: Unified response building
-  - `ToolExecutor`: Dynamic tool execution
-
-- **Services**:
-  - `LLMService`: LLM integration (Qwen/DeepSeek/GPT)
-  - `GalaxyService`: Knowledge graph operations
-  - `ExpansionService`: LLM-driven knowledge expansion
-  - `DecayService`: Ebbinghaus forgetting curve implementation
-  - `PushService`: Smart notifications (sprint/memory/inactivity strategies)
-  - `TaskService`: Task management (6 types: learning, training, error_fix, reflection, social, planning)
-
-- **Tools System** (`app/tools/`):
-  - Dynamic tool registry with auto-discovery
-  - Tools for knowledge, tasks, and user operations
-
-#### 3. Flutter Mobile (`mobile/`)
-- **State Management**: Riverpod
-- **Storage**: Hive + SharedPreferences
-- **UI Features**:
-  - Galaxy Screen: Interactive knowledge graph with GLSL shaders
-  - Chat Screen: Real-time AI conversation
-  - Task Management: 6 task types with execution modes
-  - Sprint/Growth Plans: Time management
-
-### Database Schema (Key Tables)
-
-```sql
--- Core Knowledge System
-knowledge_nodes          -- Knowledge points with embeddings
-user_node_status         -- User-specific mastery & progress
-node_relations           -- Connections between nodes
-study_records            -- Learning history
-node_expansion_queue     -- LLM expansion queue
-
--- User & Tasks
-users                    -- User profiles
-tasks                    -- 6 task types
-plans                    -- Sprint/Growth plans
-chat_messages            -- Conversation history
-
--- Smart Push System
-push_preferences         -- User notification settings
-push_histories           -- Push history for frequency control
-notifications            -- User notifications
+Request → Redis (chat history, rate limits)
+        → Go semantic cache (RAG results)
+        → Python LRU (embeddings, tool schemas)
+        → PostgreSQL (persistent)
 ```
 
-## Critical Code Locations
+### Connection Pools
+- Go → PostgreSQL: sqlc with pgxpool (default 10 connections)
+- Go → Redis: go-redis with pooling
+- Python → PostgreSQL: asyncpg pool
+- Go → Python gRPC: Connection reuse
 
-### Request Processing Flow
-1. **Mobile** → WebSocket → **Go Gateway** (`handler/chat_orchestrator.go:HandleWebSocket`)
-2. **Go** → gRPC → **Python** (`app/services/agent_grpc_service.py`)
-3. **Python Orchestration** (`app/orchestration/orchestrator.py:process_stream`):
-   - Validation (`validator.py`)
-   - Context building (user + conversation history)
-   - RAG retrieval
-   - LLM call with tools
-   - Response composition
+---
 
-### Key Files to Read
-- **Backend Entry**: `backend/app/main.py` (FastAPI lifespan)
-- **Go Entry**: `backend/gateway/cmd/server/main.go`
-- **gRPC Server**: `backend/grpc_server.py`
-- **Orchestration**: `backend/app/orchestration/orchestrator.py`
-- **Mobile Entry**: `mobile/lib/main.dart`
+## 🧪 Testing Strategy
 
-## Development Notes
+### Test Pyramid for This Project
 
-### Environment Setup
-1. Copy `.env.example` to `.env` and configure:
-   - Database URL
-   - Redis URL
-   - LLM API keys (Qwen/DeepSeek)
-   - JWT secret
+```
+                    ╱╲
+                   ╱  ╲
+                  ╱ E2E ╲        ← WebSocket integration tests
+                 ╱────────╲
+                ╱Integration╲    ← gRPC service tests
+               ╱──────────────╲
+              ╱   Unit Tests    ╲ ← Pure function tests
+             ╱────────────────────╲
+```
 
-2. Install dependencies:
-   ```bash
-   # Python
-   cd backend && pip install -r requirements.txt
+### Critical Test Coverage Areas
 
-   # Go
-   cd backend/gateway && go mod tidy
+```python
+# Python: Must test
+- Orchestrator state transitions (FSM logic)
+- Tool execution edge cases
+- LLM response parsing
+- Vector search accuracy
 
-   # Flutter
-   cd mobile && flutter pub get
-   ```
+# Go: Must test
+- WebSocket message routing
+- Auth middleware
+- gRPC client error handling
+- Cache invalidation
 
-3. Run migrations:
-   ```bash
-   cd backend && alembic upgrade head
-   ```
+# Flutter: Must test
+- Provider state changes
+- WebSocket reconnection
+- Offline behavior
+```
 
-### Testing Strategy
-- **Unit Tests**: `backend/tests/`
-- **Integration Tests**: `test_websocket_client.py`, `test_grpc_client.py`
-- **Demo Data**: `backend/setup_demo_data.py`
+---
 
-### Key Features Implementation
+## 📚 Documentation Locations
 
-#### 1. Knowledge Galaxy (知识星图)
-- **Backend**: `services/galaxy_service.py`, `services/expansion_service.py`
-- **Frontend**: `mobile/lib/presentation/screens/galaxy_screen.dart`
-- **Visual**: GLSL shaders for flame effect, particle systems for animations
+| Topic | Location |
+|-------|----------|
+| Full Technical Guide | `docs/深度技术讲解教案_完整版.md` |
+| Architecture Overview | `docs/00_项目概览/02_技术架构.md` |
+| API Reference | `docs/02_技术设计文档/03_API参考.md` |
+| Knowledge Graph Design | `docs/02_技术设计文档/02_知识星图系统设计_v3.0.md` |
+| Proto Definitions | `proto/agent_service.proto` (canonical) |
 
-#### 2. Smart Push System
-- **Strategies**: `services/push_service.py` (Memory/Sprint/Inactivity)
-- **Scheduler**: `services/scheduler_service.py` (15-min cycles)
-- **Frequency Control**: Daily caps, cooldowns, user preferences
+---
 
-#### 3. Context Pruning
-- **Implementation**: `app/orchestration/context_pruner.py`
-- **Logic**: Keeps last 10 messages, summarizes older ones, 1-hour cache TTL
+## 🎯 Opus 4.5 Specific Optimizations
 
-#### 4. Dynamic Tools
-- **Registry**: `app/orchestration/dynamic_tool_registry.py`
-- **Auto-discovery**: Scans `app/tools/` package
-- **Execution**: `app/orchestration/executor.py`
+### Leverage Extended Context
+This codebase benefits from loading multiple related files simultaneously. When analyzing a feature:
 
-### Common Issues & Solutions
+```
+Load order for maximum context:
+1. Proto definition (API contract)
+2. Python implementation (logic)
+3. Go handler (integration)
+4. Flutter provider (client state)
+```
 
-**Issue**: gRPC connection fails
-- Check if Python gRPC server is running on port 50051
-- Verify `settings.GRPC_PORT` in `.env`
+### Multi-Step Reasoning
+For complex refactoring, use chain-of-thought:
 
-**Issue**: WebSocket disconnects
-- Check Go Gateway logs for auth failures
-- Verify Redis connection for session management
+```
+Step 1: Map all touchpoints (grep for function/type name)
+Step 2: Identify dependency direction (who imports whom)
+Step 3: Plan change order (leaves → roots)
+Step 4: Execute with verification at each step
+```
 
-**Issue**: Database schema mismatch
-- Run `make sync-db` to regenerate Go SQLC code
-- Run `alembic upgrade head` for Python migrations
+### Parallel Verification
+After significant changes, verify all affected layers:
 
-### Production Considerations
-- **Security**: Rate limiting, input validation, SQL injection prevention
-- **Monitoring**: OpenTelemetry tracing, Prometheus metrics
-- **Performance**: Redis caching, connection pooling, async operations
-- **Scalability**: Horizontal scaling with Redis for state management
+```bash
+# Run in parallel if possible
+cd backend && pytest &
+cd backend/gateway && go test ./... &
+cd mobile && flutter test &
+wait
+```
 
-## Documentation
+---
 
-- **README.md**: Project overview and quick start
-- **docs/**: Comprehensive documentation (Chinese)
-  - `02_技术设计文档/01_技术白皮书.md`: System architecture
-  - `02_技术设计文档/02_知识星图系统设计_v3.0.md`: Galaxy feature design
-  - `02_技术设计文档/07_后端知识星图设计.md`: Backend implementation
+## 🔒 Security Checklist
 
-## Production-Grade Enhancements (2025-12-27)
+Before any PR involving auth, data, or external calls:
 
-### ContextPruner Production Fixes
-All critical issues from code review have been resolved:
+```
+□ Secrets only in .env files (never in code)
+□ User input validated at Go Gateway layer
+□ SQL queries use parameterized statements
+□ WebSocket messages sanitized
+□ Rate limiting applied for expensive operations
+□ Error messages don't leak internal details
+```
 
-1. **Serialization**: ✅ JSON instead of pickle
-2. **Concurrency Safety**: ✅ Message ID tracking to prevent duplicates
-3. **Error Handling**: ✅ Graceful degradation for Redis/LLM failures
-4. **Circuit Breaker**: ✅ Prevents queue buildup and OOM
-5. **Monitoring**: ✅ Prometheus metrics integration
-6. **Health Checks**: ✅ Comprehensive HTTP endpoints
-7. **Structured Logging**: ✅ JSON format with context
-8. **Configuration**: ✅ Production-grade settings management
+---
 
-### New Production Files
-- `backend/app/orchestration/orchestrator_production.py`: Production orchestrator
-- `backend/app/config_production.py`: Enhanced configuration system
-- `backend/app/api/v1/health_production.py`: Complete health check endpoints
-- `docs/06_安全与质量报告/03_生产部署指南.md`: Deployment guide
-- `docs/06_安全与质量报告/04_生产级修复总结.md`: Fix summary
+## 📋 Pre-Commit Checklist
 
-### Production Readiness Score: 9.5/10
+Before considering any task complete:
 
-## Recent Changes (Git Log)
-- `27b84d3`: Added ContextPruner for conversation history management
-- `4371fc1`: Migrated Apple login to Go gateway
-- `254e73c`: Added user preferences and context models
-- `e9c53bc`: Added distributed tracing and monitoring stack
+```
+□ Code compiles/lints without errors
+□ Generated files regenerated if sources changed
+□ Tests pass (at minimum, affected area)
+□ No hardcoded secrets or debug code
+□ Comments updated if behavior changed
+□ Proto backward compatible (if API change)
+```
+
+---
+
+**Document Version**: 2.0.0 (Opus 4.5 Optimized)
+**Last Updated**: 2025-12-28
+**Project Version**: Sparkle MVP v0.3.0

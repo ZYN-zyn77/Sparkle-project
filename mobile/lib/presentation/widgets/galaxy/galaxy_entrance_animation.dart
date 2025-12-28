@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 class GalaxyEntranceAnimation extends StatefulWidget {
-  final VoidCallback onComplete;
 
   const GalaxyEntranceAnimation({
     required this.onComplete, super.key,
   });
+  final VoidCallback onComplete;
 
   @override
   State<GalaxyEntranceAnimation> createState() => _GalaxyEntranceAnimationState();
@@ -48,11 +49,9 @@ class _GalaxyEntranceAnimationState extends State<GalaxyEntranceAnimation> with 
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: _mainController,
-      builder: (context, child) {
-        return Stack(
+      builder: (context, child) => Stack(
           alignment: Alignment.center,
           children: [
             // The expanding spark
@@ -63,10 +62,10 @@ class _GalaxyEntranceAnimationState extends State<GalaxyEntranceAnimation> with 
                 height: 20,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: DS.brandPrimaryConst,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.blueAccent.withValues(alpha: 0.5),
+                      color: DS.brandPrimaryAccent.withValues(alpha: 0.5),
                       blurRadius: 20,
                       spreadRadius: 10,
                     ),
@@ -84,7 +83,7 @@ class _GalaxyEntranceAnimationState extends State<GalaxyEntranceAnimation> with 
             Opacity(
               opacity: _flashAnim.value,
               child: Container(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: DS.brandPrimary.withValues(alpha: 0.3),
               ),
             ),
 
@@ -92,10 +91,10 @@ class _GalaxyEntranceAnimationState extends State<GalaxyEntranceAnimation> with 
             if (_mainController.value > 0.4 && _mainController.value < 0.8)
               Opacity(
                  opacity: (_mainController.value - 0.4) / 0.2, // Fade in
-                 child: const Text(
+                 child: Text(
                    'SPARKLE',
                    style: TextStyle(
-                     color: Colors.white,
+                     color: DS.brandPrimaryConst,
                      fontSize: 32,
                      fontWeight: FontWeight.bold,
                      letterSpacing: 10,
@@ -103,8 +102,6 @@ class _GalaxyEntranceAnimationState extends State<GalaxyEntranceAnimation> with 
                  ),
               ),
           ],
-        );
-      },
+        ),
     );
-  }
 }

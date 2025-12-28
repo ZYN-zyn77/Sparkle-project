@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/achievements/achievement_card_generator.dart';
 
 /// 成就分享对话框
@@ -11,14 +13,14 @@ import 'package:sparkle/presentation/widgets/achievements/achievement_card_gener
 /// - 保存到相册
 /// - 复制链接
 class AchievementShareDialog extends StatefulWidget {
-  final String achievementType;
-  final Map<String, dynamic> data;
 
   const AchievementShareDialog({
     required this.achievementType,
     required this.data,
     super.key,
   });
+  final String achievementType;
+  final Map<String, dynamic> data;
 
   @override
   State<AchievementShareDialog> createState() => _AchievementShareDialogState();
@@ -93,7 +95,8 @@ class _AchievementShareDialogState extends State<AchievementShareDialog> {
     if (_imagePath == null) return;
 
     try {
-      // TODO: 使用 image_gallery_saver 保存到相册
+      // Feature: Use image_gallery_saver package to save to gallery
+      // Requires: flutter pub add image_gallery_saver
       // await ImageGallerySaver.saveFile(_imagePath!);
 
       if (mounted) {
@@ -107,45 +110,44 @@ class _AchievementShareDialogState extends State<AchievementShareDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Dialog(
+  Widget build(BuildContext context) => Dialog(
       backgroundColor: const Color(0xFF1E293B),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(DS.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Title
-            const Row(
+            Row(
               children: [
-                Icon(Icons.share, color: Colors.white, size: 28),
-                SizedBox(width: 12),
+                Icon(Icons.share, color: DS.brandPrimary, size: 28),
+                const SizedBox(width: DS.md),
                 Text(
                   '分享成就',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: DS.brandPrimary,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: DS.xl),
 
             // Preview
             if (_isGenerating)
-              const SizedBox(
+              SizedBox(
                 height: 200,
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: DS.lg),
                       Text(
                         '正在生成分享卡片...',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: DS.brandPrimary70),
                       ),
                     ],
                   ),
@@ -161,63 +163,61 @@ class _AchievementShareDialogState extends State<AchievementShareDialog> {
                 ),
               )
             else
-              const SizedBox(
+              SizedBox(
                 height: 200,
                 child: Center(
                   child: Icon(
                     Icons.error_outline,
-                    color: Colors.red,
+                    color: DS.error,
                     size: 64,
                   ),
                 ),
               ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: DS.xl),
 
             // Share options
             if (_imagePath != null) ...[
               _buildShareButton(
                 icon: Icons.share,
                 label: '分享到社交媒体',
-                color: Colors.blue,
+                color: DS.brandPrimaryConst,
                 onTap: _shareToSocial,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DS.md),
               _buildShareButton(
                 icon: Icons.save_alt,
                 label: '保存到相册',
-                color: Colors.green,
+                color: DS.success,
                 onTap: _saveToGallery,
               ),
             ],
 
-            const SizedBox(height: 12),
+            const SizedBox(height: DS.md),
 
             // Close button
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 '关闭',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: DS.brandPrimary70),
               ),
             ),
           ],
         ),
       ),
     );
-  }
 
   Widget _buildShareButton({
     required IconData icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
-  }) {
-    return InkWell(
+  }) => InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DS.lg),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
@@ -226,12 +226,12 @@ class _AchievementShareDialogState extends State<AchievementShareDialog> {
         child: Row(
           children: [
             Icon(icon, color: color, size: 24),
-            const SizedBox(width: 16),
+            const SizedBox(width: DS.lg),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: DS.brandPrimaryConst,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -242,7 +242,6 @@ class _AchievementShareDialogState extends State<AchievementShareDialog> {
         ),
       ),
     );
-  }
 }
 
 /// 便捷函数：显示成就分享对话框

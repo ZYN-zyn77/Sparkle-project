@@ -533,6 +533,36 @@ func (ns NullUserstatus) Value() (driver.Value, error) {
 	return string(ns.Userstatus), nil
 }
 
+type AgentExecutionStat struct {
+	ID           int32              `json:"id"`
+	UserID       int32              `json:"user_id"`
+	SessionID    string             `json:"session_id"`
+	RequestID    string             `json:"request_id"`
+	AgentType    string             `json:"agent_type"`
+	AgentName    pgtype.Text        `json:"agent_name"`
+	StartedAt    pgtype.Timestamptz `json:"started_at"`
+	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
+	DurationMs   pgtype.Int4        `json:"duration_ms"`
+	Status       string             `json:"status"`
+	ToolName     pgtype.Text        `json:"tool_name"`
+	Operation    pgtype.Text        `json:"operation"`
+	Metadata     []byte             `json:"metadata"`
+	ErrorMessage pgtype.Text        `json:"error_message"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+type AgentStatsSummary struct {
+	UserID         int32       `json:"user_id"`
+	AgentType      string      `json:"agent_type"`
+	ExecutionCount int64       `json:"execution_count"`
+	AvgDurationMs  float64     `json:"avg_duration_ms"`
+	MaxDurationMs  interface{} `json:"max_duration_ms"`
+	MinDurationMs  interface{} `json:"min_duration_ms"`
+	SuccessCount   int64       `json:"success_count"`
+	FailureCount   int64       `json:"failure_count"`
+	LastUsedAt     interface{} `json:"last_used_at"`
+}
+
 type AlembicVersion struct {
 	VersionNum string `json:"version_num"`
 }
@@ -633,6 +663,31 @@ type ErrorRecord struct {
 	CreatedAt       pgtype.Timestamp `json:"created_at"`
 	UpdatedAt       pgtype.Timestamp `json:"updated_at"`
 	DeletedAt       pgtype.Timestamp `json:"deleted_at"`
+}
+
+type EventOutbox struct {
+	ID             pgtype.UUID      `json:"id"`
+	AggregateType  string           `json:"aggregate_type"`
+	AggregateID    pgtype.UUID      `json:"aggregate_id"`
+	EventType      string           `json:"event_type"`
+	EventVersion   int32            `json:"event_version"`
+	Payload        []byte           `json:"payload"`
+	Metadata       []byte           `json:"metadata"`
+	SequenceNumber int64            `json:"sequence_number"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	PublishedAt    pgtype.Timestamp `json:"published_at"`
+}
+
+type EventStore struct {
+	ID             pgtype.UUID      `json:"id"`
+	AggregateType  string           `json:"aggregate_type"`
+	AggregateID    pgtype.UUID      `json:"aggregate_id"`
+	EventType      string           `json:"event_type"`
+	EventVersion   int32            `json:"event_version"`
+	SequenceNumber int64            `json:"sequence_number"`
+	Payload        []byte           `json:"payload"`
+	Metadata       []byte           `json:"metadata"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
 }
 
 type FocusSession struct {
@@ -877,6 +932,32 @@ type PrivateMessage struct {
 	DeletedAt   pgtype.Timestamp `json:"deleted_at"`
 }
 
+type ProcessedEvent struct {
+	EventID       string           `json:"event_id"`
+	ConsumerGroup string           `json:"consumer_group"`
+	ProcessedAt   pgtype.Timestamp `json:"processed_at"`
+}
+
+type ProjectionMetadatum struct {
+	ProjectionName        string           `json:"projection_name"`
+	LastProcessedPosition pgtype.Text      `json:"last_processed_position"`
+	LastProcessedAt       pgtype.Timestamp `json:"last_processed_at"`
+	Version               int32            `json:"version"`
+	Status                string           `json:"status"`
+	ErrorMessage          pgtype.Text      `json:"error_message"`
+	CreatedAt             pgtype.Timestamp `json:"created_at"`
+	UpdatedAt             pgtype.Timestamp `json:"updated_at"`
+}
+
+type ProjectionSnapshot struct {
+	ID             pgtype.UUID      `json:"id"`
+	ProjectionName string           `json:"projection_name"`
+	AggregateID    pgtype.UUID      `json:"aggregate_id"`
+	SnapshotData   []byte           `json:"snapshot_data"`
+	StreamPosition string           `json:"stream_position"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+}
+
 type PushHistory struct {
 	UserID      pgtype.UUID      `json:"user_id"`
 	TriggerType string           `json:"trigger_type"`
@@ -972,6 +1053,21 @@ type Task struct {
 	CreatedAt         pgtype.Timestamp `json:"created_at"`
 	UpdatedAt         pgtype.Timestamp `json:"updated_at"`
 	DeletedAt         pgtype.Timestamp `json:"deleted_at"`
+}
+
+type TokenUsage struct {
+	UserID           pgtype.UUID      `json:"user_id"`
+	SessionID        string           `json:"session_id"`
+	RequestID        string           `json:"request_id"`
+	PromptTokens     int32            `json:"prompt_tokens"`
+	CompletionTokens int32            `json:"completion_tokens"`
+	TotalTokens      int32            `json:"total_tokens"`
+	Model            string           `json:"model"`
+	Cost             pgtype.Float8    `json:"cost"`
+	ID               pgtype.UUID      `json:"id"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	UpdatedAt        pgtype.Timestamp `json:"updated_at"`
+	DeletedAt        pgtype.Timestamp `json:"deleted_at"`
 }
 
 type User struct {

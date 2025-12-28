@@ -1,8 +1,10 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 
 class LongTermPlanCard extends ConsumerWidget {
@@ -16,16 +18,16 @@ class LongTermPlanCard extends ConsumerWidget {
     return GestureDetector(
       onTap: () => context.push('/growth'),
       child: ClipRRect(
-        borderRadius: AppDesignTokens.borderRadius20,
+        borderRadius: DS.borderRadius20,
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: AppDesignTokens.glassBackground,
-              borderRadius: AppDesignTokens.borderRadius20,
-              border: Border.all(color: AppDesignTokens.glassBorder),
+              color: DS.glassBackground,
+              borderRadius: DS.borderRadius20,
+              border: Border.all(color: DS.glassBorder),
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             child: growth != null ? _buildContent(context, growth) : _buildEmptyState(context),
           ),
         ),
@@ -33,11 +35,10 @@ class LongTermPlanCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, GrowthData growth) {
-    return Column(
+  Widget _buildContent(BuildContext context, GrowthData growth) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
@@ -45,10 +46,10 @@ class LongTermPlanCard extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Colors.white70,
+                color: DS.brandPrimary70Const,
               ),
             ),
-            Icon(Icons.spa_rounded, color: AppDesignTokens.success, size: 16),
+            const Icon(Icons.spa_rounded, color: DS.success, size: 16),
           ],
         ),
         
@@ -62,17 +63,17 @@ class LongTermPlanCard extends ConsumerWidget {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: AppDesignTokens.success,
+                  color: DS.success,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: DS.xs),
               SizedBox(
                 height: 4,
                 width: 60,
                 child: LinearProgressIndicator(
                   value: growth.progress,
-                  backgroundColor: Colors.white10,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppDesignTokens.success),
+                  backgroundColor: DS.brandPrimary10,
+                  valueColor: const AlwaysStoppedAnimation<Color>(DS.success),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -84,10 +85,10 @@ class LongTermPlanCard extends ConsumerWidget {
 
         Text(
           growth.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: DS.brandPrimaryConst,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -97,24 +98,21 @@ class LongTermPlanCard extends ConsumerWidget {
           'Mastery: ${(growth.masteryLevel * 100).toInt()}%',
           style: TextStyle(
             fontSize: 10,
-            color: Colors.white.withValues(alpha: 0.5),
+            color: DS.brandPrimary.withValues(alpha: 0.5),
           ),
         ),
       ],
     );
-  }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return const Column(
+  Widget _buildEmptyState(BuildContext context) => Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.add_circle_outline, color: Colors.white30, size: 32),
-        SizedBox(height: 8),
+        Icon(Icons.add_circle_outline, color: DS.brandPrimary30Const, size: 32),
+        const SizedBox(height: DS.smConst),
         Text(
           '创建长期计划',
-          style: TextStyle(fontSize: 12, color: Colors.white54),
+          style: TextStyle(fontSize: 12, color: DS.brandPrimary54Const),
         ),
       ],
     );
-  }
 }

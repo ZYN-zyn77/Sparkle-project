@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
-import 'package:sparkle/app/theme.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
 
 /// WeatherHeader - Full-screen background weather system
 class WeatherHeader extends ConsumerWidget {
@@ -67,7 +68,7 @@ class WeatherHeader extends ConsumerWidget {
     switch (type) {
       case 'sunny':
         return const LinearGradient(
-          colors: [AppDesignTokens.deepSpaceStart, AppDesignTokens.deepSpaceEnd, Color(0xFF415A77)],
+          colors: [DS.deepSpaceStart, DS.deepSpaceEnd, Color(0xFF415A77)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         );
@@ -79,7 +80,7 @@ class WeatherHeader extends ConsumerWidget {
         );
       case 'rainy':
         return const LinearGradient(
-          colors: [AppDesignTokens.deepSpaceStart, AppDesignTokens.deepSpaceSurface, AppDesignTokens.neutral700],
+          colors: [DS.deepSpaceStart, DS.deepSpaceSurface, DS.neutral700],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         );
@@ -91,7 +92,7 @@ class WeatherHeader extends ConsumerWidget {
         );
       default:
         return const LinearGradient(
-          colors: [AppDesignTokens.deepSpaceStart, AppDesignTokens.deepSpaceEnd],
+          colors: [DS.deepSpaceStart, DS.deepSpaceEnd],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         );
@@ -103,16 +104,12 @@ class WeatherHeader extends ConsumerWidget {
     switch (type) {
       case 'sunny':
         icon = Icons.wb_sunny_rounded;
-        break;
       case 'cloudy':
         icon = Icons.cloud_rounded;
-        break;
       case 'rainy':
         icon = Icons.thunderstorm_rounded;
-        break;
       case 'meteor':
         icon = Icons.auto_awesome_rounded;
-        break;
       default:
         icon = Icons.wb_sunny_rounded;
     }
@@ -134,33 +131,29 @@ class WeatherHeader extends ConsumerWidget {
     }
   }
 
-  Widget _buildWeatherEffects(String type) {
-    return Positioned.fill(
+  Widget _buildWeatherEffects(String type) => Positioned.fill(
       child: IgnorePointer(
         child: CustomPaint(
           painter: _WeatherParticlePainter(type),
         ),
       ),
     );
-  }
 }
 
 class _StarField extends StatelessWidget {
   const _StarField();
 
   @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
+  Widget build(BuildContext context) => CustomPaint(
       size: MediaQuery.of(context).size,
       painter: _StarPainter(),
     );
-  }
 }
 
 class _StarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white;
+    final paint = Paint()..color = DS.brandPrimary;
     final stars = [
       Offset(size.width * 0.1, size.height * 0.15),
       Offset(size.width * 0.3, size.height * 0.08),
@@ -181,7 +174,7 @@ class _StarPainter extends CustomPainter {
     for (var i = 0; i < stars.length; i++) {
       final opacity = 0.2 + (i % 3) * 0.1;
       final radius = 0.5 + (i % 2) * 0.5;
-      paint.color = Colors.white.withAlpha((opacity * 255).toInt());
+      paint.color = DS.brandPrimary.withAlpha((opacity * 255).toInt());
       canvas.drawCircle(stars[i], radius, paint);
     }
   }
@@ -191,48 +184,44 @@ class _StarPainter extends CustomPainter {
 }
 
 class _WeatherParticlePainter extends CustomPainter {
-  final String type;
   _WeatherParticlePainter(this.type);
+  final String type;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.05);
+    final paint = Paint()..color = DS.brandPrimary.withValues(alpha: 0.05);
 
     switch (type) {
       case 'sunny':
         paint.style = PaintingStyle.stroke;
         paint.strokeWidth = 1;
-        for (int i = 0; i < 5; i++) {
+        for (var i = 0; i < 5; i++) {
           canvas.drawCircle(
             Offset(size.width * 0.8, size.height * 0.2),
             20 + i * 30.0,
             paint,
           );
         }
-        break;
       case 'cloudy':
         paint.style = PaintingStyle.fill;
         canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.1), 60, paint);
         canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.3), 80, paint);
-        break;
       case 'rainy':
         paint.style = PaintingStyle.fill;
-        paint.color = Colors.white.withValues(alpha: 0.1);
-        for (int i = 0; i < 30; i++) {
+        paint.color = DS.brandPrimary.withValues(alpha: 0.1);
+        for (var i = 0; i < 30; i++) {
           final x = (size.width * 0.1) + (i % 6) * 60;
           final y = (size.height * 0.1) + (i ~/ 6) * 80;
           canvas.drawRect(Rect.fromLTWH(x, y, 1, 15), paint);
         }
-        break;
       case 'meteor':
         paint.style = PaintingStyle.stroke;
         paint.strokeWidth = 1.5;
-        paint.color = Colors.white.withValues(alpha: 0.2);
-        for (int i = 0; i < 3; i++) {
+        paint.color = DS.brandPrimary.withValues(alpha: 0.2);
+        for (var i = 0; i < 3; i++) {
           final start = Offset(size.width * (0.3 + i * 0.2), size.height * (0.1 + i * 0.1));
           canvas.drawLine(start, Offset(start.dx + 40, start.dy + 30), paint);
         }
-        break;
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
 /// 退出确认步骤
@@ -8,13 +9,13 @@ enum ExitStep { first, second, third }
 
 /// 三重确认退出对话框
 class ExitConfirmationDialog extends StatefulWidget {
-  final int elapsedMinutes;
-  final VoidCallback onConfirmExit;
-  final VoidCallback onCancel;
 
   const ExitConfirmationDialog({
     required this.elapsedMinutes, required this.onConfirmExit, required this.onCancel, super.key,
   });
+  final int elapsedMinutes;
+  final VoidCallback onConfirmExit;
+  final VoidCallback onCancel;
 
   @override
   State<ExitConfirmationDialog> createState() => _ExitConfirmationDialogState();
@@ -66,23 +67,22 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
+  Widget build(BuildContext context) => SlideTransition(
       position: _slideAnimation,
       child: Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(24),
+        insetPadding: const EdgeInsets.all(DS.xl),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(DS.xl),
           decoration: BoxDecoration(
-            color: AppDesignTokens.deepSpaceSurface,
+            color: DS.deepSpaceSurface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: DS.brandPrimary.withValues(alpha: 0.1),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: DS.brandPrimary.withValues(alpha: 0.5),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -93,35 +93,35 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog>
             children: [
               // Progress Indicator
               _buildProgressIndicator(),
-              const SizedBox(height: 24),
+              const SizedBox(height: DS.xl),
 
               // Icon
               _buildIcon(),
-              const SizedBox(height: 16),
+              const SizedBox(height: DS.lg),
 
               // Title
               Text(
                 _getTitle(),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: DS.brandPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DS.md),
 
               // Message
               Text(
                 _getMessage(),
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: DS.brandPrimary.withValues(alpha: 0.7),
                   fontSize: 14,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: DS.xl),
 
               // Buttons
               Row(
@@ -130,18 +130,16 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog>
                     child: CustomButton.secondary(
                       text: _getCancelText(),
                       onPressed: _cancel,
-                      size: ButtonSize.medium,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: DS.lg),
                   Expanded(
                     child: CustomButton.primary(
                       text: _getConfirmText(),
                       onPressed: _nextStep,
                       customGradient: _currentStep == ExitStep.third
-                          ? AppDesignTokens.errorGradient
+                          ? DS.errorGradient
                           : null,
-                      size: ButtonSize.medium,
                     ),
                   ),
                 ],
@@ -151,10 +149,8 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog>
         ),
       ),
     );
-  }
 
-  Widget _buildProgressIndicator() {
-    return Row(
+  Widget _buildProgressIndicator() => Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(3, (index) {
         final isActive = index <= _currentStep.index;
@@ -164,14 +160,13 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog>
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
             color: isActive
-                ? AppDesignTokens.primaryBase
-                : Colors.white.withValues(alpha: 0.2),
+                ? DS.primaryBase
+                : DS.brandPrimary.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),
         );
       }),
     );
-  }
 
   Widget _buildIcon() {
     IconData icon;
@@ -180,17 +175,17 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog>
     switch (_currentStep) {
       case ExitStep.first:
         icon = Icons.pause_circle_outline_rounded;
-        color = AppDesignTokens.warning;
+        color = DS.warning;
       case ExitStep.second:
         icon = Icons.warning_amber_rounded;
-        color = AppDesignTokens.warning;
+        color = DS.warning;
       case ExitStep.third:
         icon = Icons.exit_to_app_rounded;
-        color = AppDesignTokens.error;
+        color = DS.error;
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(DS.lg),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
@@ -252,7 +247,7 @@ Future<bool> showExitConfirmation(
   final result = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
-    barrierColor: Colors.black.withValues(alpha: 0.7),
+    barrierColor: DS.brandPrimary.withValues(alpha: 0.7),
     builder: (context) => ExitConfirmationDialog(
       elapsedMinutes: elapsedMinutes,
       onConfirmExit: () => Navigator.of(context).pop(true),

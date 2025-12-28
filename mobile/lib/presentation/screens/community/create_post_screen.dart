@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/community_providers.dart';
 
 class CreatePostScreen extends ConsumerStatefulWidget {
@@ -15,6 +16,34 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final _contentController = TextEditingController();
   final _topicController = TextEditingController();
   bool _isPosting = false;
+  XFile? _selectedImage;
+  String? _selectedLocation;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedImage = image;
+      });
+    }
+  }
+
+  Future<void> _pickLocation() async {
+    // Feature: Implement location picker using geolocator package
+    // Requires: flutter pub add geolocator
+    // 暂时使用模拟位置
+    setState(() {
+      _selectedLocation = '模拟位置';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('位置选择功能开发中，使用模拟位置'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
   Future<void> _submit() async {
     final content = _contentController.text.trim();
@@ -25,9 +54,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     try {
       await ref.read(feedProvider.notifier).addPostOptimistically(
             content,
-            [], // TODO: Image picker
+            _selectedImage != null ? [_selectedImage!.path] : [],
             _topicController.text.trim(),
           );
+      // Feature: Save location data separately if provided
+      if (_selectedLocation != null) {
+        print('位置信息: $_selectedLocation');
+      }
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
@@ -41,9 +74,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppDesignTokens.background,
+  Widget build(BuildContext context) => Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: const Text('New Post'),
@@ -53,17 +85,17 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             child: TextButton(
               onPressed: _isPosting ? null : _submit,
               style: TextButton.styleFrom(
-                backgroundColor: AppDesignTokens.primaryBase,
-                foregroundColor: Colors.white,
+                backgroundColor: DS.brandPrimary.withOpacity(0.1),
+                foregroundColor: DS.brandPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
               child: _isPosting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(color: DS.brandPrimaryConst, strokeWidth: 2),
                     )
                   : const Text('Post', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -71,28 +103,28 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(DS.lg),
         child: Column(
           children: [
             TextField(
               controller: _contentController,
               autofocus: true,
               maxLines: 8,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              decoration: const InputDecoration(
+              style: TextStyle(color: DS.brandPrimaryConst, fontSize: 16),
+              decoration: InputDecoration(
                 hintText: "What's on your mind?",
-                hintStyle: TextStyle(color: Colors.white30),
+                hintStyle: TextStyle(color: DS.brandPrimary.withOpacity(0.3)),
                 border: InputBorder.none,
               ),
             ),
-            const Divider(color: Colors.white24),
+            Divider(color: DS.brandPrimary.withOpacity(0.24)),
             TextField(
               controller: _topicController,
-              style: const TextStyle(color: AppDesignTokens.secondaryBase),
-              decoration: const InputDecoration(
+              style: TextStyle(color: DS.brandSecondary),
+              decoration: InputDecoration(
                 prefixText: '# ',
-                hintText: "Topic (optional)",
-                hintStyle: TextStyle(color: Colors.white30),
+                hintText: 'Topic (optional)',
+                hintStyle: TextStyle(color: DS.brandPrimary.withOpacity(0.3)),
                 border: InputBorder.none,
               ),
             ),
@@ -101,12 +133,22 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.image_outlined, color: AppDesignTokens.primaryBase),
-                  onPressed: () {}, // TODO
+                  icon: Icon(
+                    Icons.image_outlined,
+                    color: _selectedImage != null
+                        ? DS.brandPrimary
+                        : DS.brandPrimary,
+                  ),
+                  onPressed: _pickImage,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.location_on_outlined, color: Colors.grey),
-                  onPressed: () {}, // TODO
+                  icon: Icon(
+                    Icons.location_on_outlined,
+                    color: _selectedLocation != null
+                        ? DS.brandPrimary
+                        : DS.brandPrimary,
+                  ),
+                  onPressed: _pickLocation,
                 ),
               ],
             ),
@@ -114,5 +156,4 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         ),
       ),
     );
-  }
 }

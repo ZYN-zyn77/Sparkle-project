@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 
 class PasswordResetScreen extends ConsumerStatefulWidget {
@@ -39,14 +40,14 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('密码修改成功'), backgroundColor: Colors.green),
+          SnackBar(content: const Text('密码修改成功'), backgroundColor: DS.successConst),
         );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('修改失败: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('修改失败: $e'), backgroundColor: DS.error),
         );
       }
     } finally {
@@ -65,7 +66,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDesignTokens.spacing24),
+        padding: const EdgeInsets.all(DS.spacing24),
         child: Form(
           key: _formKey,
           child: Column(
@@ -74,11 +75,11 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
               Text(
                 '请确保您的新密码包含至少 8 个字符。',
                 style: TextStyle(
-                  color: isDark ? Colors.white70 : Colors.grey.shade600,
+                  color: isDark ? DS.brandPrimary70 : DS.brandPrimary.shade600,
                   fontSize: 14,
                 ),
               ),
-              const SizedBox(height: AppDesignTokens.spacing24),
+              const SizedBox(height: DS.spacing24),
               _buildPasswordField(
                 label: '当前密码',
                 controller: _oldPasswordController,
@@ -89,7 +90,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: AppDesignTokens.spacing16),
+              const SizedBox(height: DS.spacing16),
               _buildPasswordField(
                 label: '新密码',
                 controller: _newPasswordController,
@@ -101,7 +102,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: AppDesignTokens.spacing16),
+              const SizedBox(height: DS.spacing16),
               _buildPasswordField(
                 label: '确认新密码',
                 controller: _confirmPasswordController,
@@ -112,23 +113,23 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: AppDesignTokens.spacing32),
+              const SizedBox(height: DS.spacing32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleReset,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppDesignTokens.primaryBase,
-                  foregroundColor: Colors.white,
+                  backgroundColor: DS.primaryBase,
+                  foregroundColor: DS.brandPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: AppDesignTokens.borderRadius12,
+                    borderRadius: DS.borderRadius12,
                   ),
                   elevation: 0,
                 ),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(color: DS.brandPrimaryConst, strokeWidth: 2),
                       )
                     : const Text('更新密码', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
@@ -157,7 +158,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white70 : Colors.grey.shade700,
+            color: isDark ? DS.brandPrimary70 : DS.brandPrimary.shade700,
           ),
         ),
         const SizedBox(height: 6),
@@ -175,18 +176,18 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
               onPressed: onToggle,
             ),
             filled: true,
-            fillColor: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
+            fillColor: isDark ? DS.brandPrimary.shade900 : DS.brandPrimary.shade50,
             border: OutlineInputBorder(
-              borderRadius: AppDesignTokens.borderRadius12,
-              borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              borderRadius: DS.borderRadius12,
+              borderSide: BorderSide(color: isDark ? DS.brandPrimary.shade700 : DS.brandPrimary.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: AppDesignTokens.borderRadius12,
-              borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              borderRadius: DS.borderRadius12,
+              borderSide: BorderSide(color: isDark ? DS.brandPrimary.shade700 : DS.brandPrimary.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: AppDesignTokens.borderRadius12,
-              borderSide: const BorderSide(color: AppDesignTokens.primaryBase, width: 2),
+              borderRadius: DS.borderRadius12,
+              borderSide: const BorderSide(color: DS.primaryBase, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),

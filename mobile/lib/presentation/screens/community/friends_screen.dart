@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/l10n/app_localizations.dart';
 import 'package:sparkle/presentation/providers/community_provider.dart';
 import 'package:sparkle/presentation/widgets/common/empty_state.dart';
 import 'package:sparkle/presentation/widgets/common/error_widget.dart';
 import 'package:sparkle/presentation/widgets/common/loading_indicator.dart';
-import 'package:sparkle/l10n/app_localizations.dart';
 
 class FriendsScreen extends StatelessWidget {
   const FriendsScreen({super.key});
@@ -54,7 +55,7 @@ class _MyFriendsTab extends ConsumerWidget {
           onRefresh: () => ref.read(friendsProvider.notifier).refresh(),
           child: ListView.builder(
             itemCount: friends.length,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             itemBuilder: (context, index) {
               final friendInfo = friends[index];
               final friend = friendInfo.friend;
@@ -66,12 +67,12 @@ class _MyFriendsTab extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      Container(
+                      DecoratedBox(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(color: DS.brandPrimaryConst, width: 2),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                            BoxShadow(color: DS.brandPrimaryConst.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
                           ],
                         ),
                         child: CircleAvatar(
@@ -79,17 +80,17 @@ class _MyFriendsTab extends ConsumerWidget {
                           child: friend.avatarUrl == null ? Text(friend.displayName[0]) : null,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: DS.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(friend.displayName, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
-                            Text('Lv.${friend.flameLevel}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            Text('Lv.${friend.flameLevel}', style: TextStyle(color: DS.brandPrimaryConst, fontSize: 12)),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                      Icon(Icons.chevron_right, size: 20, color: DS.brandPrimary),
                     ],
                   ),
                 ),
@@ -120,7 +121,7 @@ class _PendingRequestsTab extends ConsumerWidget {
           onRefresh: () => ref.read(pendingRequestsProvider.notifier).refresh(),
           child: ListView.builder(
             itemCount: requests.length,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             itemBuilder: (context, index) {
               final request = requests[index];
               final user = request.friend;
@@ -136,14 +137,14 @@ class _PendingRequestsTab extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.check, color: Colors.green),
+                        icon: Icon(Icons.check, color: DS.success),
                         onPressed: () {
                           ref.read(pendingRequestsProvider.notifier).respondToRequest(request.id, true);
                           ref.read(friendsProvider.notifier).refresh();
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.red),
+                        icon: Icon(Icons.close, color: DS.error),
                         onPressed: () {
                           ref.read(pendingRequestsProvider.notifier).respondToRequest(request.id, false);
                         },
@@ -178,7 +179,7 @@ class _RecommendationsTab extends ConsumerWidget {
           onRefresh: () => ref.read(friendRecommendationsProvider.notifier).refresh(),
           child: ListView.builder(
             itemCount: recommendations.length,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             itemBuilder: (context, index) {
               final rec = recommendations[index];
               return Card(

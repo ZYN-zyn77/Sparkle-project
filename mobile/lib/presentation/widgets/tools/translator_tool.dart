@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 class TranslatorTool extends StatefulWidget {
   const TranslatorTool({super.key});
@@ -13,7 +14,7 @@ class _TranslatorToolState extends State<TranslatorTool> {
   String _output = '';
   bool _isLoading = false;
 
-  void _translate() async {
+  Future<void> _translate() async {
     if (_inputController.text.isEmpty) return;
 
     setState(() {
@@ -33,13 +34,12 @@ class _TranslatorToolState extends State<TranslatorTool> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(DS.xl),
       height: 500,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: DS.brandPrimaryConst,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -52,23 +52,23 @@ class _TranslatorToolState extends State<TranslatorTool> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppDesignTokens.neutral300,
+                color: DS.neutral300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: DS.xl),
           Row(
             children: [
               const Icon(Icons.translate, color: Colors.purple),
-              const SizedBox(width: 8),
+              const SizedBox(width: DS.sm),
               Text(
                 '快速翻译',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: DS.xl),
           TextField(
             controller: _inputController,
             maxLines: 4,
@@ -76,10 +76,10 @@ class _TranslatorToolState extends State<TranslatorTool> {
               hintText: '输入要翻译的文本...',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               filled: true,
-              fillColor: AppDesignTokens.neutral50,
+              fillColor: DS.neutral50,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
           Center(
             child: IconButton(
               onPressed: _translate,
@@ -87,9 +87,9 @@ class _TranslatorToolState extends State<TranslatorTool> {
               style: IconButton.styleFrom(backgroundColor: Colors.purple.withValues(alpha: 0.1)),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(DS.lg),
             height: 120,
             decoration: BoxDecoration(
               color: Colors.purple.withValues(alpha: 0.05),
@@ -102,7 +102,7 @@ class _TranslatorToolState extends State<TranslatorTool> {
                     child: Text(
                       _output.isEmpty ? '翻译结果将显示在这里' : _output,
                       style: TextStyle(
-                        color: _output.isEmpty ? AppDesignTokens.neutral400 : AppDesignTokens.neutral900,
+                        color: _output.isEmpty ? DS.neutral400 : DS.neutral900,
                       ),
                     ),
                   ),
@@ -110,5 +110,4 @@ class _TranslatorToolState extends State<TranslatorTool> {
         ],
       ),
     );
-  }
 }

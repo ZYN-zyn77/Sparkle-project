@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 
 /// FocusFloatingDock - 专注模式悬浮窗
 /// 支持边缘吸附、自动隐藏、点击展开菜单
-class FocusFloatingDock extends StatefulWidget {
-  final VoidCallback? onMindfulnessTap;
-  final VoidCallback? onToolsTap;
-  final Axis initialEdge; // Left, Right, Top, Bottom
+class FocusFloatingDock extends StatefulWidget { // Left, Right, Top, Bottom
 
   const FocusFloatingDock({
     super.key,
@@ -14,6 +12,9 @@ class FocusFloatingDock extends StatefulWidget {
     this.onToolsTap,
     this.initialEdge = Axis.horizontal,
   });
+  final VoidCallback? onMindfulnessTap;
+  final VoidCallback? onToolsTap;
+  final Axis initialEdge;
 
   @override
   State<FocusFloatingDock> createState() => _FocusFloatingDockState();
@@ -73,8 +74,8 @@ class _FocusFloatingDockState extends State<FocusFloatingDock> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
-    final bool isRightSide = _position.dx > screenSize.width / 2;
+    final screenSize = MediaQuery.of(context).size;
+    final isRightSide = _position.dx > screenSize.width / 2;
 
     return Positioned(
       left: _position.dx,
@@ -96,7 +97,7 @@ class _FocusFloatingDockState extends State<FocusFloatingDock> with SingleTicker
           width: _isHiding ? 20 : (_isExpanded ? 180 : 60),
           height: _isExpanded ? 160 : 60,
           decoration: BoxDecoration(
-            color: AppDesignTokens.primaryBase.withValues(alpha: 0.95),
+            color: DS.primaryBase.withValues(alpha: 0.95),
             borderRadius: _isHiding 
                 ? BorderRadius.horizontal(
                     left: isRightSide ? const Radius.circular(30) : Radius.zero,
@@ -105,7 +106,7 @@ class _FocusFloatingDockState extends State<FocusFloatingDock> with SingleTicker
                 : BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: DS.brandPrimary.withValues(alpha: 0.3),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -126,24 +127,21 @@ class _FocusFloatingDockState extends State<FocusFloatingDock> with SingleTicker
     );
   }
 
-  Widget _buildCollapsedIcon() {
-    return InkWell(
+  Widget _buildCollapsedIcon() => InkWell(
       onTap: _toggleExpand,
       borderRadius: BorderRadius.circular(30),
-      child: const Center(
-        child: Icon(Icons.timer_rounded, color: Colors.white, size: 30),
+      child: Center(
+        child: Icon(Icons.timer_rounded, color: DS.brandPrimaryConst, size: 30),
       ),
     );
-  }
 
-  Widget _buildExpandedMenu() {
-    return Column(
+  Widget _buildExpandedMenu() => Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         // Collapse Button
         InkWell(
           onTap: _toggleExpand,
-          child: const Icon(Icons.close, color: Colors.white, size: 24),
+          child: Icon(Icons.close, color: DS.brandPrimaryConst, size: 24),
         ),
         
         // Menu Items
@@ -165,25 +163,23 @@ class _FocusFloatingDockState extends State<FocusFloatingDock> with SingleTicker
         ),
       ],
     );
-  }
 
   Widget _buildMenuItem({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
-  }) {
-    return InkWell(
+  }) => InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 12),
+            Icon(icon, color: DS.brandPrimaryConst, size: 20),
+            const SizedBox(width: DS.md),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: DS.brandPrimaryConst,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -191,5 +187,4 @@ class _FocusFloatingDockState extends State<FocusFloatingDock> with SingleTicker
         ),
       ),
     );
-  }
 }

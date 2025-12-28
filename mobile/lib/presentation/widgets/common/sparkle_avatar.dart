@@ -1,15 +1,12 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:io';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/user_model.dart';
 
 class SparkleAvatar extends StatelessWidget {
-  final String? url;
-  final double radius;
-  final String? fallbackText;
-  final Color? backgroundColor;
-  final AvatarStatus status;
 
   const SparkleAvatar({
     super.key,
@@ -19,6 +16,11 @@ class SparkleAvatar extends StatelessWidget {
     this.backgroundColor,
     this.status = AvatarStatus.approved,
   });
+  final String? url;
+  final double radius;
+  final String? fallbackText;
+  final Color? backgroundColor;
+  final AvatarStatus status;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class SparkleAvatar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     
     final effectiveBackgroundColor = backgroundColor ?? 
-        (isDark ? Colors.grey.shade800 : Colors.grey.shade200);
+        (isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade200);
 
     Widget avatar;
     if (url == null || url!.isEmpty) {
@@ -74,7 +76,7 @@ class SparkleAvatar extends StatelessWidget {
             width: radius * 2,
             height: radius * 2,
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: DS.brandPrimary.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -84,17 +86,17 @@ class SparkleAvatar extends StatelessWidget {
                   SizedBox(
                     width: radius * 0.6,
                     height: radius * 0.6,
-                    child: const CircularProgressIndicator(
+                    child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                      valueColor: AlwaysStoppedAnimation<Color>(DS.brandPrimary70),
                     ),
                   ),
                   if (radius > 25) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: DS.xs),
                     Text(
                       '审核中',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: DS.brandPrimaryConst,
                         fontSize: radius * 0.3,
                         fontWeight: FontWeight.bold,
                       ),
@@ -111,8 +113,7 @@ class SparkleAvatar extends StatelessWidget {
     return avatar;
   }
 
-  Widget _buildFallback(Color bgColor) {
-    return CircleAvatar(
+  Widget _buildFallback(Color bgColor) => CircleAvatar(
       radius: radius,
       backgroundColor: bgColor,
       child: Text(
@@ -120,11 +121,10 @@ class SparkleAvatar extends StatelessWidget {
             ? fallbackText![0].toUpperCase() 
             : '?',
         style: TextStyle(
-          color: Colors.grey.shade600,
+          color: DS.brandPrimary.shade600,
           fontSize: radius * 0.8,
           fontWeight: FontWeight.bold,
         ),
       ),
     );
-  }
 }

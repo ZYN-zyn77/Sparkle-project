@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/animations/staggered_responsive_grid.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/task_provider.dart';
-import 'package:sparkle/presentation/widgets/task/task_card.dart';
 import 'package:sparkle/presentation/widgets/common/empty_state.dart';
 import 'package:sparkle/presentation/widgets/common/error_widget.dart';
 import 'package:sparkle/presentation/widgets/common/loading_indicator.dart';
+import 'package:sparkle/presentation/widgets/task/task_card.dart';
 
 enum TaskFilterOptions { all, pending, inProgress, completed }
 
@@ -47,29 +48,29 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: AppDesignTokens.primaryGradient,
+            gradient: DS.primaryGradient,
           ),
         ),
         title: AnimatedSwitcher(
-          duration: AppDesignTokens.durationNormal,
+          duration: DS.durationNormal,
           child: _isSearching
               ? TextField(
                   key: const ValueKey('search'),
                   controller: _searchController,
                   autofocus: true,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: AppDesignTokens.fontSizeBase,
+                  style: TextStyle(
+                    color: DS.brandPrimaryConst,
+                    fontSize: DS.fontSizeBase,
                   ),
                   decoration: InputDecoration(
                     hintText: '搜索任务...',
                     border: InputBorder.none,
                     hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: DS.brandPrimary.withValues(alpha: 0.7),
                     ),
-                    prefixIcon: const Icon(
+                    prefixIcon: Icon(
                       Icons.search,
-                      color: Colors.white70,
+                      color: DS.brandPrimary70Const,
                     ),
                   ),
                   onChanged: (value) => setState(() {}),
@@ -78,23 +79,23 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
                   key: const ValueKey('title'),
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(DS.sm),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: AppDesignTokens.borderRadius8,
+                        color: DS.brandPrimary.withValues(alpha: 0.2),
+                        borderRadius: DS.borderRadius8,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.task_alt_rounded,
-                        color: Colors.white,
+                        color: DS.brandPrimaryConst,
                         size: 20,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
+                    const SizedBox(width: DS.md),
+                    Text(
                       '我的任务',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: AppDesignTokens.fontWeightBold,
+                        color: DS.brandPrimaryConst,
+                        fontWeight: DS.fontWeightBold,
                       ),
                     ),
                   ],
@@ -103,7 +104,7 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
-            color: Colors.white,
+            color: DS.brandPrimaryConst,
             onPressed: () {
               setState(() {
                 _isSearching = !_isSearching;
@@ -127,8 +128,7 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           HapticFeedback.mediumImpact();
-          // TODO: Navigate to create task screen
-          // context.push('/tasks/new');
+          context.push('/tasks/new');
         },
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -136,13 +136,13 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            gradient: AppDesignTokens.primaryGradient,
+            gradient: DS.primaryGradient,
             shape: BoxShape.circle,
-            boxShadow: AppDesignTokens.shadowPrimary,
+            boxShadow: DS.shadowPrimary,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.add_rounded,
-            color: Colors.white,
+            color: DS.brandPrimaryConst,
             size: 32,
           ),
         ),
@@ -175,7 +175,7 @@ class _TaskListScreenState extends ConsumerState<TaskListScreen> {
       } else {
         return EmptyState.noTasks(
           onCreateTask: () {
-            // context.push('/tasks/new');
+            context.push('/tasks/new');
           },
         );
       }
@@ -236,8 +236,8 @@ class _FilterChips extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: AppDesignTokens.shadowSm,
+        color: DS.brandPrimaryConst,
+        boxShadow: DS.shadowSm,
       ),
       child: SizedBox(
         height: 40,
@@ -253,34 +253,34 @@ class _FilterChips extends ConsumerWidget {
                   ref.read(taskFilterProvider.notifier).state = filter;
                 },
                 child: AnimatedContainer(
-                  duration: AppDesignTokens.durationFast,
+                  duration: DS.durationFast,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppDesignTokens.spacing16,
-                    vertical: AppDesignTokens.spacing8,
+                    horizontal: DS.spacing16,
+                    vertical: DS.spacing8,
                   ),
                   decoration: BoxDecoration(
-                    gradient: isSelected ? AppDesignTokens.primaryGradient : null,
-                    color: isSelected ? null : AppDesignTokens.neutral100,
-                    borderRadius: AppDesignTokens.borderRadius20,
+                    gradient: isSelected ? DS.primaryGradient : null,
+                    color: isSelected ? null : DS.neutral100,
+                    borderRadius: DS.borderRadius20,
                     border: Border.all(
                       color: isSelected
                           ? Colors.transparent
-                          : AppDesignTokens.neutral300,
+                          : DS.neutral300,
                       width: 1.5,
                     ),
-                    boxShadow: isSelected ? AppDesignTokens.shadowSm : null,
+                    boxShadow: isSelected ? DS.shadowSm : null,
                   ),
                   child: Center(
                     child: Text(
                       _getFilterLabel(filter),
                       style: TextStyle(
                         color: isSelected
-                            ? Colors.white
-                            : AppDesignTokens.neutral700,
+                            ? DS.brandPrimary
+                            : DS.neutral700,
                         fontWeight: isSelected
-                            ? AppDesignTokens.fontWeightBold
-                            : AppDesignTokens.fontWeightMedium,
-                        fontSize: AppDesignTokens.fontSizeSm,
+                            ? DS.fontWeightBold
+                            : DS.fontWeightMedium,
+                        fontSize: DS.fontSizeSm,
                       ),
                     ),
                   ),

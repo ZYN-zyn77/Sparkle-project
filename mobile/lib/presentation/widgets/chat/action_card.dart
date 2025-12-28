@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sparkle/app/theme.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/design/motion.dart';
 import 'package:sparkle/data/models/chat_message_model.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
 class ActionCard extends StatefulWidget {
-  final WidgetPayload action;
-  final VoidCallback? onConfirm;
-  final VoidCallback? onDismiss;
 
   const ActionCard({
     required this.action, 
@@ -17,6 +15,9 @@ class ActionCard extends StatefulWidget {
     this.onConfirm,
     this.onDismiss,
   });
+  final WidgetPayload action;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onDismiss;
 
   @override
   State<ActionCard> createState() => _ActionCardState();
@@ -60,19 +61,17 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
       onTapDown: hasAction ? (_) => _pressController.forward() : null,
       onTapUp: hasAction ? (_) => _pressController.reverse() : null,
       onTapCancel: hasAction ? () => _pressController.reverse() : null,
-      onTap: hasAction ? () {
-        HapticFeedback.selectionClick();
-      } : null,
+      onTap: hasAction ? HapticFeedback.selectionClick : null,
       child: SparkleMotion.pressScale(
         animation: _pressController,
-        child: Container(
+        child: DecoratedBox(
           decoration: BoxDecoration(
             color: context.colors.surfaceCard,
-            borderRadius: AppDesignTokens.borderRadius16,
-            boxShadow: AppDesignTokens.shadowMd,
+            borderRadius: DS.borderRadius16,
+            boxShadow: DS.shadowMd,
           ),
           child: ClipRRect(
-            borderRadius: AppDesignTokens.borderRadius16,
+            borderRadius: DS.borderRadius16,
             child: Stack(
               children: [
                 // Gradient Stripe
@@ -94,15 +93,14 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                     child: TweenAnimationBuilder<double>(
                       tween: Tween(begin: -2.0, end: 2.0),
                       duration: const Duration(seconds: 3),
-                      builder: (context, value, child) {
-                        return Container(
+                      builder: (context, value, child) => Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
                                 Colors.transparent,
-                                Colors.white.withValues(alpha: 0.1),
+                                DS.brandPrimary.withValues(alpha: 0.1),
                                 Colors.transparent,
                               ],
                               stops: [
@@ -112,8 +110,7 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                        );
-                      },
+                        ),
                       onEnd: () {
                         // Restart animation
                         if (mounted) setState(() {});
@@ -122,7 +119,7 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                   ),
 
                 Padding(
-                  padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+                  padding: const EdgeInsets.all(DS.spacing16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -130,11 +127,10 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                         children: [
                           AnimatedBuilder(
                             animation: _iconScaleAnimation,
-                            builder: (context, child) {
-                              return Transform.scale(
+                            builder: (context, child) => Transform.scale(
                                 scale: hasAction ? _iconScaleAnimation.value : 1.0,
                                 child: Container(
-                                  padding: const EdgeInsets.all(AppDesignTokens.spacing8),
+                                  padding: const EdgeInsets.all(DS.spacing8),
                                   decoration: BoxDecoration(
                                     gradient: _getActionGradient(widget.action.type),
                                     shape: BoxShape.circle,
@@ -148,29 +144,28 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                                   ),
                                   child: Icon(
                                     _getActionIcon(widget.action.type),
-                                    color: Colors.white,
-                                    size: AppDesignTokens.iconSizeSm,
+                                    color: DS.brandPrimaryConst,
+                                    size: DS.iconSizeSm,
                                   ),
                                 ),
-                              );
-                            },
+                              ),
                           ),
-                          const SizedBox(width: AppDesignTokens.spacing12),
+                          const SizedBox(width: DS.spacing12),
                           Expanded(
                             child: Text(
                               _getTitleForAction(widget.action.type),
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: AppDesignTokens.fontWeightBold,
-                                color: AppDesignTokens.neutral900,
+                                fontWeight: DS.fontWeightBold,
+                                color: DS.neutral900,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppDesignTokens.spacing16),
+                      const SizedBox(height: DS.spacing16),
                       _buildContentForAction(context, widget.action),
                       if (hasAction) ...[
-                        const SizedBox(height: AppDesignTokens.spacing16),
+                        const SizedBox(height: DS.spacing16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -178,15 +173,15 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                               CustomButton.text(
                                 text: '忽略',
                                 onPressed: widget.onDismiss,
-                                size: ButtonSize.small,
+                                size: CustomButtonSize.small,
                               ),
-                            const SizedBox(width: AppDesignTokens.spacing8),
+                            const SizedBox(width: DS.spacing8),
                             if (widget.onConfirm != null)
                               CustomButton.primary(
                                 text: '确认',
                                 icon: Icons.check_rounded,
                                 onPressed: widget.onConfirm,
-                                size: ButtonSize.small,
+                                size: CustomButtonSize.small,
                                 customGradient: _getActionGradient(widget.action.type),
                               ),
                           ],
@@ -206,30 +201,30 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
   LinearGradient _getActionGradient(String type) {
     switch (type) {
       case 'create_task':
-        return AppDesignTokens.primaryGradient;
+        return DS.primaryGradient;
       case 'create_plan':
-        return AppDesignTokens.secondaryGradient;
+        return DS.secondaryGradient;
       case 'update_preference':
-        return AppDesignTokens.infoGradient;
+        return DS.infoGradient;
       case 'add_error':
-        return AppDesignTokens.warningGradient;
+        return DS.warningGradient;
       default:
-        return AppDesignTokens.primaryGradient;
+        return DS.primaryGradient;
     }
   }
 
   Color _getActionColor(String type) {
     switch (type) {
       case 'create_task':
-        return AppDesignTokens.primaryBase;
+        return DS.primaryBase;
       case 'create_plan':
-        return AppDesignTokens.secondaryBase;
+        return DS.secondaryBase;
       case 'update_preference':
-        return AppDesignTokens.info;
+        return DS.info;
       case 'add_error':
-        return AppDesignTokens.warning;
+        return DS.warning;
       default:
-        return AppDesignTokens.primaryBase;
+        return DS.primaryBase;
     }
   }
 
@@ -263,13 +258,12 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
     }
   }
 
-  Widget _buildContentForAction(BuildContext context, WidgetPayload action) {
-    return Column(
+  Widget _buildContentForAction(BuildContext context, WidgetPayload action) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (action.data['title'] != null) ...[
           Container(
-            padding: const EdgeInsets.all(AppDesignTokens.spacing12),
+            padding: const EdgeInsets.all(DS.spacing12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -279,7 +273,7 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: AppDesignTokens.borderRadius12,
+              borderRadius: DS.borderRadius12,
               border: Border.all(
                 color: _getActionColor(action.type).withValues(alpha: 0.2),
               ),
@@ -287,62 +281,59 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
             child: Text(
               action.data['title'],
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: AppDesignTokens.fontWeightSemibold,
-                color: AppDesignTokens.neutral900,
+                fontWeight: DS.fontWeightSemibold,
+                color: DS.neutral900,
               ),
             ),
           ),
-          const SizedBox(height: AppDesignTokens.spacing12),
+          const SizedBox(height: DS.spacing12),
         ],
         if (action.data.entries.where((e) => e.key != 'title').isNotEmpty)
           Wrap(
-            spacing: AppDesignTokens.spacing8,
-            runSpacing: AppDesignTokens.spacing8,
+            spacing: DS.spacing8,
+            runSpacing: DS.spacing8,
             children: action.data.entries
                 .where((e) => e.key != 'title')
-                .map((entry) {
-              return Container(
+                .map((entry) => Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppDesignTokens.spacing12,
-                  vertical: AppDesignTokens.spacing8,
+                  horizontal: DS.spacing12,
+                  vertical: DS.spacing8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppDesignTokens.neutral100,
-                  borderRadius: AppDesignTokens.borderRadius8,
-                  border: Border.all(color: AppDesignTokens.neutral200),
+                  color: DS.neutral100,
+                  borderRadius: DS.borderRadius8,
+                  border: Border.all(color: DS.neutral200),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       _getParamIcon(entry.key),
-                      size: AppDesignTokens.iconSizeXs,
-                      color: AppDesignTokens.neutral600,
+                      size: DS.iconSizeXs,
+                      color: DS.neutral600,
                     ),
-                    const SizedBox(width: AppDesignTokens.spacing4),
+                    const SizedBox(width: DS.spacing4),
                     Text(
                       '${_formatParamKey(entry.key)}: ',
                       style: const TextStyle(
-                        color: AppDesignTokens.neutral600,
-                        fontSize: AppDesignTokens.fontSizeSm,
+                        color: DS.neutral600,
+                        fontSize: DS.fontSizeSm,
                       ),
                     ),
                     Text(
                       entry.value.toString(),
                       style: const TextStyle(
-                        fontWeight: AppDesignTokens.fontWeightSemibold,
-                        fontSize: AppDesignTokens.fontSizeSm,
-                        color: AppDesignTokens.neutral900,
+                        fontWeight: DS.fontWeightSemibold,
+                        fontSize: DS.fontSizeSm,
+                        color: DS.neutral900,
                       ),
                     ),
                   ],
                 ),
-              );
-            }).toList(),
+              ),).toList(),
           ),
       ],
     );
-  }
 
   IconData _getParamIcon(String key) {
     switch (key.toLowerCase()) {

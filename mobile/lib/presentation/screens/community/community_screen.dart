@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/community_providers.dart';
 import 'package:sparkle/presentation/screens/community/create_post_screen.dart';
 import 'package:sparkle/presentation/widgets/community/feed_post_card.dart';
@@ -20,13 +21,13 @@ class CommunityScreen extends ConsumerWidget {
             MaterialPageRoute(builder: (ctx) => const CreatePostScreen()),
           );
         },
-        backgroundColor: AppDesignTokens.primaryBase,
+        backgroundColor: DS.primaryBase,
         child: const Icon(Icons.edit),
       ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => ref.read(feedProvider.notifier).refresh(),
-          color: AppDesignTokens.primaryBase,
+          color: DS.primaryBase,
           child: feedState.when(
             data: (posts) {
               if (posts.isEmpty) {
@@ -49,21 +50,18 @@ class CommunityScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: AppDesignTokens.error),
-                  const SizedBox(height: 16),
+                  const Icon(Icons.error_outline, size: 48, color: DS.error),
+                  const SizedBox(height: DS.lg),
                   Text(
                     'Failed to load feed',
-                    style: TextStyle(color: Colors.grey[300]),
+                    style: TextStyle(color: DS.brandPrimary300),
                   ),
-                  TextButton(
-                    onPressed: () => ref.read(feedProvider.notifier).refresh(),
-                    child: const Text('Retry'),
-                  ),
+                  SparkleButton.ghost(label: 'Retry', onPressed: () => ref.read(feedProvider.notifier).refresh()),
                 ],
               ),
             ),
             loading: () => const Center(
-              child: CircularProgressIndicator(color: AppDesignTokens.primaryBase),
+              child: CircularProgressIndicator(color: DS.primaryBase),
             ),
           ),
         ),
@@ -71,99 +69,93 @@ class CommunityScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+  Widget _buildHeader(BuildContext context) => Padding(
+      padding: const EdgeInsets.all(DS.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Community',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: DS.brandPrimaryConst,
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: DS.sm),
           Text(
             'Discover what others are learning',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[400],
+              color: DS.brandPrimary400,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
           // Filter Tabs (Placeholder)
-          SingleChildScrollView(
+          const SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 _FilterChip(label: 'Global Feed', isSelected: true),
-                const SizedBox(width: 8),
-                const _FilterChip(label: 'My Squad', isSelected: false),
-                const SizedBox(width: 8),
-                const _FilterChip(label: 'Following', isSelected: false),
+                SizedBox(width: DS.sm),
+                _FilterChip(label: 'My Squad', isSelected: false),
+                SizedBox(width: DS.sm),
+                _FilterChip(label: 'Following', isSelected: false),
               ],
             ),
           ),
         ],
       ),
     );
-  }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return ListView(
+  Widget _buildEmptyState(BuildContext context) => ListView(
       children: [
         _buildHeader(context),
         const SizedBox(height: 100),
-        const Center(
+        Center(
           child: Column(
             children: [
-              Icon(Icons.forum_outlined, size: 64, color: Colors.white24),
-              SizedBox(height: 16),
+              Icon(Icons.forum_outlined, size: 64, color: DS.brandPrimary24),
+              const SizedBox(height: DS.lg),
               Text(
                 'No posts yet',
-                style: TextStyle(color: Colors.white54, fontSize: 18),
+                style: TextStyle(color: DS.brandPrimary54, fontSize: 18),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: DS.sm),
               Text(
                 'Be the first to share something!',
-                style: TextStyle(color: Colors.white24),
+                style: TextStyle(color: DS.brandPrimary24),
               ),
             ],
           ),
         ),
       ],
     );
-  }
 }
 
 class _FilterChip extends StatelessWidget {
+
+  const _FilterChip({required this.label, required this.isSelected});
   final String label;
   final bool isSelected;
 
-  const _FilterChip({required this.label, required this.isSelected});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? AppDesignTokens.primaryBase : Colors.white10,
+        color: isSelected ? DS.primaryBase : DS.brandPrimary10,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isSelected ? AppDesignTokens.primaryBase : Colors.white24,
+          color: isSelected ? DS.primaryBase : DS.brandPrimary24,
         ),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: isSelected ? Colors.white : Colors.white70,
+          color: isSelected ? DS.brandPrimary : DS.brandPrimary70,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
     );
-  }
 }

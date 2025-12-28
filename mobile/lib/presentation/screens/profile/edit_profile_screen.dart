@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:sparkle/core/design/design_tokens.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/data/models/user_model.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 import 'package:sparkle/presentation/screens/profile/password_reset_screen.dart';
-import 'package:sparkle/presentation/widgets/profile/avatar_selection_dialog.dart';
 import 'package:sparkle/presentation/widgets/common/sparkle_avatar.dart';
-import 'package:sparkle/data/models/user_model.dart';
+import 'package:sparkle/presentation/widgets/profile/avatar_selection_dialog.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -78,13 +79,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               await ref.read(authProvider.notifier).updateAvatar(url);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('头像更新成功'), backgroundColor: Colors.green),
+                  SnackBar(content: const Text('头像更新成功'), backgroundColor: DS.successConst),
                 );
               }
             } catch (e) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('更新失败: $e'), backgroundColor: Colors.red),
+                  SnackBar(content: Text('更新失败: $e'), backgroundColor: DS.error),
                 );
               }
             } finally {
@@ -111,13 +112,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       await ref.read(authProvider.notifier).updateAvatar(pickedFile.path);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('头像更新成功'), backgroundColor: Colors.green),
+          SnackBar(content: const Text('头像更新成功'), backgroundColor: DS.successConst),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('上传失败: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('上传失败: $e'), backgroundColor: DS.error),
         );
       }
     } finally {
@@ -153,14 +154,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('资料更新成功'), backgroundColor: Colors.green),
+          SnackBar(content: const Text('资料更新成功'), backgroundColor: DS.successConst),
         );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('更新失败: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('更新失败: $e'), backgroundColor: DS.error),
         );
       }
     } finally {
@@ -192,7 +193,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 : const Text(
                     '保存',
                     style: TextStyle(
-                      color: AppDesignTokens.primaryBase,
+                      color: DS.primaryBase,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -200,9 +201,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDesignTokens.spacing24),
+        padding: const EdgeInsets.all(DS.spacing24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Avatar Section
             Center(
@@ -212,7 +212,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   children: [
                     SparkleAvatar(
                       radius: 50,
-                      backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                      backgroundColor: isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade200,
                       url: user?.avatarStatus == AvatarStatus.pending 
                           ? (user?.pendingAvatarUrl ?? user?.avatarUrl) 
                           : user?.avatarUrl,
@@ -225,17 +225,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: AppDesignTokens.primaryBase,
+                          color: DS.primaryBase,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isDark ? Colors.grey.shade900 : Colors.white,
+                            color: isDark ? DS.brandPrimary.shade900 : DS.brandPrimary,
                             width: 2,
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.camera_alt_rounded,
                           size: 16,
-                          color: Colors.white,
+                          color: DS.brandPrimaryConst,
                         ),
                       ),
                     ),
@@ -244,7 +244,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             if (user?.avatarStatus == AvatarStatus.pending) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: DS.md),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -265,18 +265,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: DS.sm),
             TextButton(
               onPressed: _isLoading ? null : _pickAndUploadAvatar,
               child: const Text(
                 '更换头像',
                 style: TextStyle(
-                  color: AppDesignTokens.primaryBase,
+                  color: DS.primaryBase,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            const SizedBox(height: AppDesignTokens.spacing24),
+            const SizedBox(height: DS.spacing24),
 
             // Form Fields
             _buildInputField(
@@ -285,7 +285,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               hint: '请输入昵称',
               icon: Icons.person_outline_rounded,
             ),
-            const SizedBox(height: AppDesignTokens.spacing16),
+            const SizedBox(height: DS.spacing16),
             _buildInputField(
               label: '邮箱',
               controller: _emailController,
@@ -293,28 +293,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
             ),
-            const SizedBox(height: AppDesignTokens.spacing16),
+            const SizedBox(height: DS.spacing16),
             _buildReadOnlyField(
               label: '用户名',
               value: user?.username ?? '',
               icon: Icons.badge_outlined,
               helperText: '用户名不可修改',
             ),
-            const SizedBox(height: AppDesignTokens.spacing24),
+            const SizedBox(height: DS.spacing24),
 
             // Security Section
             _buildSectionHeader(isDark, '账户安全'),
-            const SizedBox(height: AppDesignTokens.spacing12),
-            Container(
+            const SizedBox(height: DS.spacing12),
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey.shade900 : Colors.white,
-                borderRadius: AppDesignTokens.borderRadius12,
+                color: isDark ? DS.brandPrimary.shade900 : DS.brandPrimary,
+                borderRadius: DS.borderRadius12,
                 border: Border.all(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  color: isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade200,
                 ),
               ),
               child: ListTile(
-                leading: const Icon(Icons.lock_reset_rounded, color: AppDesignTokens.primaryBase),
+                leading: const Icon(Icons.lock_reset_rounded, color: DS.primaryBase),
                 title: const Text('重置密码', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
@@ -325,18 +325,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             
-            const SizedBox(height: AppDesignTokens.spacing24),
+            const SizedBox(height: DS.spacing24),
 
             // Account Info Section
             _buildSectionHeader(isDark, '账户信息'),
-            const SizedBox(height: AppDesignTokens.spacing12),
+            const SizedBox(height: DS.spacing12),
             Container(
-              padding: const EdgeInsets.all(AppDesignTokens.spacing16),
+              padding: const EdgeInsets.all(DS.spacing16),
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
-                borderRadius: AppDesignTokens.borderRadius12,
+                color: isDark ? DS.brandPrimary.shade900 : DS.brandPrimary.shade50,
+                borderRadius: DS.borderRadius12,
                 border: Border.all(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  color: isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade200,
                 ),
               ),
               child: Column(
@@ -344,7 +344,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 children: [
                   _buildInfoRow('火焰等级', 'Lv.${user?.flameLevel ?? 1}'),
                   _buildInfoRow('火焰亮度', '${((user?.flameBrightness ?? 0.5) * 100).toInt()}%'),
-                  _buildInfoRow('账户类型', user?.id.startsWith('guest') == true ? '游客账户' : '正式账户'),
+                  _buildInfoRow('账户类型', user?.id.startsWith('guest') ?? false ? '游客账户' : '正式账户'),
                 ],
               ),
             ),
@@ -354,19 +354,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildSectionHeader(bool isDark, String title) {
-    return Align(
+  Widget _buildSectionHeader(bool isDark, String title) => Align(
       alignment: Alignment.centerLeft,
       child: Text(
         title,
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white70 : Colors.grey.shade700,
+          color: isDark ? DS.brandPrimary70 : DS.brandPrimary.shade700,
         ),
       ),
     );
-  }
 
   Widget _buildInputField({
     required String label,
@@ -388,7 +386,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white70 : Colors.grey.shade700,
+            color: isDark ? DS.brandPrimary70 : DS.brandPrimary.shade700,
           ),
         ),
         const SizedBox(height: 6),
@@ -401,34 +399,34 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             prefixIcon: Icon(icon, size: 20),
             filled: true,
             fillColor: enabled
-                ? (isDark ? Colors.grey.shade900 : Colors.grey.shade50)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade100),
+                ? (isDark ? DS.brandPrimary.shade900 : DS.brandPrimary.shade50)
+                : (isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade100),
             border: OutlineInputBorder(
-              borderRadius: AppDesignTokens.borderRadius12,
-              borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              borderRadius: DS.borderRadius12,
+              borderSide: BorderSide(color: isDark ? DS.brandPrimary.shade700 : DS.brandPrimary.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: AppDesignTokens.borderRadius12,
-              borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              borderRadius: DS.borderRadius12,
+              borderSide: BorderSide(color: isDark ? DS.brandPrimary.shade700 : DS.brandPrimary.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: AppDesignTokens.borderRadius12,
-              borderSide: const BorderSide(color: AppDesignTokens.primaryBase, width: 2),
+              borderRadius: DS.borderRadius12,
+              borderSide: const BorderSide(color: DS.primaryBase, width: 2),
             ),
             disabledBorder: OutlineInputBorder(
-              borderRadius: AppDesignTokens.borderRadius12,
-              borderSide: BorderSide(color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+              borderRadius: DS.borderRadius12,
+              borderSide: BorderSide(color: isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade200),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
         if (helperText != null) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: DS.xs),
           Text(
             helperText,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white38 : Colors.grey.shade500,
+              color: isDark ? DS.brandPrimary38 : DS.brandPrimary.shade500,
             ),
           ),
         ],
@@ -453,38 +451,38 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white70 : Colors.grey.shade700,
+            color: isDark ? DS.brandPrimary70 : DS.brandPrimary.shade700,
           ),
         ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-            borderRadius: AppDesignTokens.borderRadius12,
-            border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+            color: isDark ? DS.brandPrimary.shade800 : DS.brandPrimary.shade100,
+            borderRadius: DS.borderRadius12,
+            border: Border.all(color: isDark ? DS.brandPrimary.shade700 : DS.brandPrimary.shade200),
           ),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: isDark ? Colors.white38 : Colors.grey.shade500),
-              const SizedBox(width: 12),
+              Icon(icon, size: 20, color: isDark ? DS.brandPrimary38 : DS.brandPrimary.shade500),
+              const SizedBox(width: DS.md),
               Text(
                 value,
                 style: TextStyle(
                   fontSize: 16,
-                  color: isDark ? Colors.white54 : Colors.grey.shade600,
+                  color: isDark ? DS.brandPrimary54 : DS.brandPrimary.shade600,
                 ),
               ),
             ],
           ),
         ),
         if (helperText != null) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: DS.xs),
           Text(
             helperText,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white38 : Colors.grey.shade500,
+              color: isDark ? DS.brandPrimary38 : DS.brandPrimary.shade500,
             ),
           ),
         ],
@@ -504,7 +502,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white54 : Colors.grey.shade600,
+              color: isDark ? DS.brandPrimary54 : DS.brandPrimary.shade600,
             ),
           ),
           Text(
@@ -512,7 +510,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white : AppDesignTokens.neutral900,
+              color: isDark ? DS.brandPrimary : DS.neutral900,
             ),
           ),
         ],

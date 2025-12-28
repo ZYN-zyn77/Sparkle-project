@@ -60,6 +60,14 @@ dependencies:
   table_calendar: ^3.2.0
   lunar: ^1.7.8
 
+  path: ^1.9.0
+  freezed_annotation: ^2.4.1
+  path_provider: ^2.1.2
+  share_plus: ^9.0.0
+  flutter_animate: ^4.5.0
+  timeago: ^3.6.1
+  http: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -70,13 +78,12 @@ dev_dependencies:
   retrofit_generator: ^8.0.4
   json_serializable: ^6.7.1
   hive_generator: ^2.0.1
+  freezed: ^2.5.2
 
   # Linting
   flutter_lints: ^3.0.1
   mockito: ^5.4.4
-  flutter_animate: ^4.5.2
-  share_plus: ^12.0.1
-  path_provider: ^2.1.5
+
 
 flutter:
   uses-material-design: true

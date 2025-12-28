@@ -1,6 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:math' as math;
+import 'package:sparkle/core/design/design_system.dart';
 
 /// 必杀技 B: 交互式知识衰减时间线
 ///
@@ -10,6 +12,12 @@ import 'dart:math' as math;
 /// - "What If" 按钮模拟复习干预效果
 /// - 触觉反馈增强交互体验
 class InteractiveDecayTimeline extends StatefulWidget {
+
+  const InteractiveDecayTimeline({
+    required this.onDaysChanged, required this.onSimulateIntervention, super.key,
+    this.selectedNodeIds = const [],
+    this.initialDays = 30,
+  });
   /// 衰减预测数据更新回调
   final Function(int daysAhead) onDaysChanged;
 
@@ -21,14 +29,6 @@ class InteractiveDecayTimeline extends StatefulWidget {
 
   /// 初始天数
   final int initialDays;
-
-  const InteractiveDecayTimeline({
-    Key? key,
-    required this.onDaysChanged,
-    required this.onSimulateIntervention,
-    this.selectedNodeIds = const [],
-    this.initialDays = 30,
-  }) : super(key: key);
 
   @override
   State<InteractiveDecayTimeline> createState() =>
@@ -129,7 +129,7 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: DS.brandPrimary.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -147,7 +147,7 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
                 color: theme.colorScheme.primary,
                 size: 24,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: DS.sm),
               Text(
                 '知识时光机',
                 style: theme.textTheme.titleLarge?.copyWith(
@@ -164,7 +164,7 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
           // 时间轴滑块
           _buildTimelineSlider(theme),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: DS.lg),
 
           // 状态指示器
           _buildStatusIndicators(theme),
@@ -178,8 +178,7 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
     );
   }
 
-  Widget _buildTimeChip(BuildContext context) {
-    return Container(
+  Widget _buildTimeChip(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primaryContainer,
@@ -194,29 +193,26 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
         ),
       ),
     );
-  }
 
-  Widget _buildTimelineSlider(ThemeData theme) {
-    return Column(
+  Widget _buildTimelineSlider(ThemeData theme) => Column(
       children: [
         // 自定义滑块
         SliderTheme(
           data: SliderThemeData(
             activeTrackColor: _getTrackColor(_currentDays),
-            inactiveTrackColor: theme.colorScheme.surfaceVariant,
+            inactiveTrackColor: theme.colorScheme.surfaceContainerHighest,
             thumbColor: _getTrackColor(_currentDays),
             overlayColor: _getTrackColor(_currentDays).withOpacity(0.2),
             thumbShape: const RoundSliderThumbShape(
               enabledThumbRadius: 12,
             ),
             overlayShape: const RoundSliderOverlayShape(
-              overlayRadius: 24,
+              
             ),
             trackHeight: 6,
           ),
           child: Slider(
             value: _currentDays,
-            min: 0,
             max: 90,
             divisions: 18, // 每5天一个刻度
             label: '${_currentDays.round()} 天后',
@@ -239,55 +235,50 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
         ),
       ],
     );
-  }
 
   Color _getTrackColor(double days) {
     if (days <= 15) {
-      return Colors.green;
+      return DS.success;
     } else if (days <= 45) {
-      return Colors.orange;
+      return DS.brandPrimary;
     } else {
-      return Colors.red;
+      return DS.error;
     }
   }
 
-  Widget _buildTickLabel(String label, ThemeData theme) {
-    return Text(
+  Widget _buildTickLabel(String label, ThemeData theme) => Text(
       label,
       style: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
       ),
     );
-  }
 
-  Widget _buildStatusIndicators(ThemeData theme) {
-    return Row(
+  Widget _buildStatusIndicators(ThemeData theme) => Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildStatusItem(
           icon: Icons.wb_sunny,
           label: '健康',
-          color: Colors.green,
+          color: DS.success,
           description: '>60%',
           theme: theme,
         ),
         _buildStatusItem(
           icon: Icons.wb_cloudy,
           label: '衰减中',
-          color: Colors.orange,
+          color: DS.brandPrimaryConst,
           description: '20-60%',
           theme: theme,
         ),
         _buildStatusItem(
           icon: Icons.warning_amber,
           label: '危险',
-          color: Colors.red,
+          color: DS.error,
           description: '<20%',
           theme: theme,
         ),
       ],
     );
-  }
 
   Widget _buildStatusItem({
     required IconData icon,
@@ -295,11 +286,10 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
     required Color color,
     required String description,
     required ThemeData theme,
-  }) {
-    return Column(
+  }) => Column(
       children: [
         Icon(icon, color: color, size: 28),
-        const SizedBox(height: 4),
+        const SizedBox(height: DS.xs),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
@@ -315,10 +305,8 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
         ),
       ],
     );
-  }
 
-  Widget _buildInterventionButton(ThemeData theme) {
-    return SizedBox(
+  Widget _buildInterventionButton(ThemeData theme) => SizedBox(
       width: double.infinity,
       child: AnimatedBuilder(
         animation: _interventionController,
@@ -361,25 +349,24 @@ class _InteractiveDecayTimelineState extends State<InteractiveDecayTimeline>
         },
       ),
     );
-  }
 }
 
 /// 时间线可视化 Painter（可选，用于更复杂的可视化）
-class DecayTimelinePainter extends CustomPainter {
-  final double currentDays;
-  final Map<int, double> decayCurve; // day -> average_mastery
+class DecayTimelinePainter extends CustomPainter { // day -> average_mastery
 
   DecayTimelinePainter({
     required this.currentDays,
     required this.decayCurve,
   });
+  final double currentDays;
+  final Map<int, double> decayCurve;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (decayCurve.isEmpty) return;
 
     final paint = Paint()
-      ..color = Colors.blue.withOpacity(0.5)
+      ..color = DS.brandPrimary.withOpacity(0.5)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -387,7 +374,7 @@ class DecayTimelinePainter extends CustomPainter {
     final maxDay = decayCurve.keys.reduce(math.max);
 
     // 绘制衰减曲线
-    bool firstPoint = true;
+    var firstPoint = true;
     decayCurve.forEach((day, mastery) {
       final x = (day / maxDay) * size.width;
       final y = size.height - (mastery / 100.0) * size.height;
@@ -405,7 +392,7 @@ class DecayTimelinePainter extends CustomPainter {
     // 绘制当前时间点标记
     final currentX = (currentDays / maxDay) * size.width;
     final circlePaint = Paint()
-      ..color = Colors.red
+      ..color = DS.error
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
@@ -416,8 +403,6 @@ class DecayTimelinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(DecayTimelinePainter oldDelegate) {
-    return oldDelegate.currentDays != currentDays ||
+  bool shouldRepaint(DecayTimelinePainter oldDelegate) => oldDelegate.currentDays != currentDays ||
         oldDelegate.decayCurve != decayCurve;
-  }
 }
