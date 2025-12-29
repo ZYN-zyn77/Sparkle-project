@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -23,7 +24,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-
 // P1 Optimization: Object pools to reduce GC pressure in high-concurrency scenarios
 
 // chatInputPool reuses input message structs
@@ -35,9 +35,9 @@ var chatInputPool = sync.Pool{
 
 // chatInput represents a WebSocket chat message input
 type chatInput struct {
-	Message   string `json:"message"`
-	SessionID string `json:"session_id"`
-	Nickname  string `json:"nickname,omitempty"`
+	Message      string                 `json:"message"`
+	SessionID    string                 `json:"session_id"`
+	Nickname     string                 `json:"nickname,omitempty"`
 	ExtraContext map[string]interface{} `json:"extra_context,omitempty"`
 }
 
@@ -84,6 +84,26 @@ func NewChatOrchestrator(ac *agent.Client, q *db.Queries, ch *service.ChatHistor
 }
 
 func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
+	requestID := c.GetString("request_id")
+	if requestID == "" {
+		requestID = c.Request.Header.Get("X-Request-ID")
+	}
+
+	// Require authenticated user_id from context (must be set by AuthMiddleware)
+	userID := c.GetString("user_id")
+	if userID == "" {
+		log.Printf("WebSocket rejected: missing authentication. request_id=%s", requestID)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		log.Printf("WebSocket rejected: invalid user_id format (not UUID). request_id=%s user_id=%s", requestID, userID)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user identity"})
+		return
+	}
+
 	// Use WebSocketFactory for secure origin checking
 	var upgrader websocket.Upgrader
 	if h.wsFactory != nil {
@@ -100,15 +120,6 @@ func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
 		return
 	}
 	defer conn.Close()
-
-	// Require authenticated user_id from context (must be set by AuthMiddleware)
-	userID := c.GetString("user_id")
-	if userID == "" {
-		log.Printf("WebSocket rejected: missing authentication")
-		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, "Authentication required"))
-		_ = conn.Close() // Explicitly close rejected connection
-		return
-	}
 
 	log.Printf("WebSocket connected for user: %s", userID)
 
@@ -204,7 +215,7 @@ func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
 			// P0: Fetch user context (pending tasks, active plans, focus stats, recent progress)
 			userContextJSON := ""
 			if h.userContext != nil {
-				contextData, err := h.userContext.GetUserContextData(ctx, uuid.MustParse(userID))
+				contextData, err := h.userContext.GetUserContextData(ctx, userUUID)
 				if err != nil {
 					log.Printf("Failed to fetch user context: %v", err)
 					// Non-fatal: continue with empty context
@@ -400,9 +411,9 @@ func convertResponseToJSON(resp *agentv1.ChatResponse) map[string]interface{} {
 			widgetData = tool.WidgetData.AsMap()
 		}
 		result["tool_result"] = map[string]interface{}{
-			"tool_name":    tool.ToolName,
-			"success":      tool.Success,
-			"data":         data,
+			"tool_name":     tool.ToolName,
+			"success":       tool.Success,
+			"data":          data,
 			"error_message": tool.ErrorMessage,
 			"suggestion":    tool.Suggestion,
 			"widget_type":   tool.WidgetType,
