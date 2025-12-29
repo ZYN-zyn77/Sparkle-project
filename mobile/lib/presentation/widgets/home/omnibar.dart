@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/repositories/omnibar_repository.dart';
+import 'package:sparkle/presentation/providers/chat_provider.dart';
 import 'package:sparkle/presentation/providers/cognitive_provider.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 import 'package:sparkle/presentation/providers/settings_provider.dart';
@@ -81,33 +82,61 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
     try {
       final result = await ref.read(omniBarRepositoryProvider).dispatch(text);
       if (mounted) {
-        await _handleResult(result);
-        _controller.clear();
-        _focusNode.unfocus();
-        setState(() => _intentType = null);
+        final success = await _handleResult(result, text);
+        if (success) {
+          _controller.clear();
+          _focusNode.unfocus();
+          setState(() => _intentType = null);
+        }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('发送失败: $e'), backgroundColor: DS.error),
-        );
-      }
+      _showError('发送失败: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _handleResult(Map<String, dynamic> result) async {
+  Future<bool> _handleResult(Map<String, dynamic> result, String text) async {
     final type = result['action_type'] as String?;
     switch (type) {
-      case 'CHAT': context.push('/chat');
+      case 'CHAT':
+        final success = await _sendChatMessage(text);
+        if (success && mounted) context.push('/chat');
+        return success;
       case 'TASK':
         await ref.read(taskListProvider.notifier).refreshTasks();
         await ref.read(dashboardProvider.notifier).refresh();
+        return true;
       case 'CAPSULE':
         await ref.read(cognitiveProvider.notifier).loadFragments();
         await ref.read(dashboardProvider.notifier).refresh();
+        return true;
+      default:
+        _showError('未知的操作类型');
+        return false;
     }
+  }
+
+  Future<bool> _sendChatMessage(String text) async {
+    try {
+      await ref.read(chatProvider.notifier).sendMessage(text);
+      final chatState = ref.read(chatProvider);
+      if (chatState.error != null) {
+        _showError('发送失败: ${chatState.error}');
+        return false;
+      }
+      return true;
+    } catch (e) {
+      _showError('发送失败: $e');
+      return false;
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: DS.error),
+    );
   }
 
   Color _getIntentColor() {
