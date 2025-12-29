@@ -123,7 +123,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(
             icon: Icon(Icons.add_comment_outlined, color: isDark ? DS.brandPrimary70 : DS.neutral700),
             tooltip: 'New Chat',
-            onPressed: () => ref.read(chatProvider.notifier).startNewSession(),
+            onPressed: () => _handleNewChatPressed(context, chatState),
           ),
         ],
       ),
@@ -265,6 +265,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleNewChatPressed(BuildContext context, ChatState chatState) async {
+    final isBusy = chatState.isSending || chatState.streamingContent.isNotEmpty;
+    final chatNotifier = ref.read(chatProvider.notifier);
+
+    if (isBusy) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('确认新建对话？'),
+          content: const Text('当前正在生成回复，继续操作将清空当前对话且无法恢复。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('清空并新建'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) {
+        return;
+      }
+    }
+
+    chatNotifier.startNewSession();
   }
 
   void _showHistoryBottomSheet(BuildContext context) {

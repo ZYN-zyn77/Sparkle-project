@@ -445,7 +445,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void startNewSession() {
-    state = state.copyWith(clearConversation: true, messages: []);
+    state = state.copyWith(
+      clearConversation: true,
+      messages: [],
+      streamingContent: '',
+      isSending: false,
+      clearAiStatus: true,
+      clearReasoning: true,
+      clearError: true,
+      clearGraphragTrace: true,
+      hasMoreMessages: true,
+    );
     if (DemoDataService.isDemoMode) {
       // Keep demo history? Or clear? 
       // Usually "Start New Session" means clear.
