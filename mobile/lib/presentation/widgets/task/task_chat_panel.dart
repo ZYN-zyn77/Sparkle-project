@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/chat_message_model.dart';
@@ -21,7 +22,7 @@ class _TaskChatPanelState extends ConsumerState<TaskChatPanel> {
   bool _isExpanded = false;
 
   void _sendMessage() {
-    final text = _controller.text;
+    final text = _controller.text.trim();
     if (text.isNotEmpty) {
       ref.read(taskChatProvider(widget.taskId).notifier).sendMessage(text);
       _controller.clear();
@@ -36,6 +37,7 @@ class _TaskChatPanelState extends ConsumerState<TaskChatPanel> {
     final chatState = ref.watch(taskChatProvider(widget.taskId));
     final messages = chatState.messages;
     final lastMessage = messages.isNotEmpty ? messages.last : null;
+    final errorText = chatState.error;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -106,6 +108,40 @@ class _TaskChatPanelState extends ConsumerState<TaskChatPanel> {
                       itemBuilder: (context, index) => ChatBubble(message: messages[index]),
                     ),
             ),
+            if (errorText != null)
+              Container(
+                width: double.infinity,
+                color: DS.error100,
+                padding: const EdgeInsets.symmetric(horizontal: DS.lg, vertical: DS.sm),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: DS.error500, size: 18),
+                    const SizedBox(width: DS.sm),
+                    Expanded(
+                      child: Text(
+                        '发送失败，可重试',
+                        style: TextStyle(color: DS.error700, fontWeight: DS.fontWeightMedium),
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('taskChatRetryButton'),
+                      onPressed: () => ref.read(taskChatProvider(widget.taskId).notifier).retryLastSend(),
+                      child: const Text('重试'),
+                    ),
+                    if (chatState.lastUserText != null)
+                      TextButton(
+                        key: const Key('taskChatCopyButton'),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: chatState.lastUserText));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('已复制上次发送内容')),
+                          );
+                        },
+                        child: const Text('复制'),
+                      ),
+                  ],
+                ),
+              ),
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(DS.sm),
