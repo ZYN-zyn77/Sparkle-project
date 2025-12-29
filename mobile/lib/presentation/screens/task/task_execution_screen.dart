@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_completion_result.dart';
 import 'package:sparkle/data/models/task_model.dart';
@@ -27,6 +30,8 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
   bool _isTimerRunning = false;
   bool _showCelebration = false;
   TaskCompletionResult? _completionResult;
+  String _noteDraft = '';
+  bool _hasRestoredDraft = false;
 
   // Timer Enhancement State
   TimerMode _timerMode = TimerMode.countUp;
@@ -34,16 +39,22 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
   bool _isPomodoroMode = false;
   int _pomodoroCycle = 0; // 0: work, 1: break, 2: long break
 
+  String _draftKey(String taskId) => 'task_execution_draft_$taskId';
+
   @override
   void initState() {
     super.initState();
     final task = ref.read(activeTaskProvider);
     _currentTimerDuration = task?.actualMinutes != null ? task!.actualMinutes! * 60 : 0;
+    if (task != null) {
+      _restoreDraftIfAvailable(task);
+    }
   }
 
   Future<bool> _onWillPop() async {
     if (_showCelebration) return false; // Don't pop during celebration
-    if (!_isTimerRunning) return true;
+    final hasProgress = _isTimerRunning || _elapsedSeconds > 0 || _noteDraft.isNotEmpty;
+    if (!hasProgress) return true;
 
     final shouldPop = await showDialog<bool>(
       context: context,
@@ -57,7 +68,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
             fontWeight: DS.fontWeightBold,
           ),
         ),
-        content: const Text('计时器仍在运行，确定要离开吗？您的进度将被保存。'),
+        content: const Text('离开前将自动保存当前计时与笔记草稿，下次可继续。确定要离开吗？'),
         actions: [
           CustomButton.text(
             text: '继续执行',
@@ -66,9 +77,12 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
           CustomButton.primary(
             text: '离开',
             icon: Icons.exit_to_app,
-            onPressed: () {
+            onPressed: () async {
               HapticFeedback.mediumImpact();
-              Navigator.of(context).pop(true);
+              await _saveDraft();
+              if (context.mounted) {
+                Navigator.of(context).pop(true);
+              }
             },
             customGradient: DS.warningGradient,
             size: CustomButtonSize.small,
@@ -98,6 +112,9 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
         setState(() {
           _completionResult = result;
         });
+        if (result != null) {
+          await _clearDraft(task.id);
+        }
       }
     }
   }
@@ -121,7 +138,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
     } else {
       // Fallback if result isn't ready or failed (though optimistic update usually handles it)
       // For now, just go to galaxy
-       context.go('/galaxy');
+      context.go('/galaxy');
     }
   }
 
@@ -151,21 +168,97 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
   void _onPomodoroComplete() {
     if (!_isPomodoroMode) return;
 
-    if (_pomodoroCycle == 0) { // Work phase completed
+    if (_pomodoroCycle == 0) {
+      // Work phase completed
       _pomodoroCycle = 1;
       _currentTimerDuration = 5 * 60; // Short break
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('番茄工作时间结束！休息一下。')),
       );
-    } else if (_pomodoroCycle == 1) { // Short break completed
+    } else if (_pomodoroCycle == 1) {
+      // Short break completed
       _pomodoroCycle = 0;
       _currentTimerDuration = 25 * 60; // Next work phase
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('休息时间结束！开始新的工作。')),
       );
-    } 
+    }
     // Extend for long breaks if desired
     setState(() {}); // Trigger rebuild for TimerWidget to update
+  }
+
+  Future<void> _saveDraft() async {
+    final task = ref.read(activeTaskProvider);
+    if (task == null || task.status == TaskStatus.completed) return;
+    final prefs = await SharedPreferences.getInstance();
+    final draft = <String, dynamic>{
+      'taskId': task.id,
+      'elapsedSeconds': _elapsedSeconds,
+      'note': _noteDraft,
+      'timerMode': _timerMode.name,
+      'currentTimerDuration': _currentTimerDuration,
+      'isPomodoroMode': _isPomodoroMode,
+      'pomodoroCycle': _pomodoroCycle,
+    };
+    await prefs.setString(_draftKey(task.id), jsonEncode(draft));
+  }
+
+  Future<void> _clearDraft(String taskId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_draftKey(taskId));
+    if (mounted) {
+      setState(() {
+        _noteDraft = '';
+        _elapsedSeconds = 0;
+      });
+    }
+  }
+
+  Future<void> _restoreDraftIfAvailable(TaskModel task) async {
+    if (_hasRestoredDraft || task.status == TaskStatus.completed) return;
+    final prefs = await SharedPreferences.getInstance();
+    final rawDraft = prefs.getString(_draftKey(task.id));
+    if (rawDraft == null) return;
+
+    try {
+      final decoded = jsonDecode(rawDraft) as Map<String, dynamic>;
+      if (decoded['taskId'] != task.id) return;
+      final savedSeconds = (decoded['elapsedSeconds'] as num?)?.toInt() ?? 0;
+      final savedNote = decoded['note'] as String?;
+      final savedTimerMode = decoded['timerMode'] as String?;
+      final savedDuration = (decoded['currentTimerDuration'] as num?)?.toInt();
+      final savedPomodoro = decoded['isPomodoroMode'] as bool? ?? false;
+      final savedCycle = (decoded['pomodoroCycle'] as num?)?.toInt() ?? 0;
+      TimerMode? restoredMode;
+      if (savedTimerMode != null) {
+        restoredMode = TimerMode.values.firstWhere(
+          (mode) => mode.name == savedTimerMode,
+          orElse: () => _timerMode,
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _hasRestoredDraft = true;
+        _noteDraft = savedNote ?? '';
+        _timerMode = restoredMode ?? _timerMode;
+        _isPomodoroMode = restoredMode == TimerMode.countDown ? savedPomodoro : false;
+        _pomodoroCycle = _isPomodoroMode ? savedCycle : 0;
+        _elapsedSeconds = savedSeconds;
+        if (_timerMode == TimerMode.countDown) {
+          _currentTimerDuration = savedSeconds > 0
+              ? savedSeconds
+              : (savedDuration ?? _currentTimerDuration);
+        } else {
+          _currentTimerDuration = savedSeconds > 0 ? savedSeconds : _currentTimerDuration;
+        }
+      });
+    } catch (_) {
+      // Ignore corrupted draft
+    }
+  }
+
+  Future<void> _handleAbandonDraftCleanup(TaskModel task) async {
+    await _clearDraft(task.id);
   }
 
   @override
@@ -229,7 +322,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
               elevation: 0,
               iconTheme: IconThemeData(color: DS.neutral900),
               title: Text(
-                activeTask.title, 
+                activeTask.title,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: DS.neutral900),
               ),
@@ -369,16 +462,19 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                       ),
                     ),
                     _BottomControls(
-                      task: activeTask, 
+                      task: activeTask,
                       elapsedSeconds: _elapsedSeconds,
                       onComplete: _handleCompletion,
+                      noteDraft: _noteDraft,
+                      onNoteDraftChanged: (value) => setState(() => _noteDraft = value),
+                      onAbandon: () => _handleAbandonDraftCleanup(activeTask),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          
+
           // Celebration Overlay
           if (_showCelebration)
             Positioned.fill(
@@ -509,16 +605,22 @@ class _TimerControls extends StatelessWidget {
 class _BottomControls extends ConsumerWidget {
 
   const _BottomControls({
-    required this.task, 
+    required this.task,
     required this.elapsedSeconds,
     required this.onComplete,
+    required this.noteDraft,
+    required this.onNoteDraftChanged,
+    required this.onAbandon,
   });
   final TaskModel task;
   final int elapsedSeconds;
   final Function(int minutes, String? note) onComplete;
+  final String noteDraft;
+  final ValueChanged<String> onNoteDraftChanged;
+  final VoidCallback onAbandon;
 
   void _showCompleteDialog(BuildContext context, WidgetRef ref) {
-    final noteController = TextEditingController();
+    final noteController = TextEditingController(text: noteDraft);
     final minutes = Duration(seconds: elapsedSeconds).inMinutes;
 
     showDialog(
@@ -588,6 +690,7 @@ class _BottomControls extends ConsumerWidget {
                 ),
               ),
               maxLines: 3,
+              onChanged: onNoteDraftChanged,
             ),
           ],
         ),
@@ -602,6 +705,7 @@ class _BottomControls extends ConsumerWidget {
             onPressed: () {
               HapticFeedback.heavyImpact();
               Navigator.of(ctx).pop();
+              onNoteDraftChanged(noteController.text);
               onComplete(minutes, noteController.text.trim().isEmpty ? null : noteController.text.trim());
             },
             customGradient: DS.successGradient,
@@ -618,9 +722,10 @@ class _BottomControls extends ConsumerWidget {
       builder: (ctx) => BlockingInterceptorDialog(
         taskId: task.id,
         onAbandonConfirmed: () {
-           ref.read(taskListProvider.notifier).abandonTask(task.id);
-           // Navigate away completely to Galaxy to exit execution flow safely
-           context.go('/galaxy');
+          ref.read(taskListProvider.notifier).abandonTask(task.id);
+          onAbandon();
+          // Navigate away completely to Galaxy to exit execution flow safely
+          context.go('/galaxy');
         },
       ),
     );
