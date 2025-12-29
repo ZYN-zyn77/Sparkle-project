@@ -49,13 +49,6 @@ func (c *chatInput) Reset() {
 	c.ExtraContext = nil
 }
 
-// jsonResponsePool reuses response maps
-var jsonResponsePool = sync.Pool{
-	New: func() interface{} {
-		return make(map[string]interface{}, 8)
-	},
-}
-
 // stringBuilderPool reuses string builders for text accumulation
 var stringBuilderPool = sync.Pool{
 	New: func() interface{} {
@@ -113,7 +106,7 @@ func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
 	if userID == "" {
 		log.Printf("WebSocket rejected: missing authentication")
 		conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, "Authentication required"))
-		conn.Close()
+		_ = conn.Close() // Explicitly close rejected connection
 		return
 	}
 

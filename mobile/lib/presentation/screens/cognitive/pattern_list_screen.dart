@@ -10,7 +10,8 @@ import 'package:sparkle/presentation/providers/cognitive_provider.dart';
 ///
 /// Displays all behavior patterns with deep space theme
 class PatternListScreen extends ConsumerStatefulWidget {
-  const PatternListScreen({super.key});
+  const PatternListScreen({this.highlightId, super.key});
+  final String? highlightId;
 
   @override
   ConsumerState<PatternListScreen> createState() => _PatternListScreenState();

@@ -626,12 +626,21 @@ class WebSocketChatServiceV2 {
 
   /// 释放资源
   void dispose() {
+    if (_disposed) return;
     _log('🗑️  Disposing WebSocketChatServiceV2');
     _disposed = true;
+    _connGen++; // Invalidate any pending connection attempts
+    
     _socketSubscription?.cancel();
     _socketSubscription = null;
-    _reconnectTimer?.cancel(); // TODO-A7: Ensure timer cancel
+    
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    
+    _stopHeartbeat();
+    
     _closeConnection();
+    
     if (_messageStreamController != null &&
         !_messageStreamController!.isClosed) {
       _messageStreamController!.close();

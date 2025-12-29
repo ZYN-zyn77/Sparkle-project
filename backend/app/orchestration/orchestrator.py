@@ -111,7 +111,7 @@ class ChatOrchestrator:
     def __init__(self, db_session: Optional[AsyncSession] = None, redis_client=None):
         if redis_client is None:
             logger.error("ChatOrchestrator requires Redis, but no redis_client was provided")
-            raise RuntimeError("Redis client is required for ChatOrchestrator")
+            raise ValueError("Redis client is required for ChatOrchestrator")
         self.db_session = db_session
         self.redis = redis_client
 
