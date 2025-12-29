@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/providers/community_provider.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
@@ -67,7 +66,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
-                    : const LinearGradient(
+                    : LinearGradient(
                         colors: [DS.primaryBase, DS.secondaryBase],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -181,7 +180,7 @@ class GroupDetailScreen extends ConsumerWidget {
                     children: group.focusTags.map((tag) => Chip(
                       label: Text(tag),
                       backgroundColor: DS.neutral100,
-                      labelStyle: const TextStyle(color: DS.neutral800),
+                      labelStyle: TextStyle(color: DS.neutral800),
                     ),).toList(),
                   ),
                   const SizedBox(height: DS.xxl),
@@ -267,7 +266,7 @@ class GroupDetailScreen extends ConsumerWidget {
           const SizedBox(height: DS.sm),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: DS.neutral900,
@@ -276,7 +275,7 @@ class GroupDetailScreen extends ConsumerWidget {
           const SizedBox(height: DS.xs),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               color: DS.neutral500,
             ),

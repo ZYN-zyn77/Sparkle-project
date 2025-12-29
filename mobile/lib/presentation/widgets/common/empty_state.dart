@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
 /// 空状态场景类型
@@ -217,7 +215,7 @@ class EmptyState extends StatelessWidget {
             // 描述
             Text(
               description ?? _getDefaultDescription(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: DS.fontSizeBase,
                 color: DS.neutral600,
                 height: DS.lineHeightNormal,
@@ -300,7 +298,7 @@ class CompactEmptyState extends StatelessWidget {
             Container(
               width: 64.0,
               height: 64.0,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: DS.neutral100,
                 shape: BoxShape.circle,
               ),
@@ -314,7 +312,7 @@ class CompactEmptyState extends StatelessWidget {
           ],
           Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: DS.fontSizeBase,
               color: DS.neutral600,
             ),

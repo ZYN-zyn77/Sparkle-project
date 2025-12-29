@@ -99,7 +99,7 @@ class ThemeManager extends ChangeNotifier {
 
   /// 应用品牌预设
   SparkleThemeData _applyBrandPreset(SparkleThemeData base) {
-    SparkleColors colors = base.colors;
+    var colors = base.colors;
     switch (_brandPreset) {
       case BrandPreset.sparkle:
         return base;

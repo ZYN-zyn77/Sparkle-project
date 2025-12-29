@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 class LearningModeControl extends StatefulWidget {
 
@@ -127,7 +126,7 @@ class _LearningModeControlState extends State<LearningModeControl> {
                                 ),
                               ],
                             ),
-                            child: const Icon(Icons.touch_app, size: 16, color: DS.primaryBase),
+                            child: Icon(Icons.touch_app, size: 16, color: DS.primaryBase),
                           ),
                         ),
                       ],

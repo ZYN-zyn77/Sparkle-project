@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 /// App Colors - now using Design Tokens
 class AppColors {
-  static const primary = DS.primaryBase;
-  static const secondary = DS.secondaryBase;
-  static const accent = DS.accent;
+  static Color get primary => DS.primaryBase;
+  static Color get secondary => DS.secondaryBase;
+  static Color get accent => DS.accent;
 
   // Light Theme
-  static const lightBackground = DS.neutral100;
-  static final lightCard = DS.brandPrimary;
-  static const lightText = DS.neutral900;
-  static const lightTextSecondary = DS.neutral700;
-  static const lightIcon = DS.neutral800;
-  static const lightBorder = DS.neutral300;
-  static const lightDivider = DS.neutral200;
+  static Color get lightBackground => DS.neutral100;
+  static Color get lightCard => DS.brandPrimary;
+  static Color get lightText => DS.neutral900;
+  static Color get lightTextSecondary => DS.neutral700;
+  static Color get lightIcon => DS.neutral800;
+  static Color get lightBorder => DS.neutral300;
+  static Color get lightDivider => DS.neutral200;
 
   // Dark Theme
-  static const darkBackground = DS.neutral900;
-  static const darkCard = DS.neutral800;
-  static const darkText = DS.neutral50;
-  static const darkTextSecondary = DS.neutral300;
-  static const darkIcon = DS.neutral100;
-  static const darkBorder = DS.neutral700;
-  static const darkDivider = DS.neutral600;
+  static Color get darkBackground => DS.neutral900;
+  static Color get darkCard => DS.neutral800;
+  static Color get darkText => DS.neutral50;
+  static Color get darkTextSecondary => DS.neutral300;
+  static Color get darkIcon => DS.neutral100;
+  static Color get darkBorder => DS.neutral700;
+  static Color get darkDivider => DS.neutral600;
 
   // Semantic colors for both themes
   static Color surfaceBright(BuildContext context) => Theme.of(context).brightness == Brightness.light
@@ -173,7 +172,7 @@ class AppThemes {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary, width: 1.5),
+        side: BorderSide(color: AppColors.primary, width: 1.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DS.radius8),
         ),
@@ -188,15 +187,15 @@ class AppThemes {
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DS.radius8),
-        borderSide: const BorderSide(color: DS.neutral300),
+        borderSide: BorderSide(color: DS.neutral300),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DS.radius8),
-        borderSide: const BorderSide(color: DS.neutral300),
+        borderSide: BorderSide(color: DS.neutral300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DS.radius8),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderSide: BorderSide(color: AppColors.primary, width: 2),
       ),
       filled: true,
       fillColor: DS.neutral50,
@@ -227,12 +226,12 @@ class AppThemes {
     ),
 
     // App bar theme
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       centerTitle: false,
       elevation: 0,
       backgroundColor: Colors.transparent,
       foregroundColor: AppColors.lightText,
-      titleTextStyle: TextStyle(
+      titleTextStyle: const TextStyle(
         fontSize: DS.fontSizeLg,
         fontWeight: DS.fontWeightBold,
         color: Color(0xFF212121),
@@ -343,7 +342,7 @@ class AppThemes {
       AppThemeExtension(
         primaryGradient: DS.primaryGradient,
         secondaryGradient: DS.secondaryGradientDark,
-        cardGradient: const LinearGradient( // Darker gradient for dark mode
+        cardGradient: LinearGradient( // Darker gradient for dark mode
           colors: [DS.neutral800, DS.neutral700],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -399,7 +398,7 @@ class AppThemes {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary, width: 1.5),
+        side: BorderSide(color: AppColors.primary, width: 1.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DS.radius8),
         ),
@@ -414,15 +413,15 @@ class AppThemes {
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DS.radius8),
-        borderSide: const BorderSide(color: DS.neutral700),
+        borderSide: BorderSide(color: DS.neutral700),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DS.radius8),
-        borderSide: const BorderSide(color: DS.neutral700),
+        borderSide: BorderSide(color: DS.neutral700),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DS.radius8),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderSide: BorderSide(color: AppColors.primary, width: 2),
       ),
       filled: true,
       fillColor: DS.neutral800,
@@ -444,7 +443,7 @@ class AppThemes {
     ),
 
     // Bottom navigation bar theme
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       selectedItemColor: AppColors.primary,
       unselectedItemColor: DS.neutral500,
       type: BottomNavigationBarType.fixed,
@@ -602,52 +601,52 @@ class SparkleColors extends ThemeExtension<SparkleColors> {
   final Color divider;
 
   /// 浅色主题配色
-  static const light = SparkleColors(
+  static SparkleColors get light => SparkleColors(
     // 任务类型 - 使用饱和度适中的颜色
-    taskLearning: Color(0xFF64B5F6),
-    taskTraining: Color(0xFFFF9800),
-    taskErrorFix: Color(0xFFEF5350),
-    taskReflection: Color(0xFF9C27B0),
-    taskSocial: Color(0xFF81C784),
-    taskPlanning: Color(0xFF009688),
+    taskLearning: const Color(0xFF64B5F6),
+    taskTraining: const Color(0xFFFF9800),
+    taskErrorFix: const Color(0xFFEF5350),
+    taskReflection: const Color(0xFF9C27B0),
+    taskSocial: const Color(0xFF81C784),
+    taskPlanning: const Color(0xFF009688),
     // 计划类型
-    planSprint: Color(0xFFE53935),
-    planGrowth: Color(0xFF43A047),
+    planSprint: const Color(0xFFE53935),
+    planGrowth: const Color(0xFF43A047),
     // 表面颜色
-    surfaceCard: Color(0xFFFFFFFF),
-    surfaceElevated: Color(0xFFFAFAFA),
-    surfaceGlass: Color(0xF0FFFFFF),
+    surfaceCard: const Color(0xFFFFFFFF),
+    surfaceElevated: const Color(0xFFFAFAFA),
+    surfaceGlass: const Color(0xF0FFFFFF),
     // 文本颜色
     textPrimary: DS.neutral900,
     textSecondary: DS.neutral700,
     textTertiary: DS.neutral500,
-    textOnPrimary: Color(0xFFFFFFFF),
+    textOnPrimary: const Color(0xFFFFFFFF),
     // 边框和分割线
     border: DS.neutral300,
     divider: DS.neutral200,
   );
 
   /// 深色主题配色
-  static const dark = SparkleColors(
+  static SparkleColors get dark => SparkleColors(
     // 任务类型 - 使用更亮的颜色以提高对比度
-    taskLearning: Color(0xFF64B5F6),
-    taskTraining: Color(0xFFFFB74D),
-    taskErrorFix: Color(0xFFEF5350),
-    taskReflection: Color(0xFFBA68C8),
-    taskSocial: Color(0xFF81C784),
-    taskPlanning: Color(0xFF4DB6AC),
+    taskLearning: const Color(0xFF64B5F6),
+    taskTraining: const Color(0xFFFFB74D),
+    taskErrorFix: const Color(0xFFEF5350),
+    taskReflection: const Color(0xFFBA68C8),
+    taskSocial: const Color(0xFF81C784),
+    taskPlanning: const Color(0xFF4DB6AC),
     // 计划类型
-    planSprint: Color(0xFFFF5252),
-    planGrowth: Color(0xFF66BB6A),
+    planSprint: const Color(0xFFFF5252),
+    planGrowth: const Color(0xFF66BB6A),
     // 表面颜色
     surfaceCard: DS.neutral800,
     surfaceElevated: DS.neutral700,
-    surfaceGlass: Color(0xF0424242),
+    surfaceGlass: const Color(0xF0424242),
     // 文本颜色
     textPrimary: DS.neutral50,
     textSecondary: DS.neutral300,
     textTertiary: DS.neutral500,
-    textOnPrimary: Color(0xFFFFFFFF),
+    textOnPrimary: const Color(0xFFFFFFFF),
     // 边框和分割线
     border: DS.neutral700,
     divider: DS.neutral600,

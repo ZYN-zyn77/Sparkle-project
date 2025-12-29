@@ -3,17 +3,27 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 import 'package:sparkle/presentation/widgets/common/sparkle_avatar.dart';
 
 class GroupChatBubble extends ConsumerStatefulWidget {
 
-  const GroupChatBubble({required this.message, this.onRevoke, this.onQuote, super.key});
+  const GroupChatBubble({
+    required this.message, 
+    this.onRevoke, 
+    this.onQuote, 
+    this.onEdit,
+    this.onReaction,
+    this.onThread,
+    super.key,
+  });
   final MessageInfo message;
   final Function(MessageInfo message)? onRevoke;
   final Function(MessageInfo message)? onQuote;
+  final Function(MessageInfo message, String content)? onEdit;
+  final Function(MessageInfo message, String emoji)? onReaction;
+  final Function(MessageInfo message)? onThread;
 
   @override
   ConsumerState<GroupChatBubble> createState() => _GroupChatBubbleState();
@@ -88,10 +98,30 @@ class _GroupChatBubbleState extends ConsumerState<GroupChatBubble> with SingleTi
                   );
                 },
               ),
+              if (widget.onThread != null)
+                ListTile(
+                  leading: const Icon(Icons.forum_outlined),
+                  title: const Text('串联回复'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onThread!(widget.message);
+                  },
+                ),
+              if (isMe && widget.onEdit != null && widget.message.messageType == MessageType.text)
+                ListTile(
+                  leading: const Icon(Icons.edit_rounded),
+                  title: const Text('编辑'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // Trigger edit flow (implementation dependent, but typically shows input)
+                    // For now, we assume onEdit is called with new content from some dialog
+                    // widget.onEdit!(widget.message, newContent);
+                  },
+                ),
               if (canRevoke && widget.onRevoke != null)
                 ListTile(
-                  leading: const Icon(Icons.undo_rounded, color: DS.error),
-                  title: const Text('撤回', style: TextStyle(color: DS.error)),
+                  leading: Icon(Icons.undo_rounded, color: DS.error),
+                  title: Text('撤回', style: TextStyle(color: DS.error)),
                   onTap: () {
                     Navigator.pop(context);
                     widget.onRevoke!(widget.message);
@@ -120,7 +150,7 @@ class _GroupChatBubbleState extends ConsumerState<GroupChatBubble> with SingleTi
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
               isMe ? '你撤回了一条消息' : '${widget.message.sender?.displayName ?? "成员"}撤回了一条消息',
-              style: const TextStyle(fontSize: 12, color: DS.neutral400),
+              style: TextStyle(fontSize: 12, color: DS.neutral400),
             ),
           ),
         ),
@@ -141,7 +171,7 @@ class _GroupChatBubbleState extends ConsumerState<GroupChatBubble> with SingleTi
             ),
             child: Text(
               widget.message.content ?? '',
-              style: const TextStyle(fontSize: 12, color: DS.neutral600),
+              style: TextStyle(fontSize: 12, color: DS.neutral600),
             ),
           ),
         ),
@@ -175,7 +205,7 @@ class _GroupChatBubbleState extends ConsumerState<GroupChatBubble> with SingleTi
                           padding: const EdgeInsets.only(left: 4, bottom: 4),
                           child: Text(
                             widget.message.sender!.displayName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: DS.neutral500,
                             ),
@@ -191,7 +221,7 @@ class _GroupChatBubbleState extends ConsumerState<GroupChatBubble> with SingleTi
                           children: [
                             Text(
                               timeStr,
-                              style: const TextStyle(fontSize: 10, color: DS.neutral500),
+                              style: TextStyle(fontSize: 10, color: DS.neutral500),
                             ),
                             if (isMe && widget.message.readCount > 0) ...[
                               const SizedBox(width: DS.sm),
@@ -246,7 +276,7 @@ class _GroupChatBubbleState extends ConsumerState<GroupChatBubble> with SingleTi
                       child: Image.network(
                         'https://api.dicebear.com/9.x/avataaars/png?seed=${readBy[i]}',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Center(
+                        errorBuilder: (_, __, ___) => Center(
                           child: Text(
                             '?',
                             style: TextStyle(fontSize: 8, color: DS.neutral500),
@@ -263,12 +293,12 @@ class _GroupChatBubbleState extends ConsumerState<GroupChatBubble> with SingleTi
         if (remaining > 0) ...[
           Text(
             '+${readBy.length}',
-            style: const TextStyle(fontSize: 10, color: DS.info),
+            style: TextStyle(fontSize: 10, color: DS.info),
           ),
         ] else ...[
           Text(
             '${readBy.length}人已读',
-            style: const TextStyle(fontSize: 10, color: DS.info),
+            style: TextStyle(fontSize: 10, color: DS.info),
           ),
         ],
       ],

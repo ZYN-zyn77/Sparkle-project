@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/mindfulness_provider.dart';
 import 'package:sparkle/presentation/widgets/focus/exit_confirmation_dialog.dart';
@@ -234,7 +233,7 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.visibility_off_rounded,
                     color: DS.warning,
                     size: 16,
@@ -242,7 +241,7 @@ class _MindfulnessModeScreenState extends ConsumerState<MindfulnessModeScreen>
                   const SizedBox(width: 6),
                   Text(
                     '分心 ${state.interruptionCount} 次',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: DS.warning,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

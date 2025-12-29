@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 
 /// PrismCard - Cognitive Prism Card (2x1 wide)
@@ -108,7 +107,7 @@ class _PrismCardState extends ConsumerState<PrismCard>
                           Container(
                             width: 6,
                             height: 6,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: DS.prismPurple,
                               shape: BoxShape.circle,
                             ),

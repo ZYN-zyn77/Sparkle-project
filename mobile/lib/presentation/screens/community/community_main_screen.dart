@@ -144,7 +144,7 @@ class _FriendsListTab extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.people_outline, size: 64, color: DS.neutral300),
-                SizedBox(height: DS.lg),
+                const SizedBox(height: DS.lg),
                 Text('还没有好友', style: TextStyle(color: DS.neutral500)),
               ],
             ),
@@ -231,7 +231,7 @@ class _GroupsListTab extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.group_outlined, size: 64, color: DS.neutral300),
-                SizedBox(height: DS.lg),
+                const SizedBox(height: DS.lg),
                 Text('还没有加入群组', style: TextStyle(color: DS.neutral500)),
               ],
             ),

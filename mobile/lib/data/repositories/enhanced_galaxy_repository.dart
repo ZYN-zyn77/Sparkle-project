@@ -79,14 +79,14 @@ class EnhancedGalaxyRepository {
       _graphCache.set(cacheKey, response);
 
       return NetworkResult.success(response);
-    } on CircuitBreakerOpenException catch (e) {
+    } on CircuitBreakerOpenException {
       // 断路器打开，尝试返回缓存
       final cached = _graphCache.get(cacheKey);
       if (cached != null) {
         debugPrint('EnhancedGalaxyRepository: Circuit breaker open, returning stale cache');
         return NetworkResult.success(cached, isFromCache: true);
       }
-      return NetworkResult.failure(GalaxyError.circuitBreakerOpen(e.message));
+      return NetworkResult.failure(GalaxyError.circuitBreakerOpen());
     } on DioException catch (e) {
       // 网络错误，尝试返回缓存
       final cached = _graphCache.get(cacheKey);

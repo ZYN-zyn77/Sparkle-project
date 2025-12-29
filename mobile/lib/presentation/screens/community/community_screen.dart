@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/community_providers.dart';
 import 'package:sparkle/presentation/screens/community/create_post_screen.dart';
 import 'package:sparkle/presentation/widgets/community/feed_post_card.dart';
@@ -50,7 +49,7 @@ class CommunityScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: DS.error),
+                  Icon(Icons.error_outline, size: 48, color: DS.error),
                   const SizedBox(height: DS.lg),
                   Text(
                     'Failed to load feed',
@@ -60,7 +59,7 @@ class CommunityScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            loading: () => const Center(
+            loading: () => Center(
               child: CircularProgressIndicator(color: DS.primaryBase),
             ),
           ),

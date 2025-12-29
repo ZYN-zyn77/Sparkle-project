@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 class FocusStatsTool extends StatelessWidget {
   const FocusStatsTool({super.key});
@@ -160,7 +159,7 @@ class FocusStatsTool extends StatelessWidget {
         const SizedBox(height: DS.sm),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
             color: DS.neutral500,
           ),
@@ -174,7 +173,7 @@ class FocusStatsTool extends StatelessWidget {
         const SizedBox(height: DS.xs),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: DS.neutral900,
@@ -182,7 +181,7 @@ class FocusStatsTool extends StatelessWidget {
         ),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             color: DS.neutral500,
           ),

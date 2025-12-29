@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 /// 翻页时钟组件 - 星空渐变风格
 class FlipClock extends StatelessWidget {
@@ -183,7 +182,7 @@ class _FlipDigitState extends State<_FlipDigit>
           ),
           child: Center(
             child: ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
+              shaderCallback: (bounds) => LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -302,7 +301,7 @@ class SimpleFlipClock extends StatelessWidget {
     }
 
     return ShaderMask(
-      shaderCallback: (bounds) => const LinearGradient(
+      shaderCallback: (bounds) => LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [

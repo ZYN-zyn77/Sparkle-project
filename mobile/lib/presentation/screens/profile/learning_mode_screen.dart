@@ -116,7 +116,7 @@ class _LearningModeScreenState extends ConsumerState<LearningModeScreen> {
                 onPressed: _isLoading ? null : _savePreferences,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
+                  shape: const RoundedRectangleBorder(
                     borderRadius: DS.borderRadius12,
                   ),
                 ),

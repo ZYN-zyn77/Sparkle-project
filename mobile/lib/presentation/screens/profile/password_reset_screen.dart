@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 
 class PasswordResetScreen extends ConsumerStatefulWidget {
@@ -120,7 +119,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                   backgroundColor: DS.primaryBase,
                   foregroundColor: DS.brandPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
+                  shape: const RoundedRectangleBorder(
                     borderRadius: DS.borderRadius12,
                   ),
                   elevation: 0,
@@ -187,7 +186,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: DS.borderRadius12,
-              borderSide: const BorderSide(color: DS.primaryBase, width: 2),
+              borderSide: BorderSide(color: DS.primaryBase, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),

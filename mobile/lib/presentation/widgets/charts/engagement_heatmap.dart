@@ -113,20 +113,20 @@ class EngagementHeatmap extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('低', style: TextStyle(fontSize: 12, color: DS.brandPrimary)),
-        SizedBox(width: DS.xs),
+        const SizedBox(width: DS.xs),
         ...List.generate(5, (index) {
           final intensity = index / 4;
           return Container(
             width: 12,
             height: 12,
-            margin: EdgeInsets.only(left: DS.xs),
+            margin: const EdgeInsets.only(left: DS.xs),
             decoration: BoxDecoration(
               color: _getColorForIntensity(intensity),
               borderRadius: BorderRadius.circular(2),
             ),
           );
         }),
-        SizedBox(width: DS.xs),
+        const SizedBox(width: DS.xs),
         Text('高', style: TextStyle(fontSize: 12, color: DS.brandPrimary)),
       ],
     );

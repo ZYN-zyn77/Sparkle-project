@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 class PreferenceController2D extends StatefulWidget {
 
@@ -144,19 +143,19 @@ class _PreferenceController2DState extends State<PreferenceController2D> {
 
   Widget _buildQuadrantLabels() {
     const labelPadding = 8.0;
-    const textStyle = TextStyle(
+    final textStyle = TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.bold,
       color: DS.neutral600,
     );
 
-    return const Stack(
+    return Stack(
       children: [
         // Depth+ at top center
         Align(
           alignment: Alignment.topCenter,
           child: Padding(
-            padding: EdgeInsets.only(top: labelPadding),
+            padding: const EdgeInsets.only(top: labelPadding),
             child: Text('深度+', style: textStyle),
           ),
         ),
@@ -164,7 +163,7 @@ class _PreferenceController2DState extends State<PreferenceController2D> {
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.only(bottom: labelPadding),
+            padding: const EdgeInsets.only(bottom: labelPadding),
             child: Text('深度-', style: textStyle),
           ),
         ),
@@ -172,7 +171,7 @@ class _PreferenceController2DState extends State<PreferenceController2D> {
         Align(
           alignment: Alignment.centerLeft,
           child: Padding(
-            padding: EdgeInsets.only(left: labelPadding),
+            padding: const EdgeInsets.only(left: labelPadding),
             child: RotatedBox(
               quarterTurns: 3,
               child: Text('好奇-', style: textStyle),
@@ -183,7 +182,7 @@ class _PreferenceController2DState extends State<PreferenceController2D> {
         Align(
           alignment: Alignment.centerRight,
           child: Padding(
-            padding: EdgeInsets.only(right: labelPadding),
+            padding: const EdgeInsets.only(right: labelPadding),
             child: RotatedBox(
               quarterTurns: 1,
               child: Text('好奇+', style: textStyle),

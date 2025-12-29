@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_completion_result.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
@@ -15,7 +14,7 @@ class TaskFeedbackDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: DS.borderRadius20),
+      shape: const RoundedRectangleBorder(borderRadius: DS.borderRadius20),
       backgroundColor: DS.brandPrimary,
       child: Padding(
         padding: const EdgeInsets.all(DS.spacing20),
@@ -28,7 +27,7 @@ class TaskFeedbackDialog extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(DS.sm),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: DS.primaryGradient,
                     shape: BoxShape.circle,
                   ),
@@ -57,7 +56,7 @@ class TaskFeedbackDialog extends StatelessWidget {
                         fontSize: DS.fontSizeBase,
                         height: 1.5,
                       ),
-                      strong: const TextStyle(fontWeight: FontWeight.bold, color: DS.primaryDark),
+                      strong: TextStyle(fontWeight: FontWeight.bold, color: DS.primaryDark),
                     ),
                   ),
                 ),
@@ -127,7 +126,7 @@ class _StatItem extends StatelessWidget {
         Icon(icon, color: color),
         const SizedBox(height: DS.xs),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        Text(label, style: const TextStyle(color: DS.neutral500, fontSize: 12)),
+        Text(label, style: TextStyle(color: DS.neutral500, fontSize: 12)),
       ],
     );
 }

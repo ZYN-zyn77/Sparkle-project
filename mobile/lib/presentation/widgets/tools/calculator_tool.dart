@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 class CalculatorTool extends StatefulWidget {
   const CalculatorTool({super.key});
@@ -107,7 +106,7 @@ class _CalculatorToolState extends State<CalculatorTool> {
               children: [
                 Text(
                   _expression,
-                  style: const TextStyle(fontSize: 24, color: DS.neutral500),
+                  style: TextStyle(fontSize: 24, color: DS.neutral500),
                 ),
                 const SizedBox(height: DS.sm),
                 Text(

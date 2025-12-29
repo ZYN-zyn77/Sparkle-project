@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 /// 火焰等级指示器组件
 ///
@@ -229,7 +228,7 @@ class _FlameIndicatorState extends State<FlameIndicator>
             const SizedBox(width: DS.spacing4),
             Text(
               'Lv.${widget.level}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: DS.fontSizeLg,
                 fontWeight: DS.fontWeightBold,
                 color: DS.neutral900,
@@ -241,7 +240,7 @@ class _FlameIndicatorState extends State<FlameIndicator>
         // 亮度
         Text(
           '亮度 ${widget.brightness}%',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: DS.fontSizeSm,
             color: DS.neutral600,
           ),
@@ -377,7 +376,7 @@ class CompactFlameIndicator extends StatelessWidget {
               children: [
                 Text(
                   'Lv.$level',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: DS.fontSizeSm,
                     fontWeight: DS.fontWeightBold,
                     color: DS.neutral900,
@@ -385,7 +384,7 @@ class CompactFlameIndicator extends StatelessWidget {
                 ),
                 Text(
                   '$brightness%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: DS.fontSizeXs,
                     color: DS.neutral600,
                   ),

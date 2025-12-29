@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 
 class DashboardCuriosityCard extends ConsumerWidget {
@@ -34,12 +33,12 @@ class DashboardCuriosityCard extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.lightbulb_outline, color: DS.accent, size: 20),
+                    Icon(Icons.lightbulb_outline, color: DS.accent, size: 20),
                     if (cognitive.hasNewInsight)
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: DS.error,
                           shape: BoxShape.circle,
                         ),

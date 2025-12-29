@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/design/motion.dart';
 import 'package:sparkle/data/models/chat_message_model.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
@@ -315,14 +313,14 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                     const SizedBox(width: DS.spacing4),
                     Text(
                       '${_formatParamKey(entry.key)}: ',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: DS.neutral600,
                         fontSize: DS.fontSizeSm,
                       ),
                     ),
                     Text(
                       entry.value.toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: DS.fontWeightSemibold,
                         fontSize: DS.fontSizeSm,
                         color: DS.neutral900,

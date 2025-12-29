@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"net/url"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -15,6 +16,7 @@ type Config struct {
 	AgentTLSCACertPath string `mapstructure:"AGENT_TLS_CA_CERT"`
 	AgentTLSServerName string `mapstructure:"AGENT_TLS_SERVER_NAME"`
 	AgentTLSInsecure bool `mapstructure:"AGENT_TLS_INSECURE"`
+	GRPCTimeoutSeconds int `mapstructure:"GRPC_TIMEOUT_SECONDS"`
 	JWTSecret     string `mapstructure:"JWT_SECRET"`
 	RedisURL      string `mapstructure:"REDIS_URL"`
 	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
@@ -40,23 +42,75 @@ func (c *Config) IsOriginAllowed(origin string) bool {
 		return true
 	}
 
+	originURL, err := url.Parse(origin)
+	if err != nil || originURL.Scheme == "" || originURL.Host == "" {
+		return false
+	}
+
+	originScheme := strings.ToLower(originURL.Scheme)
+	originHost := strings.ToLower(originURL.Hostname())
+	originPort := originURL.Port()
+
 	// Check against whitelist
 	for _, allowed := range c.AllowedOrigins {
+		allowed = strings.TrimSpace(allowed)
+		if allowed == "" {
+			continue
+		}
 		if allowed == "*" {
 			return true
 		}
-		if strings.EqualFold(allowed, origin) {
-			return true
-		}
-		// Support wildcard subdomains (e.g., *.example.com)
+
 		if strings.HasPrefix(allowed, "*.") {
 			domain := strings.TrimPrefix(allowed, "*.")
-			if strings.HasSuffix(origin, domain) {
+			if matchWildcardHost(originHost, domain) {
 				return true
 			}
+			continue
 		}
+
+		allowedURL, err := url.Parse(allowed)
+		if err != nil || allowedURL.Scheme == "" || allowedURL.Host == "" {
+			allowedHost := strings.ToLower(allowed)
+			if originHost == allowedHost {
+				return true
+			}
+			continue
+		}
+
+		if strings.ToLower(allowedURL.Scheme) != originScheme {
+			continue
+		}
+
+		allowedHost := strings.ToLower(allowedURL.Hostname())
+		allowedPort := allowedURL.Port()
+
+		if strings.HasPrefix(allowedHost, "*.") {
+			domain := strings.TrimPrefix(allowedHost, "*.")
+			if !matchWildcardHost(originHost, domain) {
+				continue
+			}
+		} else if allowedHost != originHost {
+			continue
+		}
+
+		if allowedPort != originPort {
+			continue
+		}
+
+		return true
 	}
 	return false
+}
+
+func matchWildcardHost(host string, domain string) bool {
+	host = strings.ToLower(host)
+	domain = strings.ToLower(domain)
+
+	if host == domain {
+		return false
+	}
+	return strings.HasSuffix(host, "."+domain)
 }
 
 func Load() *Config {
@@ -67,6 +121,7 @@ func Load() *Config {
 	viper.SetDefault("AGENT_TLS_CA_CERT", "")
 	viper.SetDefault("AGENT_TLS_SERVER_NAME", "")
 	viper.SetDefault("AGENT_TLS_INSECURE", false)
+	viper.SetDefault("GRPC_TIMEOUT_SECONDS", 5)
 	// JWT_SECRET has no default - must be set via environment variable or .env file
 	viper.SetDefault("REDIS_URL", "127.0.0.1:6379")
 	viper.SetDefault("REDIS_PASSWORD", "")

@@ -54,6 +54,9 @@ class ApiEndpoints {
   static String learningPath(String targetNodeId) => '/learning-paths/$targetNodeId';
 
   // Community - Friends
+  static const String communityFeed = '/community/feed';
+  static const String communityPosts = '/community/posts';
+  static String communityPostLike(String id) => '/community/posts/$id/like';
   static const String friends = '/community/friends';
   static const String friendRequest = '/community/friends/request';
   static const String friendRespond = '/community/friends/respond';
@@ -61,7 +64,11 @@ class ApiEndpoints {
   static const String friendsRecommendations = '/community/friends/recommendations';
   static String privateMessages(String friendId) => '/community/friends/$friendId/messages';
   static String revokePrivateMessage(String messageId) => '/community/messages/$messageId/revoke';
+  static String editPrivateMessage(String messageId) => '/community/messages/$messageId';
+  static String privateMessageReactions(String messageId) => '/community/messages/$messageId/reactions';
+  static String privateMessagesSearch(String friendId) => '/community/friends/$friendId/messages/search';
   static const String sendPrivateMessage = '/community/messages';
+  static const String communityShare = '/community/share';
   static const String searchUsers = '/community/users/search';
   static const String userStatus = '/community/status';
 
@@ -72,12 +79,53 @@ class ApiEndpoints {
   static String groupJoin(String id) => '/community/groups/$id/join';
   static String groupLeave(String id) => '/community/groups/$id/leave';
   static String groupMessages(String id) => '/community/groups/$id/messages';
+  static String groupMessageRevoke(String groupId, String messageId) => '/community/groups/$groupId/messages/$messageId/revoke';
+  static String groupMessageEdit(String groupId, String messageId) => '/community/groups/$groupId/messages/$messageId';
+  static String groupMessageReactions(String groupId, String messageId) => '/community/groups/$groupId/messages/$messageId/reactions';
+  static String groupThreadMessages(String groupId, String threadRootId) => '/community/groups/$groupId/threads/$threadRootId';
+  static String groupMessagesSearch(String groupId) => '/community/groups/$groupId/messages/search';
   static String groupTasks(String id) => '/community/groups/$id/tasks';
   static String groupFlame(String id) => '/community/groups/$id/flame';
 
   // Community - Tasks & Checkin
   static String claimTask(String id) => '/community/tasks/$id/claim';
   static const String checkin = '/community/checkin';
+
+  // Community - Encryption
+  static const String encryptionKeys = '/community/encryption/keys';
+  static String encryptionKey(String keyId) => '/community/encryption/keys/$keyId';
+  static String encryptionKeyRevoke(String keyId) => '/community/encryption/keys/$keyId/revoke';
+  static String userPublicKey(String userId) => '/community/encryption/keys/user/$userId';
+
+  // Community - Group Moderation
+  static String groupAnnouncement(String groupId) => '/community/groups/$groupId/announcement';
+  static String groupModerationSettings(String groupId) => '/community/groups/$groupId/moderation';
+  static String groupMemberMute(String groupId, String userId) => '/community/groups/$groupId/members/$userId/mute';
+  static String groupMemberUnmute(String groupId, String userId) => '/community/groups/$groupId/members/$userId/unmute';
+  static String groupMemberWarn(String groupId, String userId) => '/community/groups/$groupId/members/$userId/warn';
+
+  // Community - Message Reports
+  static const String messageReports = '/community/reports';
+  static String messageReport(String reportId) => '/community/reports/$reportId';
+  static String messageReportReview(String reportId) => '/community/reports/$reportId/review';
+
+  // Community - Message Favorites
+  static const String messageFavorites = '/community/favorites';
+  static String messageFavorite(String favoriteId) => '/community/favorites/$favoriteId';
+
+  // Community - Message Forwarding
+  static const String messageForward = '/community/messages/forward';
+
+  // Community - Broadcast
+  static const String broadcast = '/community/broadcast';
+
+  // Community - Advanced Search
+  static const String messagesAdvancedSearch = '/community/messages/search';
+
+  // Community - Offline Queue
+  static const String offlineQueuePending = '/community/offline/pending';
+  static const String offlineQueueFailed = '/community/offline/failed';
+  static const String offlineQueueRetry = '/community/offline/retry';
 
   // Cognitive Prism
   static const String cognitiveFragments = '/cognitive/fragments';

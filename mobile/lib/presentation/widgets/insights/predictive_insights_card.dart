@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 /// 预测洞察卡片 - 显示AI预测的学习建议
 ///
@@ -71,11 +70,11 @@ class PredictiveInsightsCard extends StatelessWidget {
               child: Icon(Icons.trending_up, color: DS.brandPrimary.shade600, size: 24),
             ),
             const SizedBox(width: DS.md),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     '活跃度预测',
                     style: TextStyle(
                       fontSize: DS.fontSizeBase,
@@ -161,11 +160,11 @@ class PredictiveInsightsCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: DS.md),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     '难度预测',
                     style: TextStyle(
                       fontSize: DS.fontSizeBase,
@@ -225,7 +224,7 @@ class PredictiveInsightsCard extends StatelessWidget {
         // Estimated Time
         Row(
           children: [
-            const Icon(Icons.schedule,
+            Icon(Icons.schedule,
               color: DS.neutral500,
               size: DS.iconSizeXs,),
             const SizedBox(width: DS.spacing8),
@@ -247,13 +246,13 @@ class PredictiveInsightsCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_amber,
+                Icon(Icons.warning_amber,
                   color: DS.warning,
                   size: DS.iconSizeXs,),
                 const SizedBox(width: DS.spacing8),
                 Text(
                   '建议先学习 $missingCount 个前置知识',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: DS.fontSizeXs,
                     color: DS.warning,
                   ),
@@ -290,11 +289,11 @@ class PredictiveInsightsCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: DS.md),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     '学习风险评估',
                     style: TextStyle(
                       fontSize: DS.fontSizeBase,
@@ -352,7 +351,7 @@ class PredictiveInsightsCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.lightbulb_outline,
+                    Icon(Icons.lightbulb_outline,
                       color: DS.accent,
                       size: DS.iconSizeXs,),
                     const SizedBox(width: DS.spacing8),

@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 /// 成就分享卡片生成器 - Week 7
 ///
@@ -107,7 +106,7 @@ class _LearningMilestoneCard extends StatelessWidget {
     return Container(
       width: 800,
       height: 1200,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -159,7 +158,7 @@ class _LearningMilestoneCard extends StatelessWidget {
                 const SizedBox(height: 60),
 
                 // Achievement title
-                const Text(
+                Text(
                   '学习里程碑',
                   style: TextStyle(
                     color: DS.brandPrimaryConst,
@@ -336,7 +335,7 @@ class _StreakRecordCard extends StatelessWidget {
             ),
             const SizedBox(height: 60),
 
-            const Text(
+            Text(
               '连续学习记录',
               style: TextStyle(
                 color: DS.brandPrimaryConst,
@@ -425,7 +424,7 @@ class _MasteryAchievementCard extends StatelessWidget {
             ),
             const SizedBox(height: 60),
 
-            const Text(
+            Text(
               '领域精通',
               style: TextStyle(
                 color: DS.brandPrimaryConst,
@@ -506,7 +505,7 @@ class _TaskCompletionCard extends StatelessWidget {
             ),
             const SizedBox(height: 60),
 
-            const Text(
+            Text(
               '任务完成',
               style: TextStyle(
                 color: DS.brandPrimaryConst,

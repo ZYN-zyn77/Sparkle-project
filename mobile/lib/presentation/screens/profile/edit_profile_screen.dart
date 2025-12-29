@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/user_model.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
 import 'package:sparkle/presentation/screens/profile/password_reset_screen.dart';
@@ -190,7 +189,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(
+                : Text(
                     '保存',
                     style: TextStyle(
                       color: DS.primaryBase,
@@ -268,7 +267,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: DS.sm),
             TextButton(
               onPressed: _isLoading ? null : _pickAndUploadAvatar,
-              child: const Text(
+              child: Text(
                 '更换头像',
                 style: TextStyle(
                   color: DS.primaryBase,
@@ -314,7 +313,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
               ),
               child: ListTile(
-                leading: const Icon(Icons.lock_reset_rounded, color: DS.primaryBase),
+                leading: Icon(Icons.lock_reset_rounded, color: DS.primaryBase),
                 title: const Text('重置密码', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
@@ -411,7 +410,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: DS.borderRadius12,
-              borderSide: const BorderSide(color: DS.primaryBase, width: 2),
+              borderSide: BorderSide(color: DS.primaryBase, width: 2),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: DS.borderRadius12,

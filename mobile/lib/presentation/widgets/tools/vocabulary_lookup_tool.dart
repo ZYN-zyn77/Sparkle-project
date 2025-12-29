@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/vocabulary_provider.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
@@ -151,7 +150,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
                       borderSide: const BorderSide(color: Colors.cyan, width: 2),
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    prefixIcon: const Icon(Icons.translate_rounded, color: DS.neutral400),
+                    prefixIcon: Icon(Icons.translate_rounded, color: DS.neutral400),
                   ),
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _lookup(),
@@ -215,7 +214,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.search_off_rounded,
               size: 48,
               color: DS.neutral300,
@@ -223,7 +222,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
             const SizedBox(height: DS.md),
             Text(
               state.error!,
-              style: const TextStyle(color: DS.neutral500),
+              style: TextStyle(color: DS.neutral500),
               textAlign: TextAlign.center,
             ),
           ],
@@ -232,7 +231,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
     }
 
     if (state.lookupResult == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -241,7 +240,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
               size: 48,
               color: DS.neutral200,
             ),
-            SizedBox(height: DS.md),
+            const SizedBox(height: DS.md),
             Text(
               '输入单词开始查询',
               style: TextStyle(color: DS.neutral400),
@@ -285,7 +284,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
                   const SizedBox(width: DS.md),
                   Text(
                     phonetic,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: DS.neutral500,
                       fontSize: 16,
                       fontStyle: FontStyle.italic,
@@ -318,7 +317,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
 
             // Definitions
             if (definitions != null) ...[
-              const Text(
+              Text(
                 '释义',
                 style: TextStyle(
                   fontWeight: DS.fontWeightBold,
@@ -333,7 +332,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
             // Examples
             if (examples != null && (examples is List && examples.isNotEmpty)) ...[
               const SizedBox(height: DS.lg),
-              const Text(
+              Text(
                 '例句',
                 style: TextStyle(
                   fontWeight: DS.fontWeightBold,
@@ -348,7 +347,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
             // Associations
             if (state.associations.isNotEmpty) ...[
               const SizedBox(height: DS.lg),
-              const Text(
+              Text(
                 '相关词汇',
                 style: TextStyle(
                   fontWeight: DS.fontWeightBold,
@@ -368,7 +367,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
                       _lookup();
                     },
                     backgroundColor: DS.neutral100,
-                    labelStyle: const TextStyle(
+                    labelStyle: TextStyle(
                       color: DS.neutral700,
                       fontSize: 12,
                     ),
@@ -391,7 +390,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
             children: [
               Text(
                 '${entry.key + 1}. ',
-                style: const TextStyle(
+                style: TextStyle(
                   color: DS.neutral500,
                   fontWeight: FontWeight.w500,
                 ),
@@ -399,7 +398,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
               Expanded(
                 child: Text(
                   entry.value.toString(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: DS.neutral700,
                     height: 1.4,
                   ),
@@ -412,7 +411,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
       return [
         Text(
           definitions.toString(),
-          style: const TextStyle(
+          style: TextStyle(
             color: DS.neutral700,
             height: 1.4,
           ),
@@ -428,7 +427,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
+              Icon(
                 Icons.format_quote_rounded,
                 size: 16,
                 color: DS.neutral400,
@@ -437,7 +436,7 @@ class _VocabularyLookupToolState extends ConsumerState<VocabularyLookupTool> {
               Expanded(
                 child: Text(
                   example.toString(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: DS.neutral600,
                     fontStyle: FontStyle.italic,
                     height: 1.4,

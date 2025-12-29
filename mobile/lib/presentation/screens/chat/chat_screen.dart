@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/data/models/chat_message_model.dart';
 import 'package:sparkle/presentation/providers/chat_provider.dart';
 import 'package:sparkle/presentation/widgets/chat/agent_reasoning_bubble_v2.dart';
 import 'package:sparkle/presentation/widgets/chat/ai_status_indicator.dart';
@@ -21,11 +21,12 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
+  ProviderSubscription<List<ChatMessageModel>>? _messagesSubscription;
 
   @override
   void initState() {
     super.initState();
-    ref.listenManual(chatProvider.select((state) => state.messages), (previous, next) {
+    _messagesSubscription = ref.listenManual(chatProvider.select((state) => state.messages), (previous, next) {
       if (next.length > (previous?.length ?? 0)) {
         _scrollToBottom();
       }
@@ -34,15 +35,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    _messagesSubscription?.close();
     _scrollController.dispose();
     super.dispose();
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (_scrollController.hasClients && _scrollController.position.hasContentDimensions) {
         _scrollController.animateTo(
-          _scrollController.position.minScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -83,7 +85,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(DS.sm),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: DS.secondaryGradient,
                 shape: BoxShape.circle,
               ),
@@ -141,7 +143,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: Column(
                 children: [
                   if (chatState.isLoading)
-                    const LinearProgressIndicator(
+                    LinearProgressIndicator(
                       backgroundColor: Colors.transparent,
                       valueColor: AlwaysStoppedAnimation<Color>(DS.primaryBase),
                       minHeight: 2,
@@ -159,8 +161,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             (chatState.aiStatus != null ? 1 : 0) +
                             (chatState.isReasoningActive ? 1 : 0),
                         itemBuilder: (context, index) {
+                          final isStatusShowing = chatState.aiStatus != null;
+                          final isReasoningShowing = chatState.isReasoningActive;
+                          final isSendingShowing = chatState.isSending;
+
                           // 1. 如果有 AI 状态更新，在最底部显示（reversed 模式下 index 为 0）
-                          if (chatState.aiStatus != null && index == 0) {
+                          if (isStatusShowing && index == 0) {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12.0),
                               child: AiStatusIndicator(
@@ -171,10 +177,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           }
 
                           // 2. 🆕 如果正在显示推理过程，显示 Chain of Thought Bubble
-                          final isStatusShowing = chatState.aiStatus != null;
                           final reasoningIndex = isStatusShowing ? 1 : 0;
-
-                          if (chatState.isReasoningActive && index == reasoningIndex) {
+                          if (isReasoningShowing && index == reasoningIndex) {
                             final durationMs = chatState.reasoningStartTime != null
                                 ? DateTime.now().millisecondsSinceEpoch - chatState.reasoningStartTime!
                                 : null;
@@ -190,9 +194,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           }
 
                           // 3. 如果正在发送/接收，显示流式内容或打字指示器
-                          final streamIndex = isStatusShowing ? (chatState.isReasoningActive ? 2 : 1) : (chatState.isReasoningActive ? 1 : 0);
+                          var streamIndex = 0;
+                          if (isStatusShowing) streamIndex++;
+                          if (isReasoningShowing) streamIndex++;
 
-                          if (chatState.isSending && index == streamIndex) {
+                          if (isSendingShowing && index == streamIndex) {
                             // 如果有流式内容，显示它
                             if (chatState.streamingContent.isNotEmpty) {
                               return Padding(
@@ -202,7 +208,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             }
 
                             // 如果没有流式内容且也没有显示状态指示器，则显示通用打字指示器
-                            if (!isStatusShowing && !chatState.isReasoningActive) {
+                            if (!isStatusShowing && !isReasoningShowing) {
                               return const Padding(
                                 padding: EdgeInsets.only(bottom: 12.0),
                                 child: _TypingIndicator(),
@@ -215,12 +221,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           // 4. 计算正式消息的索引
                           var msgIndex = index;
                           if (isStatusShowing) msgIndex--;
-                          if (chatState.isReasoningActive) msgIndex--;
-                          if (chatState.isSending) msgIndex--;
+                          if (isReasoningShowing) msgIndex--;
+                          if (isSendingShowing) msgIndex--;
 
                           if (msgIndex < 0) return const SizedBox.shrink();
 
-                          final message = messages[messages.length - 1 - msgIndex];
+                          final messageCount = messages.length;
+                          final adjustedIndex = messageCount - 1 - msgIndex;
+                          
+                          if (adjustedIndex < 0 || adjustedIndex >= messageCount) {
+                            return const SizedBox.shrink();
+                          }
+
+                          final message = messages[adjustedIndex];
                           return ChatBubble(message: message);
                         },
                       ),
@@ -232,7 +245,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                    color: DS.error.withValues(alpha: 0.1),
                    child: Text(
                      'Error: ${chatState.error}', 
-                     style: const TextStyle(color: DS.error),
+                     style: TextStyle(color: DS.error),
                      textAlign: TextAlign.center,
                    ),
                  ),
@@ -282,7 +295,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               padding: const EdgeInsets.all(DS.lg),
               child: Row(
                 children: [
-                  const Icon(Icons.history_rounded, color: DS.primaryBase),
+                  Icon(Icons.history_rounded, color: DS.primaryBase),
                   const SizedBox(width: DS.md),
                   Text(
                     '历史对话',
@@ -340,9 +353,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ),
                         subtitle: Text(
                           session['updated_at']?.split('T')[0] ?? '',
-                          style: const TextStyle(fontSize: 12, color: DS.neutral500),
+                          style: TextStyle(fontSize: 12, color: DS.neutral500),
                         ),
-                        trailing: isCurrent ? const Icon(Icons.check_circle, color: DS.primaryBase, size: 18) : null,
+                        trailing: isCurrent ? Icon(Icons.check_circle, color: DS.primaryBase, size: 18) : null,
                         onTap: () {
                           Navigator.pop(context);
                           ref.read(chatProvider.notifier).loadConversationHistory(session['id']);
@@ -373,7 +386,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 color: DS.primaryBase.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.auto_awesome, size: 48, color: DS.primaryBase),
+              child: Icon(Icons.auto_awesome, size: 48, color: DS.primaryBase),
             ),
             const SizedBox(height: DS.xl),
             Text(

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/design/motion.dart';
 
 /// 计划卡片组件
@@ -118,7 +116,7 @@ class _PlanCardState extends State<PlanCard> with SingleTickerProviderStateMixin
                     ],
                     const Spacer(),
                     // Just a visual indicator now - not interactive so smaller is acceptable
-                    const Icon(Icons.arrow_forward_ios,
+                    Icon(Icons.arrow_forward_ios,
                       size: DS.iconSizeXs,
                       color: DS.neutral400,),
                   ],

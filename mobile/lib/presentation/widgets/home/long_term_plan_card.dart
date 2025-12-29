@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
 
 class LongTermPlanCard extends ConsumerWidget {
@@ -49,7 +48,7 @@ class LongTermPlanCard extends ConsumerWidget {
                 color: DS.brandPrimary70Const,
               ),
             ),
-            const Icon(Icons.spa_rounded, color: DS.success, size: 16),
+            Icon(Icons.spa_rounded, color: DS.success, size: 16),
           ],
         ),
         
@@ -60,7 +59,7 @@ class LongTermPlanCard extends ConsumerWidget {
             children: [
               Text(
                 '${(growth.progress * 100).toInt()}%',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: DS.success,
@@ -73,7 +72,7 @@ class LongTermPlanCard extends ConsumerWidget {
                 child: LinearProgressIndicator(
                   value: growth.progress,
                   backgroundColor: DS.brandPrimary10,
-                  valueColor: const AlwaysStoppedAnimation<Color>(DS.success),
+                  valueColor: AlwaysStoppedAnimation<Color>(DS.success),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

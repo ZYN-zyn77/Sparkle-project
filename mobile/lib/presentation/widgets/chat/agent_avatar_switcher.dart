@@ -57,7 +57,7 @@ class AgentConfig { // 动画隐喻描述
         );
 
       case AgentType.knowledge:
-        return const AgentConfig(
+        return AgentConfig(
           icon: Icons.auto_awesome, // 星光图标
           color: DS.info, // 蓝色 (Science Blue)
           displayName: 'KnowledgeAgent',
@@ -73,7 +73,7 @@ class AgentConfig { // 动画隐喻描述
         );
 
       case AgentType.code:
-        return const AgentConfig(
+        return AgentConfig(
           icon: Icons.terminal, // 终端图标
           color: DS.success, // 绿色 (Matrix Green)
           displayName: 'CodeAgent',

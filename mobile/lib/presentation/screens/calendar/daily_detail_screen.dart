@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/services/lunar_service.dart';
 import 'package:sparkle/data/models/calendar_event_model.dart';
 import 'package:sparkle/presentation/providers/calendar_provider.dart';
@@ -170,7 +169,7 @@ class DailyDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.diamond_outlined, color: DS.prismPurple, size: 20),
+              Icon(Icons.diamond_outlined, color: DS.prismPurple, size: 20),
               const SizedBox(width: DS.smConst),
               Text('当日认知棱镜', style: TextStyle(color: DS.brandPrimaryConst, fontWeight: FontWeight.bold)),
             ],
@@ -252,32 +251,33 @@ class DailyDetailScreen extends ConsumerWidget {
       itemCount: tasks.length,
       itemBuilder: (context, index) {
         final task = tasks[index];
+        final isCompleted = task.status.toString().contains('completed');
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(DS.md),
           decoration: BoxDecoration(
-            color: DS.brandPrimary10Const,
+            color: SparkleContextExtension(context).colors.brandPrimary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
               Icon(
-                task.status.toString().contains('completed') ? Icons.check_circle : Icons.circle_outlined,
-                color: task.status.toString().contains('completed') ? DS.success : DS.brandPrimary38,
+                isCompleted ? Icons.check_circle : Icons.circle_outlined,
+                color: isCompleted ? SparkleContextExtension(context).colors.semanticSuccess : SparkleContextExtension(context).colors.brandPrimary.withValues(alpha: 0.38),
                 size: 20,
               ),
               const SizedBox(width: DS.md),
               Expanded(
                 child: Text(
-                  task.title,
+                  task.title as String,
                   style: TextStyle(
-                    color: task.status.toString().contains('completed') ? DS.brandPrimary38 : DS.brandPrimary,
-                    decoration: task.status.toString().contains('completed') ? TextDecoration.lineThrough : null,
+                    color: isCompleted ? SparkleContextExtension(context).colors.brandPrimary.withValues(alpha: 0.38) : SparkleContextExtension(context).colors.brandPrimary,
+                    decoration: isCompleted ? TextDecoration.lineThrough : null,
                   ),
                 ),
               ),
-              if (task.priority > 2)
-                 Icon(Icons.flag, color: DS.errorAccent, size: 16),
+              if ((task.priority as int) > 2)
+                 Icon(Icons.flag, color: SparkleContextExtension(context).colors.semanticError.withValues(alpha: 0.2), size: 16),
             ],
           ),
         );

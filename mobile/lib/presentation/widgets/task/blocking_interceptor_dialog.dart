@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/cognitive_provider.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
@@ -71,7 +70,7 @@ class _BlockingInterceptorDialogState extends ConsumerState<BlockingInterceptorD
 
   @override
   Widget build(BuildContext context) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: DS.borderRadius20),
+      shape: const RoundedRectangleBorder(borderRadius: DS.borderRadius20),
       child: Padding(
         padding: const EdgeInsets.all(DS.spacing20),
         child: SingleChildScrollView(
@@ -87,7 +86,7 @@ class _BlockingInterceptorDialogState extends ConsumerState<BlockingInterceptorD
                       color: DS.warning.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.block, color: DS.warning),
+                    child: Icon(Icons.block, color: DS.warning),
                   ),
                   const SizedBox(width: DS.spacing12),
                   Expanded(

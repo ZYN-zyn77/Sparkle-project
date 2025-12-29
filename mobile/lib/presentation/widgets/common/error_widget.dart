@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
 /// 错误组件类型
@@ -207,7 +206,7 @@ class CustomErrorWidget extends StatelessWidget {
             // 错误标题
             Text(
               title ?? _getDefaultTitle(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: DS.fontSize2xl,
                 fontWeight: DS.fontWeightBold,
                 color: DS.neutral900,
@@ -218,7 +217,7 @@ class CustomErrorWidget extends StatelessWidget {
             // 错误消息
             Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: DS.fontSizeBase,
                 color: DS.neutral600,
                 height: DS.lineHeightNormal,

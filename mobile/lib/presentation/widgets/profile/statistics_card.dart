@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 class StatisticsCard extends StatelessWidget {
   const StatisticsCard({super.key});
@@ -25,14 +24,14 @@ class StatisticsCard extends StatelessWidget {
                   color: DS.primaryBase.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.show_chart_rounded,
                   color: DS.primaryBase,
                   size: 16,
                 ),
               ),
               const SizedBox(width: DS.spacing8),
-              const Text(
+              Text(
                 '本周成长趋势',
                 style: TextStyle(
                   fontSize: DS.fontSizeBase,
@@ -86,7 +85,7 @@ class _WeeklyTrendChart extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
                         days[value.toInt()],
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: DS.neutral500,
                           fontSize: 10,
                           fontWeight: FontWeight.w500,

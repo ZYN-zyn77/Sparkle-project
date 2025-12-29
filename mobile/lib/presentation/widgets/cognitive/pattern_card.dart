@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/behavior_pattern_model.dart';
 
 class PatternCard extends StatelessWidget {
@@ -39,7 +38,7 @@ class PatternCard extends StatelessWidget {
 
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: DS.borderRadius20),
+      shape: const RoundedRectangleBorder(borderRadius: DS.borderRadius20),
       color: isDark ? DS.neutral800 : DS.brandPrimary,
       child: Padding(
         padding: const EdgeInsets.all(DS.spacing20),
@@ -67,7 +66,7 @@ class PatternCard extends StatelessWidget {
                   ),
                 ),
                 if (pattern.isArchived)
-                  const Icon(Icons.archive, color: DS.neutral500, size: 20),
+                  Icon(Icons.archive, color: DS.neutral500, size: 20),
               ],
             ),
             const SizedBox(height: DS.spacing16),

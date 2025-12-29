@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 
 /// 加载指示器类型
 enum LoadingType {
@@ -135,7 +134,7 @@ class LoadingIndicator extends StatelessWidget {
           const SizedBox(height: DS.spacing12),
           Text(
             loadingText ?? '加载中...',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: DS.fontSizeSm,
               color: DS.neutral600,
             ),
@@ -213,7 +212,7 @@ class LoadingIndicator extends StatelessWidget {
                 const SizedBox(height: DS.spacing20),
                 Text(
                   loadingText!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: DS.fontSizeBase,
                     fontWeight: DS.fontWeightMedium,
                     color: DS.neutral900,
@@ -279,7 +278,7 @@ class TaskCardSkeleton extends StatelessWidget {
           borderRadius: DS.borderRadius16,
           boxShadow: DS.shadowSm,
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 标题行
@@ -290,8 +289,8 @@ class TaskCardSkeleton extends StatelessWidget {
                   height: 40.0,
                   borderRadius: DS.borderRadius4,
                 ),
-                const SizedBox(width: DS.spacing12),
-                const Expanded(
+                SizedBox(width: DS.spacing12),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -309,7 +308,7 @@ class TaskCardSkeleton extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: DS.spacing16),
+            SizedBox(height: DS.spacing16),
             // 标签行
             Row(
               children: [
@@ -318,7 +317,7 @@ class TaskCardSkeleton extends StatelessWidget {
                   height: 24.0,
                   borderRadius: DS.borderRadius12,
                 ),
-                const SizedBox(width: DS.spacing8),
+                SizedBox(width: DS.spacing8),
                 _SkeletonBox(
                   width: 80.0,
                   height: 24.0,
@@ -354,7 +353,7 @@ class ChatBubbleSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!isUser) ...[
-              _SkeletonBox(
+              const _SkeletonBox(
                 width: 40.0,
                 height: 40.0,
                 borderRadius: DS.borderRadiusFull,
@@ -391,7 +390,7 @@ class ChatBubbleSkeleton extends StatelessWidget {
             ),
             if (isUser) ...[
               const SizedBox(width: DS.spacing12),
-              _SkeletonBox(
+              const _SkeletonBox(
                 width: 40.0,
                 height: 40.0,
                 borderRadius: DS.borderRadiusFull,
@@ -419,7 +418,7 @@ class ProfileCardSkeleton extends StatelessWidget {
         child: Column(
           children: [
             // 头像
-            _SkeletonBox(
+            const _SkeletonBox(
               width: 80.0,
               height: 80.0,
               borderRadius: DS.borderRadiusFull,
@@ -471,9 +470,9 @@ class ListItemSkeleton extends StatelessWidget {
   const ListItemSkeleton({super.key});
 
   @override
-  Widget build(BuildContext context) => _ShimmerWrapper(
+  Widget build(BuildContext context) => const _ShimmerWrapper(
       child: Padding(
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: DS.spacing16,
           vertical: DS.spacing12,
         ),
@@ -484,8 +483,8 @@ class ListItemSkeleton extends StatelessWidget {
               height: 48.0,
               borderRadius: DS.borderRadius12,
             ),
-            const SizedBox(width: DS.spacing12),
-            const Expanded(
+            SizedBox(width: DS.spacing12),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

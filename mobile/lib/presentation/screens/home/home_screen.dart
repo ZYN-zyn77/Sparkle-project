@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/design/responsive_layout.dart';
 import 'package:sparkle/core/services/message_notification_service.dart';
 import 'package:sparkle/l10n/app_localizations.dart';
@@ -194,7 +193,7 @@ class _DashboardScreen extends ConsumerWidget {
             children: [
               Text(
                 'Lv.${user?.flameLevel ?? 1}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: DS.fontSizeXs,
                   fontWeight: DS.fontWeightBold,
                   color: DS.warning,
@@ -205,7 +204,7 @@ class _DashboardScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: DS.fontSizeSm,
                   fontWeight: DS.fontWeightBold,
-                  color: DS.brandPrimaryConst,
+                  color: DS.brandPrimary,
                 ),
               ),
             ],

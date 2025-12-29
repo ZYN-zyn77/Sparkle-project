@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/sparkle_avatar.dart';
 
 class AvatarOption {
@@ -63,7 +62,7 @@ class AvatarSelectionDialog extends StatelessWidget {
 
     return AlertDialog(
       title: const Text('选择系统头像'),
-      shape: RoundedRectangleBorder(borderRadius: DS.borderRadius16),
+      shape: const RoundedRectangleBorder(borderRadius: DS.borderRadius16),
       content: SizedBox(
         width: double.maxFinite,
         child: GridView.builder(

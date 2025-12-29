@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/repositories/omnibar_repository.dart';
 import 'package:sparkle/presentation/providers/cognitive_provider.dart';
 import 'package:sparkle/presentation/providers/dashboard_provider.dart';
@@ -117,7 +115,7 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
       case 'TASK': return DS.successAccent;
       case 'CAPSULE': return Colors.purpleAccent;
       case 'CHAT': return DS.brandPrimaryAccent;
-      default: return AppColors.textOnDark(context).withValues(alpha: 0.15);
+      default: return DS.textSecondary.withValues(alpha: 0.15);
     }
   }
 
@@ -153,15 +151,15 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
                   controller: _controller,
                   focusNode: _focusNode,
                   onSubmitted: enterToSend ? (_) => _submit() : null,
-                  style: TextStyle(color: AppColors.textOnDark(context), fontSize: 15),
+                  style: TextStyle(color: DS.textSecondary, fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: _isListening 
-                        ? 'Listening...' 
+                    hintText: _isListening
+                        ? 'Listening...'
                         : (widget.hintText ?? 'Tell me what you think...'),
                     hintStyle: TextStyle(
-                      color: _isListening 
-                          ? DS.primaryBase 
-                          : AppColors.textOnDark(context).withAlpha(80), 
+                      color: _isListening
+                          ? DS.primaryBase
+                          : DS.textSecondary.withAlpha(80), 
                       fontSize: 14,
                     ),
                     border: InputBorder.none,
@@ -172,7 +170,7 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
                 const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
               else if (_controller.text.isEmpty && !_isListening)
                  IconButton(
-                  icon: const Icon(Icons.mic, color: DS.primaryBase),
+                  icon: Icon(Icons.mic, color: DS.primaryBase),
                   onPressed: _toggleListening,
                   tooltip: '语音输入',
                 )
@@ -182,9 +180,9 @@ class _OmniBarState extends ConsumerState<OmniBar> with SingleTickerProviderStat
                     _isListening 
                         ? Icons.stop_circle_outlined 
                         : (_intentType == 'CHAT' ? Icons.auto_awesome : Icons.arrow_upward_rounded),
-                    color: _isListening 
-                        ? DS.errorAccent 
-                        : (_intentType != null ? color : AppColors.textOnDark(context).withValues(alpha: 0.7)),
+                    color: _isListening
+                        ? DS.errorAccent
+                        : (_intentType != null ? color : DS.textSecondary.withValues(alpha: 0.7)),
                     size: 20,
                   ),
                   onPressed: _isListening ? _toggleListening : _submit,

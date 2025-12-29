@@ -63,7 +63,7 @@ void main() {
     group('Theme Manager Provider', () {
       testWidgets('themeManagerProvider returns non-null instance',
           (WidgetTester tester) async {
-        bool providerWorked = false;
+        var providerWorked = false;
 
         await tester.pumpWidget(
           ProviderScope(
@@ -129,7 +129,7 @@ void main() {
 
       testWidgets('themeModeProvider can notify listeners',
           (WidgetTester tester) async {
-        int updateCount = 0;
+        var updateCount = 0;
 
         await tester.pumpWidget(
           ProviderScope(
@@ -500,7 +500,7 @@ void main() {
 
       testWidgets('Provider updates efficiently',
           (WidgetTester tester) async {
-        int buildCount = 0;
+        var buildCount = 0;
 
         await tester.pumpWidget(
           ProviderScope(
@@ -540,7 +540,7 @@ void main() {
     group('Edge Cases', () {
       testWidgets('Provider works with empty widget tree',
           (WidgetTester tester) async {
-        bool initialized = false;
+        var initialized = false;
 
         await tester.pumpWidget(
           ProviderScope(

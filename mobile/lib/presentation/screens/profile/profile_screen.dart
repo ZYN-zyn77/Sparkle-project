@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/user_model.dart';
 import 'package:sparkle/l10n/app_localizations.dart';
 import 'package:sparkle/presentation/providers/auth_provider.dart';
@@ -97,7 +96,7 @@ class ProfileScreen extends ConsumerWidget {
                             Text(
                               user.nickname ?? user.username,
                               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: DS.brandPrimaryConst,
+                                color: DS.textPrimary,
                                 fontWeight: DS.fontWeightBold,
                               ),
                             ),
@@ -111,12 +110,12 @@ class ProfileScreen extends ConsumerWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.local_fire_department_rounded, color: DS.brandPrimaryConst, size: 16),
+                                  Icon(Icons.local_fire_department_rounded, color: DS.brandPrimary, size: 16),
                                   const SizedBox(width: DS.xs),
                                   Text(
                                     'Lv.${user.flameLevel}',
                                     style: TextStyle(
-                                      color: DS.brandPrimaryConst,
+                                      color: DS.brandPrimary,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -124,7 +123,7 @@ class ProfileScreen extends ConsumerWidget {
                                   Text(
                                     'Brightness ${(user.flameBrightness * 100).toInt()}%',
                                     style: TextStyle(
-                                      color: DS.brandPrimary.withValues(alpha: 0.9),
+                                      color: DS.textSecondary,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -146,7 +145,7 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildSettingsSection(BuildContext context, WidgetRef ref, AppLocalizations l10n) => DecoratedBox(
       decoration: BoxDecoration(
-        color: DS.brandPrimaryConst,
+        color: DS.surfaceSecondary,
         borderRadius: DS.borderRadius16,
         boxShadow: DS.shadowSm,
       ),
@@ -212,13 +211,13 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.language),
-        shape: RoundedRectangleBorder(borderRadius: DS.borderRadius16),
+        shape: const RoundedRectangleBorder(borderRadius: DS.borderRadius16),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               title: Text(l10n.languageChinese),
-              trailing: currentLocale.languageCode == 'zh' ? const Icon(Icons.check, color: DS.primaryBase) : null,
+              trailing: currentLocale.languageCode == 'zh' ? Icon(Icons.check, color: DS.primaryBase) : null,
               onTap: () {
                 ref.read(localeProvider.notifier).setLocale(const Locale('zh'));
                 Navigator.pop(context);
@@ -226,7 +225,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             ListTile(
               title: Text(l10n.languageEnglish),
-              trailing: currentLocale.languageCode == 'en' ? const Icon(Icons.check, color: DS.primaryBase) : null,
+              trailing: currentLocale.languageCode == 'en' ? Icon(Icons.check, color: DS.primaryBase) : null,
               onTap: () {
                 ref.read(localeProvider.notifier).setLocale(const Locale('en'));
                 Navigator.pop(context);
@@ -244,7 +243,7 @@ class ProfileScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: Text(l10n.logout),
         content: Text(l10n.confirmLogout),
-        shape: RoundedRectangleBorder(borderRadius: DS.borderRadius16),
+        shape: const RoundedRectangleBorder(borderRadius: DS.borderRadius16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -255,7 +254,7 @@ class ProfileScreen extends ConsumerWidget {
               Navigator.pop(context);
               ref.read(authProvider.notifier).logout();
             },
-            child: Text(l10n.confirm, style: const TextStyle(color: DS.error)),
+            child: Text(l10n.confirm, style: TextStyle(color: DS.error)),
           ),
         ],
       ),
@@ -281,16 +280,16 @@ class ProfileScreen extends ConsumerWidget {
           gradient: gradient,
           borderRadius: DS.borderRadius8,
         ),
-        child: Icon(icon, color: DS.brandPrimaryConst, size: 20),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
       title: Text(
         title,
         style: TextStyle(
-          color: isDestructive ? DS.error : DS.neutral900,
+          color: isDestructive ? DS.error : DS.textPrimary,
           fontWeight: DS.fontWeightMedium,
         ),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.arrow_forward_ios_rounded,
         size: 16,
         color: DS.neutral400,

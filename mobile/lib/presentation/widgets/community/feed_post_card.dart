@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/domain/community/community_models.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -72,14 +71,14 @@ class FeedPostCard extends StatelessWidget {
                     color: DS.primaryBase.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 12,
                         height: 12,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
-                      SizedBox(width: DS.xs),
+                      const SizedBox(width: DS.xs),
                       Text(
                         'Posting...',
                         style: TextStyle(
@@ -142,7 +141,7 @@ class FeedPostCard extends StatelessWidget {
                   ),
                   child: Text(
                     '#${post.topic}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: DS.secondaryBase,
                       fontSize: 12,
                     ),

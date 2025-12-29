@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/behavior_pattern_model.dart';
 import 'package:sparkle/presentation/providers/cognitive_provider.dart';
 
@@ -11,7 +10,8 @@ import 'package:sparkle/presentation/providers/cognitive_provider.dart';
 ///
 /// Displays all behavior patterns with deep space theme
 class PatternListScreen extends ConsumerStatefulWidget {
-  const PatternListScreen({super.key});
+  const PatternListScreen({this.highlightId, super.key});
+  final String? highlightId;
 
   @override
   ConsumerState<PatternListScreen> createState() => _PatternListScreenState();
@@ -34,7 +34,7 @@ class _PatternListScreenState extends ConsumerState<PatternListScreen> {
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: DS.deepSpaceGradient,
         ),
         child: SafeArea(
@@ -221,7 +221,7 @@ class _PatternCard extends StatelessWidget {
                         color: DS.success.withAlpha(40),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
+                      child: Text(
                         '已克服',
                         style: TextStyle(
                           fontSize: 10,
@@ -261,7 +261,7 @@ class _PatternCard extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lightbulb_outline_rounded,
                         color: DS.success,
                         size: 18,
@@ -270,7 +270,7 @@ class _PatternCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           pattern.solutionText!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: DS.successLight,
                             height: 1.4,

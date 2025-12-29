@@ -6,11 +6,17 @@ from loguru import logger
 from datetime import datetime
 import uuid
 
+from google.protobuf.json_format import MessageToDict
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.llm_service import llm_service
 from app.services.knowledge_service import KnowledgeService
 from app.services.galaxy_service import GalaxyService
 from app.services.user_service import UserService
+from app.services.focus_service import focus_service
+from app.models.task import Task, TaskStatus as ModelTaskStatus
+from app.models.plan import Plan
+from sqlalchemy import select, and_, desc, asc
 from app.orchestration.prompts import build_system_prompt
 from app.orchestration.executor import ToolExecutor
 from app.orchestration.state_manager import SessionStateManager, FSMState
@@ -84,7 +90,7 @@ def get_agent_type_for_tool(tool_name: str) -> int:
         return agent_service_pb2.REASONING
 
     # Task/orchestration tools -> ORCHESTRATOR
-    if any(keyword in tool_lower for keyword in ['task', 'plan', 'create', 'update', 'batch', 'orchestrate']):
+    if any(keyword in tool_lower for keyword in ['task', 'plan', 'create', 'update', 'batch', 'orchestrate', 'focus', 'pomodoro']):
         return agent_service_pb2.ORCHESTRATOR
 
     # Default to ORCHESTRATOR
@@ -103,34 +109,35 @@ class ChatOrchestrator:
     """
 
     def __init__(self, db_session: Optional[AsyncSession] = None, redis_client=None):
+        if redis_client is None:
+            logger.error("ChatOrchestrator requires Redis, but no redis_client was provided")
+            raise ValueError("Redis client is required for ChatOrchestrator")
         self.db_session = db_session
         self.redis = redis_client
 
         # Initialize components
-        self.state_manager = SessionStateManager(redis_client) if redis_client else None
-        self.validator = RequestValidator(redis_client, daily_quota=100000) if redis_client else None
+        self.state_manager = SessionStateManager(redis_client)
+        self.validator = RequestValidator(redis_client, daily_quota=100000)
         self.tool_executor = ToolExecutor()
         self.response_composer = ResponseComposer()
 
         # Initialize ContextPruner (P0 feature)
         self.context_pruner = None
         self.token_tracker = None
-        if redis_client:
-            self.context_pruner = ContextPruner(
-                redis_client=redis_client,
-                max_history_messages=10,      # 保留最近10轮对话
-                summary_threshold=20,         # 超过20轮触发总结
-                summary_cache_ttl=3600        # 总结缓存1小时
-            )
+        self.context_pruner = ContextPruner(
+            redis_client=redis_client,
+            max_history_messages=10,      # 保留最近10轮对话
+            summary_threshold=20,         # 超过20轮触发总结
+            summary_cache_ttl=3600        # 总结缓存1小时
+        )
 
-            # Initialize TokenTracker (P1 feature)
-            self.token_tracker = TokenTracker(redis_client)
+        # Initialize TokenTracker (P1 feature)
+        self.token_tracker = TokenTracker(redis_client)
 
-            logger.info("ChatOrchestrator initialized with ContextPruner and TokenTracker")
+        logger.info("ChatOrchestrator initialized with ContextPruner and TokenTracker")
 
         # Initialize tool registry (auto-discover tools)
-        if redis_client:  # Only log if initialized
-            logger.info("ChatOrchestrator initialized with all components")
+        logger.info("ChatOrchestrator initialized with all components")
 
         # Ensure tools are registered
         self._ensure_tools_registered()
@@ -139,19 +146,18 @@ class ChatOrchestrator:
         self.graph = create_standard_chat_graph()
         
         # Connect Checkpointer
-        if redis_client:
-            self.graph.checkpointer = RedisCheckpointer(redis_client)
-            
-            # Connect Visualizer and Tracer
-            from app.visualization.realtime_visualizer import visualizer
-            from app.visualization.execution_tracer import ExecutionTracer
-            
-            self.tracer = ExecutionTracer(redis_client)
-            
-            self.graph.on_event = self._chain_event_handlers(
-                visualizer.on_graph_event,
-                self.tracer.record_event
-            )
+        self.graph.checkpointer = RedisCheckpointer(redis_client)
+        
+        # Connect Visualizer and Tracer
+        from app.visualization.realtime_visualizer import visualizer
+        from app.visualization.execution_tracer import ExecutionTracer
+        
+        self.tracer = ExecutionTracer(redis_client)
+        
+        self.graph.on_event = self._chain_event_handlers(
+            visualizer.on_graph_event,
+            self.tracer.record_event
+        )
 
     def _chain_event_handlers(self, *handlers):
         """Chain multiple event handlers"""
@@ -212,6 +218,35 @@ class ChatOrchestrator:
         if self.state_manager:
             await self.state_manager.cache_response(session_id, request_id, response_data)
 
+    def _merge_user_contexts(self, local_context: Dict[str, Any], grpc_context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        P0: Merge user context from Go Gateway (gRPC) with local context (Python).
+        Prioritizes gRPC context as it's more recent (fetched at request time).
+
+        Returns:
+            Merged context dict with both sources
+        """
+        if not grpc_context:
+            return local_context
+
+        merged = {}
+
+        # Start with local context as base
+        merged.update(local_context)
+
+        # Override with gRPC context (prioritized as more recent)
+        if "pending_tasks" in grpc_context:
+            merged["next_actions"] = grpc_context["pending_tasks"]  # Normalize field name
+        if "active_plans" in grpc_context:
+            merged["active_plans"] = grpc_context["active_plans"]
+        if "focus_stats" in grpc_context:
+            merged["focus_stats"] = grpc_context["focus_stats"]
+        if "recent_progress" in grpc_context:
+            merged["recent_progress"] = grpc_context["recent_progress"]
+
+        logger.debug(f"Merged context keys: {list(merged.keys())}")
+        return merged
+
     async def _build_user_context(self, user_id: str, db_session: AsyncSession) -> Dict[str, Any]:
         """
         Build comprehensive user context from UserService
@@ -229,14 +264,74 @@ class ChatOrchestrator:
             # Get analytics summary (with Redis caching)
             analytics = await user_service.get_analytics_summary(uuid.UUID(user_id))
 
+            user_context_data = None
             if user_context:
+                user_context_data = user_context.model_dump()
+
+            # Next actions (top pending tasks)
+            tasks_stmt = (
+                select(Task)
+                .where(
+                    and_(
+                        Task.user_id == uuid.UUID(user_id),
+                        Task.status == ModelTaskStatus.PENDING
+                    )
+                )
+                .order_by(desc(Task.priority), asc(Task.due_date), desc(Task.created_at))
+                .limit(3)
+            )
+            tasks_result = await db_session.execute(tasks_stmt)
+            tasks = tasks_result.scalars().all()
+            next_actions = [
+                {
+                    "id": str(task.id),
+                    "title": task.title,
+                    "type": task.type.value,
+                    "estimated_minutes": task.estimated_minutes,
+                    "priority": task.priority
+                }
+                for task in tasks
+            ]
+
+            # Active plans (latest 3)
+            plans_stmt = (
+                select(Plan)
+                .where(
+                    and_(
+                        Plan.user_id == uuid.UUID(user_id),
+                        Plan.is_active == True
+                    )
+                )
+                .order_by(desc(Plan.created_at))
+                .limit(3)
+            )
+            plans_result = await db_session.execute(plans_stmt)
+            plans = plans_result.scalars().all()
+            active_plans = [
+                {
+                    "id": str(plan.id),
+                    "title": plan.name,
+                    "type": plan.type.value,
+                    "target_date": plan.target_date.isoformat() if plan.target_date else None,
+                    "progress": plan.progress or 0
+                }
+                for plan in plans
+            ]
+
+            # Focus stats (today)
+            focus_stats = await focus_service.get_today_stats(db_session, uuid.UUID(user_id))
+
+            if user_context_data:
                 return {
-                    "user_context": user_context,
+                    "user_context": user_context_data,
                     "analytics_summary": analytics,
                     "preferences": {
                         "depth_preference": user_context.preferences.get("depth_preference", 0.5),
                         "curiosity_preference": user_context.preferences.get("curiosity_preference", 0.5),
-                    }
+                    },
+                    "next_actions": next_actions,
+                    "active_plans": active_plans,
+                    "focus_stats": focus_stats,
                 }
             else:
                 # Fallback to basic context
@@ -244,7 +339,10 @@ class ChatOrchestrator:
                 return {
                     "user_context": None,
                     "analytics_summary": {"is_active": True, "engagement_level": "medium"},
-                    "preferences": {"depth_preference": 0.5, "curiosity_preference": 0.5}
+                    "preferences": {"depth_preference": 0.5, "curiosity_preference": 0.5},
+                    "next_actions": next_actions,
+                    "active_plans": active_plans,
+                    "focus_stats": focus_stats,
                 }
 
         except Exception as e:
@@ -373,6 +471,43 @@ class ChatOrchestrator:
                 tool_result = request.tool_result
                 user_message = f"Tool '{tool_result.tool_name}' execution result: {tool_result.result_json}"
 
+            # P0: Build user + conversation context
+            # First, try to merge extra_context from gRPC (from Go Gateway)
+            grpc_context = {}
+            if request.user_profile and request.user_profile.extra_context:
+                try:
+                    grpc_context = json.loads(request.user_profile.extra_context)
+                    logger.debug(f"Parsed extra_context from gRPC: {list(grpc_context.keys())}")
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse extra_context JSON: {e}")
+
+            request_context = {}
+            if request.HasField("extra_context"):
+                try:
+                    request_context = MessageToDict(request.extra_context)
+                    if request_context:
+                        logger.debug(f"Parsed request extra_context: {list(request_context.keys())}")
+                except Exception as e:
+                    logger.warning(f"Failed to parse request extra_context: {e}")
+
+            if request_context:
+                grpc_context = {**grpc_context, **request_context}
+
+            user_context_payload = None
+            conversation_context = None
+            if active_db and user_id:
+                local_context = await self._build_user_context(user_id, active_db)
+                # P0: Merge contexts - prioritize gRPC context (more recent) over local context
+                user_context_payload = self._merge_user_contexts(local_context, grpc_context)
+                logger.info(f"Merged user context: {user_context_payload is not None}")
+            elif grpc_context:
+                # If no DB session but have gRPC context, use it
+                user_context_payload = grpc_context
+                logger.info("Using gRPC context without local DB context")
+
+            if self.context_pruner:
+                conversation_context = await self._build_conversation_context(session_id, user_id)
+
             # Prepare initial state
             state = WorkflowState()
             state.append_message("user", user_message)
@@ -400,7 +535,9 @@ class ChatOrchestrator:
                 "session_id": session_id,
                 "stream_callback": stream_callback,
                 "tools_schema": tools,
-                "redis_client": self.redis
+                "redis_client": self.redis,
+                "user_context": user_context_payload,
+                "conversation_context": conversation_context,
             })
 
             # Launch Graph Execution in Background

@@ -115,7 +115,7 @@ class ResponsiveScaffold extends StatelessWidget {
                   padding: const EdgeInsets.all(DS.spacing24),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.local_fire_department,
                         color: DS.primaryBase,
                         size: 32,

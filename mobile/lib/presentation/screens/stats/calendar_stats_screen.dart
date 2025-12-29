@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
+import 'package:sparkle/app/theme.dart';
 import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/services/lunar_service.dart';
 import 'package:sparkle/data/models/calendar_event_model.dart';
@@ -278,7 +277,7 @@ class _CalendarStatsScreenState extends ConsumerState<CalendarStatsScreen> {
         outsideDaysVisible: false,
         defaultTextStyle: TextStyle(color: DS.brandPrimary),
         weekendTextStyle: TextStyle(color: DS.brandPrimary70),
-        selectedDecoration: const BoxDecoration(
+        selectedDecoration: BoxDecoration(
           color: DS.primaryBase,
           shape: BoxShape.circle,
         ),
@@ -324,7 +323,7 @@ class _CalendarStatsScreenState extends ConsumerState<CalendarStatsScreen> {
     
     return Container(
       margin: const EdgeInsets.all(DS.xs),
-      decoration: isSelected ? const BoxDecoration(
+      decoration: isSelected ? BoxDecoration(
         color: DS.primaryBase,
         shape: BoxShape.circle,
       ) : isToday ? BoxDecoration(
@@ -384,8 +383,8 @@ class _CalendarStatsScreenState extends ConsumerState<CalendarStatsScreen> {
                      MaterialPageRoute(builder: (_) => DailyDetailScreen(date: _selectedDay ?? _focusedDay)),
                    );
                  },
-                 icon: const Icon(Icons.info_outline, size: 16, color: DS.primaryBase),
-                 label: const Text('查看详情', style: TextStyle(color: DS.primaryBase)),
+                 icon: Icon(Icons.info_outline, size: 16, color: DS.primaryBase),
+                 label: Text('查看详情', style: TextStyle(color: DS.primaryBase)),
                ),
              ],
            ),
@@ -531,7 +530,7 @@ class _EventEditDialogState extends ConsumerState<_EventEditDialog> {
               ),
               TextButton(
                 onPressed: _saveEvent,
-                child: const Text('保存', style: TextStyle(color: DS.primaryBase)),
+                child: Text('保存', style: TextStyle(color: DS.primaryBase)),
               ),
             ],
           ),

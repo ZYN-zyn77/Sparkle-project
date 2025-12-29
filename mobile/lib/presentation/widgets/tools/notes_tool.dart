@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
 class NotesTool extends StatefulWidget {
@@ -57,7 +55,7 @@ class _NotesToolState extends State<NotesTool> {
                   _controller.clear();
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已清空')));
                 },
-                child: const Text('清空', style: TextStyle(color: DS.error)),
+                child: Text('清空', style: TextStyle(color: DS.error)),
               ),
             ],
           ),

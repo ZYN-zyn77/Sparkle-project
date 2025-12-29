@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/cognitive_provider.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
 
@@ -45,7 +44,7 @@ class _ThoughtCapsuleDialogState extends ConsumerState<ThoughtCapsuleDialog> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: DS.borderRadius20),
+      shape: const RoundedRectangleBorder(borderRadius: DS.borderRadius20),
       child: Padding(
         padding: const EdgeInsets.all(DS.spacing20),
         child: Column(
@@ -60,7 +59,7 @@ class _ThoughtCapsuleDialogState extends ConsumerState<ThoughtCapsuleDialog> {
                     color: DS.primaryBase.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.psychology, color: DS.primaryBase),
+                  child: Icon(Icons.psychology, color: DS.primaryBase),
                 ),
                 const SizedBox(width: DS.spacing12),
                 Text(
@@ -84,12 +83,12 @@ class _ThoughtCapsuleDialogState extends ConsumerState<ThoughtCapsuleDialog> {
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: '输入你的想法...',
-                border: OutlineInputBorder(
+                border: const OutlineInputBorder(
                   borderRadius: DS.borderRadius12,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: DS.borderRadius12,
-                  borderSide: const BorderSide(color: DS.primaryBase, width: 2),
+                  borderSide: BorderSide(color: DS.primaryBase, width: 2),
                 ),
               ),
             ),

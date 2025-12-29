@@ -29,7 +29,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: DS.lg,
             vertical: DS.md,
           ),
@@ -43,7 +43,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                   themeManager.setAppThemeMode(mode);
                 },
               ),
-              SizedBox(height: DS.xl),
+              const SizedBox(height: DS.xl),
 
               // Brand Preset Section
               _BrandPresetSection(
@@ -52,7 +52,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                   themeManager.setBrandPreset(preset);
                 },
               ),
-              SizedBox(height: DS.xl),
+              const SizedBox(height: DS.xl),
 
               // High Contrast Section
               _HighContrastSection(
@@ -61,7 +61,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                   themeManager.toggleHighContrast(enabled);
                 },
               ),
-              SizedBox(height: DS.xl),
+              const SizedBox(height: DS.xl),
 
               // Reset to Defaults Button
               _ResetButton(
@@ -77,10 +77,10 @@ class ThemeSettingsScreen extends ConsumerWidget {
                   }
                 },
               ),
-              SizedBox(height: DS.xl),
+              const SizedBox(height: DS.xl),
 
               // Color Preview Section
-              _ColorPreviewSection(),
+              const _ColorPreviewSection(),
             ],
           ),
         ),
@@ -100,22 +100,20 @@ class _ThemeModeSection extends StatelessWidget {
   final Function(AppThemeMode) onModeChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '主题模式',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        SizedBox(height: DS.md),
+        const SizedBox(height: DS.md),
         _SegmentedThemeButton(
           currentMode: currentMode,
           onModeChanged: onModeChanged,
         ),
       ],
     );
-  }
 }
 
 /// 分段的主题切换按钮
@@ -130,10 +128,10 @@ class _SegmentedThemeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modes = AppThemeMode.values;
+    const modes = AppThemeMode.values;
     final modeLabels = ['浅色', '深色', '跟随系统'];
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: DS.brandPrimary30),
         borderRadius: BorderRadius.circular(DS.md),
@@ -148,16 +146,16 @@ class _SegmentedThemeButton extends StatelessWidget {
             child: GestureDetector(
               onTap: () => onModeChanged(mode),
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: DS.md),
+                padding: const EdgeInsets.symmetric(vertical: DS.md),
                 decoration: BoxDecoration(
                   color: isSelected ? DS.brandPrimary : Colors.transparent,
                   borderRadius: index == 0
-                      ? BorderRadius.only(
+                      ? const BorderRadius.only(
                           topLeft: Radius.circular(DS.md - 2),
                           bottomLeft: Radius.circular(DS.md - 2),
                         )
                       : index == modes.length - 1
-                          ? BorderRadius.only(
+                          ? const BorderRadius.only(
                               topRight: Radius.circular(DS.md - 2),
                               bottomRight: Radius.circular(DS.md - 2),
                             )
@@ -200,15 +198,14 @@ class _BrandPresetSection extends StatelessWidget {
   final Function(BrandPreset) onPresetChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '品牌预设',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        SizedBox(height: DS.md),
+        const SizedBox(height: DS.md),
         Wrap(
           spacing: DS.md,
           runSpacing: DS.md,
@@ -221,7 +218,7 @@ class _BrandPresetSection extends StatelessWidget {
             return GestureDetector(
               onTap: () => onPresetChanged(preset),
               child: Container(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: DS.lg,
                   vertical: DS.md,
                 ),
@@ -250,7 +247,6 @@ class _BrandPresetSection extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 /// 高对比度模式部分
@@ -264,9 +260,8 @@ class _HighContrastSection extends StatelessWidget {
   final Function(bool) onToggled;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(DS.lg),
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(DS.lg),
       decoration: BoxDecoration(
         border: Border.all(color: DS.brandPrimary30),
         borderRadius: BorderRadius.circular(DS.md),
@@ -281,7 +276,7 @@ class _HighContrastSection extends StatelessWidget {
                 '高对比度模式',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              SizedBox(height: DS.xs),
+              const SizedBox(height: DS.xs),
               Text(
                 '增强文字和背景的对比度',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -293,12 +288,11 @@ class _HighContrastSection extends StatelessWidget {
           Switch(
             value: highContrast,
             onChanged: onToggled,
-            activeColor: DS.brandPrimary,
+            activeThumbColor: DS.brandPrimary,
           ),
         ],
       ),
     );
-  }
 }
 
 /// 恢复默认值按钮
@@ -308,14 +302,13 @@ class _ResetButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
+  Widget build(BuildContext context) => SizedBox(
       width: double.infinity,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: DS.brandPrimary),
-          padding: EdgeInsets.symmetric(vertical: DS.lg),
+          padding: const EdgeInsets.symmetric(vertical: DS.lg),
         ),
         child: Text(
           '恢复默认设置',
@@ -323,7 +316,6 @@ class _ResetButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 /// 颜色预览部分
@@ -342,7 +334,7 @@ class _ColorPreviewSection extends ConsumerWidget {
           '颜色预览',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        SizedBox(height: DS.md),
+        const SizedBox(height: DS.md),
         // Brand Colors
         Row(
           children: [
@@ -352,7 +344,7 @@ class _ColorPreviewSection extends ConsumerWidget {
                 label: '主色',
               ),
             ),
-            SizedBox(width: DS.md),
+            const SizedBox(width: DS.md),
             Expanded(
               child: _ColorBox(
                 color: colors.brandSecondary,
@@ -361,7 +353,7 @@ class _ColorPreviewSection extends ConsumerWidget {
             ),
           ],
         ),
-        SizedBox(height: DS.md),
+        const SizedBox(height: DS.md),
         // Semantic Colors
         Row(
           children: [
@@ -371,14 +363,14 @@ class _ColorPreviewSection extends ConsumerWidget {
                 label: '成功',
               ),
             ),
-            SizedBox(width: DS.md),
+            const SizedBox(width: DS.md),
             Expanded(
               child: _ColorBox(
                 color: colors.semanticWarning,
                 label: '警告',
               ),
             ),
-            SizedBox(width: DS.md),
+            const SizedBox(width: DS.md),
             Expanded(
               child: _ColorBox(
                 color: colors.semanticError,
@@ -387,7 +379,7 @@ class _ColorPreviewSection extends ConsumerWidget {
             ),
           ],
         ),
-        SizedBox(height: DS.md),
+        const SizedBox(height: DS.md),
         // Task Type Colors
         Text(
           '任务类型颜色',
@@ -395,7 +387,7 @@ class _ColorPreviewSection extends ConsumerWidget {
                 fontWeight: FontWeight.w600,
               ),
         ),
-        SizedBox(height: DS.md),
+        const SizedBox(height: DS.md),
         Wrap(
           spacing: DS.md,
           runSpacing: DS.md,
@@ -426,8 +418,7 @@ class _ColorBox extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       children: [
         Container(
           width: size,
@@ -444,7 +435,7 @@ class _ColorBox extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: DS.xs),
+        const SizedBox(height: DS.xs),
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall,
@@ -452,5 +443,4 @@ class _ColorBox extends StatelessWidget {
         ),
       ],
     );
-  }
 }

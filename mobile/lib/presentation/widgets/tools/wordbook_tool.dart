@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sparkle/core/design/design_system.dart' hide CustomButtonSize;
 import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/presentation/providers/vocabulary_provider.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
@@ -63,8 +62,8 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('太棒了！今日复习完成'),
+          SnackBar(
+            content: const Text('太棒了！今日复习完成'),
             backgroundColor: DS.success,
           ),
         );
@@ -218,7 +217,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
               color: DS.success.withValues(alpha: 0.5),
             ),
             const SizedBox(height: DS.lg),
-            const Text(
+            Text(
               '太棒了！暂无待复习单词',
               style: TextStyle(
                 color: DS.neutral500,
@@ -247,7 +246,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
 
   Widget _buildAllWords(List<dynamic> wordbook) {
     if (wordbook.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -256,7 +255,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
               size: 64,
               color: DS.neutral300,
             ),
-            SizedBox(height: DS.lg),
+            const SizedBox(height: DS.lg),
             Text(
               '生词本空空如也',
               style: TextStyle(
@@ -264,7 +263,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
                 fontSize: 16,
               ),
             ),
-            SizedBox(height: DS.sm),
+            const SizedBox(height: DS.sm),
             Text(
               '使用查词工具添加生词',
               style: TextStyle(
@@ -280,7 +279,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
     return ListView.builder(
       itemCount: wordbook.length,
       itemBuilder: (context, index) {
-        final word = wordbook[index];
+        final word = wordbook[index] as Map<String, dynamic>;
         return _WordCard(
           word: (word['word'] as String?) ?? '',
           phonetic: word['phonetic'] as String?,
@@ -350,7 +349,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
               ),
               Text(
                 '${_currentReviewIndex + 1} / ${reviewList.length}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: DS.neutral500,
                   fontWeight: FontWeight.w500,
                 ),
@@ -395,7 +394,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
                       const SizedBox(height: DS.sm),
                       Text(
                         word['phonetic'] as String,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: DS.neutral500,
                           fontSize: 18,
                           fontStyle: FontStyle.italic,
@@ -419,7 +418,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
                         textAlign: TextAlign.center,
                       ),
                     ] else ...[
-                      const Text(
+                      Text(
                         '点击显示释义',
                         style: TextStyle(
                           color: DS.neutral400,
@@ -494,7 +493,7 @@ class _WordCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: DS.neutral200),
+        side: BorderSide(color: DS.neutral200),
       ),
       child: InkWell(
         onTap: onTap,
@@ -520,7 +519,7 @@ class _WordCard extends StatelessWidget {
                           const SizedBox(width: DS.sm),
                           Text(
                             phonetic!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: DS.neutral500,
                               fontSize: 14,
                               fontStyle: FontStyle.italic,
@@ -534,7 +533,7 @@ class _WordCard extends StatelessWidget {
                       definition,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: DS.neutral600,
                         fontSize: 14,
                       ),

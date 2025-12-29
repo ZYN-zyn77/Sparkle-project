@@ -4,7 +4,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_completion_result.dart';
 import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/task_provider.dart';
@@ -49,7 +48,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
     final shouldPop = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: DS.borderRadius20,
         ),
         title: const Text(
@@ -177,7 +176,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
       return Scaffold(
         appBar: AppBar(
           flexibleSpace: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: DS.primaryGradient,
             ),
           ),
@@ -186,7 +185,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline_rounded,
                 size: 80,
                 color: DS.neutral400,
@@ -228,11 +227,11 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
-              iconTheme: const IconThemeData(color: DS.neutral900),
+              iconTheme: IconThemeData(color: DS.neutral900),
               title: Text(
                 activeTask.title, 
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: DS.neutral900),
+                style: TextStyle(color: DS.neutral900),
               ),
             ),
             body: DecoratedBox(
@@ -325,9 +324,9 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                                   Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(DS.spacing16),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: DS.neutral50,
-                                      borderRadius: BorderRadius.only(
+                                      borderRadius: const BorderRadius.only(
                                         bottomLeft: Radius.circular(16),
                                         bottomRight: Radius.circular(16),
                                       ),
@@ -345,7 +344,7 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                                         h2: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           fontWeight: DS.fontWeightBold,
                                         ),
-                                        code: const TextStyle(
+                                        code: TextStyle(
                                           backgroundColor: DS.neutral100,
                                           color: DS.primaryDark,
                                           fontFamily: 'monospace',
@@ -525,14 +524,14 @@ class _BottomControls extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: DS.borderRadius20,
         ),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(DS.sm),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: DS.successGradient,
                 shape: BoxShape.circle,
               ),
@@ -559,11 +558,11 @@ class _BottomControls extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.timer_outlined, color: DS.primaryBase),
+                  Icon(Icons.timer_outlined, color: DS.primaryBase),
                   const SizedBox(width: DS.spacing8),
                   Text(
                     '用时：$minutes 分钟',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: DS.fontWeightMedium,
                       color: DS.neutral700,
                     ),
@@ -577,12 +576,12 @@ class _BottomControls extends ConsumerWidget {
               decoration: InputDecoration(
                 labelText: '笔记（选填）',
                 hintText: '记录一些学习心得...',
-                border: OutlineInputBorder(
+                border: const OutlineInputBorder(
                   borderRadius: DS.borderRadius12,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: DS.borderRadius12,
-                  borderSide: const BorderSide(
+                  borderSide: BorderSide(
                     color: DS.primaryBase,
                     width: 2,
                   ),

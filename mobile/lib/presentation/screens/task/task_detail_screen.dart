@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/task_model.dart';
 import 'package:sparkle/presentation/providers/task_provider.dart';
 import 'package:sparkle/presentation/widgets/common/custom_button.dart';
@@ -129,7 +128,7 @@ class _TaskDetailView extends ConsumerWidget {
                           Chip(
                             label: Text(toBeginningOfSentenceCase(task.type.name) ?? task.type.name),
                             backgroundColor: DS.brandPrimary.withValues(alpha: 0.8),
-                            avatar: const Icon(Icons.category, size: 16, color: DS.primaryBase),
+                            avatar: Icon(Icons.category, size: 16, color: DS.primaryBase),
                           ),
                           Chip(
                             label: Text(toBeginningOfSentenceCase(task.status.name) ?? task.status.name),
@@ -220,7 +219,7 @@ class _TaskDetailView extends ConsumerWidget {
           listBullet: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: DS.primaryBase,
           ),
-          code: const TextStyle(
+          code: TextStyle(
             backgroundColor: DS.neutral100,
             color: DS.primaryDark,
             fontFamily: 'monospace',
@@ -238,7 +237,7 @@ class _TaskDetailView extends ConsumerWidget {
           blockquoteDecoration: BoxDecoration(
             color: DS.neutral50,
             borderRadius: DS.borderRadius8,
-            border: const Border(
+            border: Border(
               left: BorderSide(
                 color: DS.primaryBase,
                 width: 4,
@@ -385,7 +384,7 @@ class _BottomActionBar extends ConsumerWidget {
         decoration: BoxDecoration(
           color: DS.brandPrimary,
           boxShadow: DS.shadowMd,
-          border: const Border(
+          border: Border(
             top: BorderSide(
               color: DS.neutral200,
             ),
@@ -427,13 +426,13 @@ class _BottomActionBar extends ConsumerWidget {
                 borderRadius: DS.borderRadius12,
               ),
               child: IconButton(
-                icon: const Icon(Icons.delete_outline, color: DS.error),
+                icon: Icon(Icons.delete_outline, color: DS.error),
                 onPressed: () {
                   HapticFeedback.mediumImpact();
                   showDialog(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      shape: RoundedRectangleBorder(
+                      shape: const RoundedRectangleBorder(
                         borderRadius: DS.borderRadius20,
                       ),
                       title: const Text(

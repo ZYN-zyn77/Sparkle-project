@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
-import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/data/models/community_model.dart';
 import 'package:sparkle/presentation/providers/settings_provider.dart';
 
@@ -184,7 +183,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
       decoration: BoxDecoration(
         color: isDark ? DS.neutral800 : DS.brandPrimary200,
         borderRadius: BorderRadius.circular(12),
-        border: const Border(
+        border: Border(
           left: BorderSide(color: DS.brandPrimary, width: 4),
         ),
       ),
@@ -196,7 +195,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
               children: [
                 Text(
                   '引用 ${widget.quotedMessage!.sender.displayName}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: DS.fontSizeXs,
                     fontWeight: DS.fontWeightBold,
                     color: DS.brandPrimary,
@@ -219,7 +218,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
             width: DS.touchTargetMinSize,
             height: DS.touchTargetMinSize,
             child: IconButton(
-              icon: const Icon(Icons.close_rounded,
+              icon: Icon(Icons.close_rounded,
                 size: DS.iconSizeSm,
                 color: DS.neutral600,),
               onPressed: widget.onCancelQuote,
