@@ -1,6 +1,7 @@
 import json
 import time
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 from pydantic import ValidationError
 from loguru import logger
 
@@ -20,7 +21,7 @@ class ToolExecutor:
         self,
         tool_name: str,
         arguments: Dict[str, Any],
-        user_id: str,
+        user_id: UUID | str,
         db_session: Optional[Any],
         progress_callback: Optional[Any] = None
     ) -> ToolResult:
@@ -61,7 +62,7 @@ class ToolExecutor:
         self,
         tool_name: str,
         arguments: Dict[str, Any],
-        user_id: str,
+        user_id: UUID | str,
         db_session: Any,
         progress_callback: Optional[Any],
         owns_session: bool
@@ -167,7 +168,7 @@ class ToolExecutor:
     async def _record_tool_execution(
         self,
         db_session: Any,
-        user_id: str,
+        user_id: UUID | str,
         tool_name: str,
         success: bool,
         execution_time_ms: Optional[int] = None,
@@ -193,15 +194,14 @@ class ToolExecutor:
             input_args: 输入参数
             output_summary: 输出摘要
         """
-        # 转换user_id为int（如果需要）
-        user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+        user_uuid = self._normalize_user_id(user_id)
 
         if use_separate_session:
             async with AsyncSessionLocal() as history_session:
                 try:
                     history_service = ToolHistoryService(history_session)
                     await history_service.record_tool_execution(
-                        user_id=user_id_int,
+                        user_id=user_uuid,
                         tool_name=tool_name,
                         success=success,
                         execution_time_ms=execution_time_ms,
@@ -220,7 +220,7 @@ class ToolExecutor:
         try:
             history_service = ToolHistoryService(db_session)
             await history_service.record_tool_execution(
-                user_id=user_id_int,
+                user_id=user_uuid,
                 tool_name=tool_name,
                 success=success,
                 execution_time_ms=execution_time_ms,
@@ -255,7 +255,7 @@ class ToolExecutor:
     async def execute_tool_calls(
         self,
         tool_calls: List[Dict[str, Any]],
-        user_id: str,
+        user_id: UUID | str,
         db_session: Optional[Any]
     ) -> List[ToolResult]:
         """
@@ -277,3 +277,9 @@ class ToolExecutor:
             )
             results.append(result)
         return results
+
+    @staticmethod
+    def _normalize_user_id(user_id: UUID | str) -> UUID:
+        if isinstance(user_id, UUID):
+            return user_id
+        return UUID(str(user_id))

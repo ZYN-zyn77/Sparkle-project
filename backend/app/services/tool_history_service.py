@@ -7,9 +7,9 @@ Tool History Service - 工具执行历史记录和学习服务
 3. 支持路由器的偏好学习
 4. 性能监控
 """
-import json
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
+from uuid import UUID
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
@@ -25,7 +25,7 @@ class ToolHistoryService:
 
     async def record_tool_execution(
         self,
-        user_id: int,
+        user_id: UUID | str,
         tool_name: str,
         success: bool,
         execution_time_ms: Optional[int] = None,
@@ -55,8 +55,10 @@ class ToolHistoryService:
             UserToolHistory: 创建的历史记录对象
         """
         try:
+            user_uuid = self._normalize_user_id(user_id)
+
             record = UserToolHistory(
-                user_id=user_id,
+                user_id=user_uuid,
                 tool_name=tool_name,
                 success=success,
                 execution_time_ms=execution_time_ms,
@@ -84,7 +86,7 @@ class ToolHistoryService:
 
     async def get_tool_success_rate(
         self,
-        user_id: int,
+        user_id: UUID | str,
         tool_name: str,
         days: int = 30
     ) -> float:
@@ -100,6 +102,7 @@ class ToolHistoryService:
             成功率 (0-100)
         """
         since = datetime.utcnow() - timedelta(days=days)
+        user_uuid = self._normalize_user_id(user_id)
 
         query = select(
             func.count(UserToolHistory.id).label('total'),
@@ -108,7 +111,7 @@ class ToolHistoryService:
             ).label('success_count')
         ).where(
             and_(
-                UserToolHistory.user_id == user_id,
+                UserToolHistory.user_id == user_uuid,
                 UserToolHistory.tool_name == tool_name,
                 UserToolHistory.created_at >= since
             )
@@ -127,7 +130,7 @@ class ToolHistoryService:
 
     async def get_user_preferred_tools(
         self,
-        user_id: int,
+        user_id: UUID | str,
         limit: int = 10,
         days: int = 30
     ) -> List[UserToolPreference]:
@@ -143,6 +146,7 @@ class ToolHistoryService:
             UserToolPreference列表
         """
         since = datetime.utcnow() - timedelta(days=days)
+        user_uuid = self._normalize_user_id(user_id)
 
         query = select(
             UserToolHistory.tool_name,
@@ -154,7 +158,7 @@ class ToolHistoryService:
             func.max(UserToolHistory.created_at).label('last_used_at')
         ).where(
             and_(
-                UserToolHistory.user_id == user_id,
+                UserToolHistory.user_id == user_uuid,
                 UserToolHistory.created_at >= since
             )
         ).group_by(
@@ -180,7 +184,7 @@ class ToolHistoryService:
             preference_score = (success_rate / 100 * 0.7) + (frequency_score * 0.3)
 
             pref = UserToolPreference(
-                user_id=user_id,
+                user_id=user_uuid,
                 tool_name=tool_name,
                 preference_score=preference_score,
                 last_30d_success_rate=success_rate,
@@ -192,7 +196,7 @@ class ToolHistoryService:
 
     async def get_tool_statistics(
         self,
-        user_id: int,
+        user_id: UUID | str,
         tool_name: str,
         days: int = 30
     ) -> ToolSuccessRateView:
@@ -208,6 +212,7 @@ class ToolHistoryService:
             ToolSuccessRateView: 统计视图
         """
         since = datetime.utcnow() - timedelta(days=days)
+        user_uuid = self._normalize_user_id(user_id)
 
         query = select(
             UserToolHistory.tool_name,
@@ -219,7 +224,7 @@ class ToolHistoryService:
             func.max(UserToolHistory.created_at).label('last_used_at')
         ).where(
             and_(
-                UserToolHistory.user_id == user_id,
+                UserToolHistory.user_id == user_uuid,
                 UserToolHistory.tool_name == tool_name,
                 UserToolHistory.created_at >= since
             )
@@ -253,7 +258,7 @@ class ToolHistoryService:
 
     async def get_recent_failed_tools(
         self,
-        user_id: int,
+        user_id: UUID | str,
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """
@@ -266,11 +271,13 @@ class ToolHistoryService:
         Returns:
             最近失败的工具列表
         """
+        user_uuid = self._normalize_user_id(user_id)
+
         query = select(
             UserToolHistory
         ).where(
             and_(
-                UserToolHistory.user_id == user_id,
+                UserToolHistory.user_id == user_uuid,
                 UserToolHistory.success == False
             )
         ).order_by(
@@ -336,3 +343,12 @@ class ToolHistoryService:
 
         logger.info(f"Cleaned up {count} old tool history records")
         return count
+
+    @staticmethod
+    def _normalize_user_id(user_id: UUID | str) -> UUID:
+        if isinstance(user_id, UUID):
+            return user_id
+        try:
+            return UUID(str(user_id))
+        except (ValueError, TypeError) as exc:
+            raise ValueError(f"Invalid user_id: {user_id}") from exc
