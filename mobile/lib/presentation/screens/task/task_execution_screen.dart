@@ -26,7 +26,10 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
   int _elapsedSeconds = 0;
   bool _isTimerRunning = false;
   bool _showCelebration = false;
+  bool _isCompleting = false;
   TaskCompletionResult? _completionResult;
+  int? _lastSubmittedMinutes;
+  String _noteDraft = '';
 
   // Timer Enhancement State
   TimerMode _timerMode = TimerMode.countUp;
@@ -80,26 +83,67 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
   }
 
   Future<void> _handleCompletion(int minutes, String? note) async {
-    // 1. Stop Timer
+    if (_isCompleting) return;
     setState(() {
-      _isTimerRunning = false;
-      _showCelebration = true;
+      _isCompleting = true;
+      _completionResult = null;
+      _lastSubmittedMinutes = minutes;
+      _noteDraft = note ?? '';
     });
 
-    // 2. Haptic Feedback
+    // Haptic Feedback
     HapticFeedback.mediumImpact();
 
     // 3. API Call
     final task = ref.read(activeTaskProvider);
     if (task != null) {
-      // Run completion in background while animation plays
-      final result = await ref.read(taskListProvider.notifier).completeTask(task.id, minutes, note);
-      if (mounted) {
-        setState(() {
-          _completionResult = result;
-        });
+      try {
+        final result = await ref.read(taskListProvider.notifier).completeTask(task.id, minutes, note);
+        if (!mounted) return;
+
+        if (result != null) {
+          setState(() {
+            _completionResult = result;
+            _showCelebration = true;
+            _isTimerRunning = false;
+          });
+        } else {
+          _showSyncError();
+        }
+      } catch (_) {
+        if (!mounted) return;
+        _showSyncError();
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isCompleting = false;
+          });
+        }
       }
+    } else {
+      setState(() {
+        _isCompleting = false;
+      });
     }
+  }
+
+  void _showSyncError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('同步失败，可重试'),
+        action: _lastSubmittedMinutes != null
+            ? SnackBarAction(
+                label: '重试',
+                onPressed: _isCompleting
+                    ? null
+                    : () => _handleCompletion(
+                          _lastSubmittedMinutes!,
+                          _noteDraft.isEmpty ? null : _noteDraft,
+                        ),
+              )
+            : null,
+      ),
+    );
   }
 
   void _onCelebrationComplete() {
@@ -372,6 +416,11 @@ class _TaskExecutionScreenState extends ConsumerState<TaskExecutionScreen> {
                       task: activeTask, 
                       elapsedSeconds: _elapsedSeconds,
                       onComplete: _handleCompletion,
+                      isCompleting: _isCompleting,
+                      noteDraft: _noteDraft,
+                      onNoteDraftChanged: (value) => setState(() {
+                        _noteDraft = value;
+                      }),
                     ),
                   ],
                 ),
@@ -512,13 +561,19 @@ class _BottomControls extends ConsumerWidget {
     required this.task, 
     required this.elapsedSeconds,
     required this.onComplete,
+    required this.isCompleting,
+    required this.noteDraft,
+    required this.onNoteDraftChanged,
   });
   final TaskModel task;
   final int elapsedSeconds;
   final Function(int minutes, String? note) onComplete;
+  final bool isCompleting;
+  final String noteDraft;
+  final ValueChanged<String> onNoteDraftChanged;
 
   void _showCompleteDialog(BuildContext context, WidgetRef ref) {
-    final noteController = TextEditingController();
+    final noteController = TextEditingController(text: noteDraft);
     final minutes = Duration(seconds: elapsedSeconds).inMinutes;
 
     showDialog(
@@ -588,6 +643,7 @@ class _BottomControls extends ConsumerWidget {
                 ),
               ),
               maxLines: 3,
+              onChanged: onNoteDraftChanged,
             ),
           ],
         ),
@@ -599,12 +655,16 @@ class _BottomControls extends ConsumerWidget {
           CustomButton.primary(
             text: '确认完成',
             icon: Icons.check_rounded,
-            onPressed: () {
-              HapticFeedback.heavyImpact();
-              Navigator.of(ctx).pop();
-              onComplete(minutes, noteController.text.trim().isEmpty ? null : noteController.text.trim());
-            },
+            onPressed: isCompleting
+                ? null
+                : () {
+                    HapticFeedback.heavyImpact();
+                    Navigator.of(ctx).pop();
+                    final trimmedNote = noteController.text.trim();
+                    onComplete(minutes, trimmedNote.isEmpty ? null : trimmedNote);
+                  },
             customGradient: DS.successGradient,
+            isLoading: isCompleting,
             size: CustomButtonSize.small,
           ),
         ],
@@ -653,8 +713,9 @@ class _BottomControls extends ConsumerWidget {
             flex: 2,
             child: CustomButton.primary(
               text: '完成任务',
-              onPressed: () => _showCompleteDialog(context, ref),
+              onPressed: isCompleting ? null : () => _showCompleteDialog(context, ref),
               customGradient: DS.successGradient,
+              isLoading: isCompleting,
             ),
           ),
         ],
