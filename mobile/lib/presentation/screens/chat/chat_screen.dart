@@ -57,6 +57,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final chatState = ref.watch(chatProvider);
     final messages = chatState.messages;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final wsState = chatState.wsConnectionState;
+    final isConnected = wsState == WsConnectionState.connected;
+    final isConnecting = wsState == WsConnectionState.connecting || wsState == WsConnectionState.reconnecting;
+    final isDisconnected = wsState == WsConnectionState.disconnected || wsState == WsConnectionState.failed;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -142,6 +146,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             SafeArea(
               child: Column(
                 children: [
+                  if (isDisconnected || isConnecting)
+                    _ConnectionBanner(
+                      state: wsState,
+                      onRetry: () => ref.read(chatProvider.notifier).reconnect(),
+                    ),
                   if (chatState.isLoading)
                     LinearProgressIndicator(
                       backgroundColor: Colors.transparent,
@@ -243,15 +252,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                    width: double.infinity,
                    padding: const EdgeInsets.all(DS.sm),
                    color: DS.error.withValues(alpha: 0.1),
-                   child: Text(
-                     'Error: ${chatState.error}', 
-                     style: TextStyle(color: DS.error),
-                     textAlign: TextAlign.center,
+                   child: Row(
+                     mainAxisAlignment: MainAxisAlignment.center,
+                     children: [
+                       Expanded(
+                         child: Text(
+                           'Error: ${chatState.error}', 
+                           style: TextStyle(color: DS.error),
+                           textAlign: TextAlign.center,
+                         ),
+                       ),
+                       if (chatState.isErrorRetryable)
+                         TextButton(
+                           onPressed: () => ref.read(chatProvider.notifier).reconnect(),
+                           child: const Text('重试'),
+                         ),
+                     ],
                    ),
                  ),
                   ChatInput(
-                    enabled: !chatState.isSending,
+                    enabled: !chatState.isSending && isConnected,
                     onSend: (text, {replyToId}) => ref.read(chatProvider.notifier).sendMessage(text),
+                    onDisabledTap: () => _showConnectionToast(context, wsState),
+                    disabledHint: isConnecting ? '连接中，稍后再试' : '已断开，点击上方重试',
                   ),
                 ],
               ),
@@ -263,6 +286,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showConnectionToast(BuildContext context, WsConnectionState state) {
+    final message = switch (state) {
+      WsConnectionState.connecting => '连接中，请稍候…',
+      WsConnectionState.reconnecting => '正在重连，请稍候…',
+      _ => '已断开连接，点击“重试连接”恢复',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -431,6 +468,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ConnectionBanner extends StatelessWidget {
+  const _ConnectionBanner({required this.state, required this.onRetry});
+
+  final WsConnectionState state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isWarning = state == WsConnectionState.reconnecting || state == WsConnectionState.connecting;
+    final backgroundColor = isWarning
+        ? DS.warning.withValues(alpha: 0.12)
+        : DS.error.withValues(alpha: 0.12);
+
+    String message;
+    if (state == WsConnectionState.reconnecting) {
+      message = '已断开，正在重连…';
+    } else if (state == WsConnectionState.connecting) {
+      message = '连接中…';
+    } else {
+      message = '已断开连接';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: DS.md, vertical: DS.sm),
+      color: backgroundColor,
+      child: Row(
+        children: [
+          Icon(
+            isWarning ? Icons.wifi_off_rounded : Icons.error_outline,
+            color: isWarning ? DS.warning : DS.error,
+            size: 20,
+          ),
+          const SizedBox(width: DS.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: isWarning
+                    ? (isDark ? DS.brandPrimary : DS.neutral900)
+                    : DS.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: const Text('重试连接'),
+          ),
+        ],
       ),
     );
   }

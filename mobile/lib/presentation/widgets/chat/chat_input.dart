@@ -13,12 +13,16 @@ class ChatInput extends ConsumerStatefulWidget {
     this.onSend,
     this.quotedMessage,
     this.onCancelQuote,
+    this.onDisabledTap,
+    this.disabledHint,
   });
   final bool enabled;
   final String? hintText;
   final Function(String text, {String? replyToId})? onSend;
   final PrivateMessageInfo? quotedMessage;
   final VoidCallback? onCancelQuote;
+  final VoidCallback? onDisabledTap;
+  final String? disabledHint;
 
   @override
   ConsumerState<ChatInput> createState() => _ChatInputState();
@@ -80,6 +84,9 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     final enterToSend = ref.watch(enterToSendProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final hintText = widget.enabled
+        ? (widget.hintText ?? 'Type a message...')
+        : (widget.disabledHint ?? '连接中，暂时无法发送');
 
     return SafeArea(
       child: Column(
@@ -109,7 +116,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                       minLines: 1,
                       textInputAction: enterToSend ? TextInputAction.send : TextInputAction.newline,
                       decoration: InputDecoration(
-                        hintText: widget.hintText ?? 'Type a message...',
+                        hintText: hintText,
                         hintStyle: TextStyle(
                           color: isDark ? DS.neutral400 : DS.neutral500,
                         ),
@@ -121,15 +128,17 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                         isDense: true,
                       ),
                       onSubmitted: canSend && enterToSend ? (_) => _handleSend() : null,
+                      readOnly: !widget.enabled,
+                      onTap: widget.enabled ? null : widget.onDisabledTap,
                     ),
                   ),
                 ),
                 const SizedBox(width: DS.spacing12),
                 GestureDetector(
-                  onTapDown: (_) => setState(() => _isButtonPressed = true),
-                  onTapUp: (_) => setState(() => _isButtonPressed = false),
-                  onTapCancel: () => setState(() => _isButtonPressed = false),
-                  onTap: canSend ? _handleSend : null,
+                  onTapDown: canSend ? (_) => setState(() => _isButtonPressed = true) : null,
+                  onTapUp: canSend ? (_) => setState(() => _isButtonPressed = false) : null,
+                  onTapCancel: canSend ? () => setState(() => _isButtonPressed = false) : null,
+                  onTap: canSend ? _handleSend : widget.onDisabledTap,
                   child: AnimatedScale(
                     scale: _isButtonPressed ? 0.9 : 1.0,
                     duration: const Duration(milliseconds: 100),
