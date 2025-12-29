@@ -37,15 +37,15 @@ func (h *ChaosHandler) SetThreshold(c *gin.Context) {
 
 	if req.Target == "queue_persist" {
 		h.chatHistory.SetBreakerThreshold(req.Value)
-		
-		qLen, _ := h.chatHistory.GetQueueLength(c.Request.Context())
+
+		qLen, _ := h.chatHistory.GetQueueLength(c.Request.Context(), "", "")
 
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ok",
 			"msg":    fmt.Sprintf("Threshold updated to %d", req.Value),
 			"details": gin.H{
-				"current_queue": qLen,
-				"new_threshold": req.Value,
+				"current_queue":   qLen,
+				"new_threshold":   req.Value,
 				"breaker_tripped": qLen >= req.Value,
 			},
 		})
@@ -55,7 +55,7 @@ func (h *ChaosHandler) SetThreshold(c *gin.Context) {
 }
 
 func (h *ChaosHandler) GetStatus(c *gin.Context) {
-	qLen, _ := h.chatHistory.GetQueueLength(c.Request.Context())
+	qLen, _ := h.chatHistory.GetQueueLength(c.Request.Context(), "", "")
 	threshold := h.chatHistory.GetBreakerThreshold()
 
 	c.JSON(http.StatusOK, gin.H{

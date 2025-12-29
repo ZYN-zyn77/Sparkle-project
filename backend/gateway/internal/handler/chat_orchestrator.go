@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-
 // P1 Optimization: Object pools to reduce GC pressure in high-concurrency scenarios
 
 // chatInputPool reuses input message structs
@@ -35,9 +34,9 @@ var chatInputPool = sync.Pool{
 
 // chatInput represents a WebSocket chat message input
 type chatInput struct {
-	Message   string `json:"message"`
-	SessionID string `json:"session_id"`
-	Nickname  string `json:"nickname,omitempty"`
+	Message      string                 `json:"message"`
+	SessionID    string                 `json:"session_id"`
+	Nickname     string                 `json:"nickname,omitempty"`
 	ExtraContext map[string]interface{} `json:"extra_context,omitempty"`
 }
 
@@ -188,6 +187,20 @@ func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
 			// Sanitize Input (Security Hygiene) - reuse global sanitizer
 			input.Message = sanitizer.Sanitize(input.Message)
 
+			if input.SessionID != "" {
+				allowed, err := h.chatHistory.EnsureSessionOwner(ctx, userID, input.SessionID)
+				if err != nil {
+					log.Printf("Failed to validate session ownership: %v", err)
+					conn.WriteJSON(gin.H{"type": "error", "message": "Session validation failed"})
+					return false
+				}
+				if !allowed {
+					log.Printf("Session ownership mismatch for user %s and session %s", userID, input.SessionID)
+					conn.WriteJSON(gin.H{"type": "error", "message": "Session ownership mismatch"})
+					return false
+				}
+			}
+
 			// Persist user message to Redis history for context pruning
 			if input.SessionID != "" {
 				sessionID := input.SessionID
@@ -287,7 +300,7 @@ func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
 
 			// Add metadata for the final state
 			latency := time.Since(startTime).Milliseconds()
-			qLen, _ := h.chatHistory.GetQueueLength(ctx)
+			qLen, _ := h.chatHistory.GetQueueLength(ctx, userID, input.SessionID)
 			threshold := h.chatHistory.GetBreakerThreshold()
 
 			meta := map[string]interface{}{
@@ -400,9 +413,9 @@ func convertResponseToJSON(resp *agentv1.ChatResponse) map[string]interface{} {
 			widgetData = tool.WidgetData.AsMap()
 		}
 		result["tool_result"] = map[string]interface{}{
-			"tool_name":    tool.ToolName,
-			"success":      tool.Success,
-			"data":         data,
+			"tool_name":     tool.ToolName,
+			"success":       tool.Success,
+			"data":          data,
 			"error_message": tool.ErrorMessage,
 			"suggestion":    tool.Suggestion,
 			"widget_type":   tool.WidgetType,
@@ -431,7 +444,7 @@ func (h *ChatOrchestrator) saveMessage(userID, sessionID, role, content string) 
 
 	ctx := context.Background()
 	// Use the new reliable double-write mechanism
-	if err := h.chatHistory.SaveMessage(ctx, sessionID, data); err != nil {
+	if err := h.chatHistory.SaveMessage(ctx, userID, sessionID, data); err != nil {
 		log.Printf("Failed to save chat message: %v", err)
 	}
 }
