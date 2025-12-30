@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-
 // P1 Optimization: Object pools to reduce GC pressure in high-concurrency scenarios
 
 // chatInputPool reuses input message structs
@@ -35,9 +34,9 @@ var chatInputPool = sync.Pool{
 
 // chatInput represents a WebSocket chat message input
 type chatInput struct {
-	Message   string `json:"message"`
-	SessionID string `json:"session_id"`
-	Nickname  string `json:"nickname,omitempty"`
+	Message      string                 `json:"message"`
+	SessionID    string                 `json:"session_id"`
+	Nickname     string                 `json:"nickname,omitempty"`
 	ExtraContext map[string]interface{} `json:"extra_context,omitempty"`
 }
 
@@ -55,6 +54,13 @@ var stringBuilderPool = sync.Pool{
 		return &strings.Builder{}
 	},
 }
+
+const (
+	asyncOperationTimeout = 300 * time.Millisecond
+	asyncMaxInflight      = 100
+)
+
+var asyncSemaphore = make(chan struct{}, asyncMaxInflight)
 
 // sanitizerPool reuses bluemonday policies (they are thread-safe once created)
 var sanitizer = bluemonday.UGCPolicy()
@@ -80,6 +86,20 @@ func NewChatOrchestrator(ac *agent.Client, q *db.Queries, ch *service.ChatHistor
 		billing:     bc,
 		wsFactory:   wsFactory,
 		userContext: uc,
+	}
+}
+
+func (h *ChatOrchestrator) launchAsync(name string, fn func(ctx context.Context)) {
+	select {
+	case asyncSemaphore <- struct{}{}:
+		go func() {
+			defer func() { <-asyncSemaphore }()
+			ctx, cancel := context.WithTimeout(context.Background(), asyncOperationTimeout)
+			defer cancel()
+			fn(ctx)
+		}()
+	default:
+		log.Printf("Dropping async %s: max in-flight %d reached", name, asyncMaxInflight)
 	}
 }
 
@@ -192,7 +212,9 @@ func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
 			if input.SessionID != "" {
 				sessionID := input.SessionID
 				message := input.Message
-				go h.saveMessage(userID, sessionID, "user", message)
+				h.launchAsync("save_message", func(ctx context.Context) {
+					h.saveMessage(ctx, userID, sessionID, "user", message)
+				})
 			}
 
 			// Canonicalize Input (Semantic Cache Prep)
@@ -311,14 +333,16 @@ func (h *ChatOrchestrator) HandleWebSocket(c *gin.Context) {
 				// Capture values for goroutine before returning input to pool
 				sessionID := input.SessionID
 				result := fullText
-				go h.saveMessage(userID, sessionID, "assistant", result)
+				h.launchAsync("save_message", func(ctx context.Context) {
+					h.saveMessage(ctx, userID, sessionID, "assistant", result)
+				})
 
 				// Also decrement quota (async)
-				go func(uid string) {
-					if _, err := h.quota.DecrQuota(context.Background(), uid); err != nil {
+				h.launchAsync("decrement_quota", func(ctx context.Context) {
+					if _, err := h.quota.DecrQuota(ctx, userID); err != nil {
 						log.Printf("Failed to decrement quota: %v", err)
 					}
-				}(userID)
+				})
 			}
 
 			return false
@@ -400,9 +424,9 @@ func convertResponseToJSON(resp *agentv1.ChatResponse) map[string]interface{} {
 			widgetData = tool.WidgetData.AsMap()
 		}
 		result["tool_result"] = map[string]interface{}{
-			"tool_name":    tool.ToolName,
-			"success":      tool.Success,
-			"data":         data,
+			"tool_name":     tool.ToolName,
+			"success":       tool.Success,
+			"data":          data,
 			"error_message": tool.ErrorMessage,
 			"suggestion":    tool.Suggestion,
 			"widget_type":   tool.WidgetType,
@@ -419,7 +443,7 @@ func convertResponseToJSON(resp *agentv1.ChatResponse) map[string]interface{} {
 }
 
 // saveMessage persists a chat message to the database
-func (h *ChatOrchestrator) saveMessage(userID, sessionID, role, content string) {
+func (h *ChatOrchestrator) saveMessage(ctx context.Context, userID, sessionID, role, content string) {
 	payload := map[string]string{
 		"session_id": sessionID,
 		"user_id":    userID,
@@ -429,10 +453,9 @@ func (h *ChatOrchestrator) saveMessage(userID, sessionID, role, content string) 
 	}
 	data, _ := json.Marshal(payload)
 
-	ctx := context.Background()
 	// Use the new reliable double-write mechanism
 	if err := h.chatHistory.SaveMessage(ctx, sessionID, data); err != nil {
-		log.Printf("Failed to save chat message: %v", err)
+		log.Printf("Failed to save chat message (session=%s, role=%s): %v", sessionID, role, err)
 	}
 }
 
