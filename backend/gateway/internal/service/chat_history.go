@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/sparkle/gateway/internal/db"
 )
 
 const (
@@ -15,12 +16,17 @@ const (
 )
 
 type ChatHistoryService struct {
-	rdb              *redis.Client
-	breakerThreshold atomic.Int64
+	rdb                 *redis.Client
+	breakerThreshold    atomic.Int64
+	enqueueScript       *redis.Script
+	droppedDueToBreaker atomic.Int64
 }
 
 func NewChatHistoryService(rdb *redis.Client) *ChatHistoryService {
-	s := &ChatHistoryService{rdb: rdb}
+	s := &ChatHistoryService{
+		rdb:           rdb,
+		enqueueScript: redis.NewScript(db.ChatHistoryEnqueueScript),
+	}
 	s.breakerThreshold.Store(DefaultMaxQueueSize)
 	return s
 }
@@ -40,6 +46,10 @@ func (s *ChatHistoryService) GetQueueLength(ctx context.Context) (int64, error) 
 	return s.rdb.LLen(ctx, "queue:persist:history").Result()
 }
 
+func (s *ChatHistoryService) GetDroppedDueToBreaker() int64 {
+	return s.droppedDueToBreaker.Load()
+}
+
 func (s *ChatHistoryService) SaveMessage(ctx context.Context, sid string, msg []byte) error {
 	pipe := s.rdb.Pipeline()
 
@@ -52,26 +62,22 @@ func (s *ChatHistoryService) SaveMessage(ctx context.Context, sid string, msg []
 	// 2. Write to persistent queue (for DB, with Circuit Breaker)
 	queueKey := "queue:persist:history"
 
-	// Check queue length (Circuit Breaker)
-	// We do this check outside the pipeline for simplicity, acknowledging the small race condition.
-	// For strict atomicity, a Lua script could be used, but this is sufficient for OOM protection.
-	qLen, err := s.rdb.LLen(ctx, queueKey).Result()
-	if err != nil {
-		// If Redis is reachable but LLEN fails, it's risky.
-		// If Redis is unreachable, pipeline exec will fail anyway.
-		log.Printf("Failed to check queue length: %v", err)
+	// Execute cache writes regardless of breaker status
+	if _, err := pipe.Exec(ctx); err != nil {
 		return err
 	}
 
 	threshold := s.breakerThreshold.Load()
-	if qLen < threshold {
-		pipe.RPush(ctx, queueKey, msg)
-	} else {
-		// Circuit Breaker triggered
-		log.Printf("Persistence queue overloaded (%d/%d), dropping message for session %s", qLen, threshold, sid)
-		// We execute the pipeline (to save to cache) but skip the DB queue push.
+	result, err := s.enqueueScript.Run(ctx, s.rdb, []string{queueKey}, threshold, msg).Int()
+	if err != nil {
+		log.Printf("Failed to enqueue chat history message: %v", err)
+		return err
 	}
 
-	_, err = pipe.Exec(ctx)
-	return err
+	if result == 0 {
+		dropped := s.droppedDueToBreaker.Add(1)
+		log.Printf("Persistence queue overloaded (threshold=%d), dropping message for session %s (drop_count=%d)", threshold, sid, dropped)
+	}
+
+	return nil
 }
