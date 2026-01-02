@@ -3,22 +3,26 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sparkle/gateway/internal/db"
-	"log"
+	"golang.org/x/sync/errgroup"
 )
+
+const defaultUserContextTimeout = 500 * time.Millisecond
 
 // TaskSummary represents a summary of a pending task
 type TaskSummary struct {
-	ID               uuid.UUID `json:"id"`
-	Title            string    `json:"title"`
-	Type             string    `json:"type"`
-	EstimatedMinutes int32     `json:"estimated_minutes"`
-	Priority         int32     `json:"priority"`
+	ID               uuid.UUID  `json:"id"`
+	Title            string     `json:"title"`
+	Type             string     `json:"type"`
+	EstimatedMinutes int32      `json:"estimated_minutes"`
+	Priority         int32      `json:"priority"`
 	DueDate          *time.Time `json:"due_date,omitempty"`
 }
 
@@ -33,41 +37,52 @@ type PlanSummary struct {
 
 // FocusStatsSummary represents today's focus statistics
 type FocusStatsSummary struct {
-	TotalSessionsToday    int32   `json:"total_sessions_today"`
-	TotalMinutesToday     int32   `json:"total_minutes_today"`
-	AverageFocusMinutes   int32   `json:"average_focus_minutes"`
-	Streak                int32   `json:"streak"`
-	LastSessionTimestamp  *time.Time `json:"last_session_timestamp,omitempty"`
+	TotalSessionsToday   int32      `json:"total_sessions_today"`
+	TotalMinutesToday    int32      `json:"total_minutes_today"`
+	AverageFocusMinutes  int32      `json:"average_focus_minutes"`
+	Streak               int32      `json:"streak"`
+	LastSessionTimestamp *time.Time `json:"last_session_timestamp,omitempty"`
 }
 
 // ProgressEvent represents a recent task completion
 type ProgressEvent struct {
-	TaskID        uuid.UUID `json:"task_id"`
-	TaskTitle     string    `json:"task_title"`
-	CompletedAt   time.Time `json:"completed_at"`
-	TimeSpentMin  int32     `json:"time_spent_min"`
+	TaskID       uuid.UUID `json:"task_id"`
+	TaskTitle    string    `json:"task_title"`
+	CompletedAt  time.Time `json:"completed_at"`
+	TimeSpentMin int32     `json:"time_spent_min"`
 }
 
 // UserContextData holds all context information for a user
 type UserContextData struct {
-	PendingTasks   []TaskSummary       `json:"pending_tasks"`
-	ActivePlans    []PlanSummary       `json:"active_plans"`
-	FocusStats     FocusStatsSummary   `json:"focus_stats"`
-	RecentProgress []ProgressEvent     `json:"recent_progress"`
+	PendingTasks   []TaskSummary     `json:"pending_tasks"`
+	ActivePlans    []PlanSummary     `json:"active_plans"`
+	FocusStats     FocusStatsSummary `json:"focus_stats"`
+	RecentProgress []ProgressEvent   `json:"recent_progress"`
 }
 
 // UserContextService handles fetching user context data for the orchestrator
 type UserContextService struct {
-	pool    *pgxpool.Pool
-	queries *db.Queries
+	pool           *pgxpool.Pool
+	queries        *db.Queries
+	fetchPending   func(ctx context.Context, userID uuid.UUID, limit int32) ([]TaskSummary, error)
+	fetchPlans     func(ctx context.Context, userID uuid.UUID, limit int32) ([]PlanSummary, error)
+	fetchStats     func(ctx context.Context, userID uuid.UUID) (FocusStatsSummary, error)
+	fetchProgress  func(ctx context.Context, userID uuid.UUID, hours int) ([]ProgressEvent, error)
+	contextTimeout time.Duration
 }
 
 // NewUserContextService creates a new user context service
 func NewUserContextService(pool *pgxpool.Pool) *UserContextService {
-	return &UserContextService{
+	s := &UserContextService{
 		pool:    pool,
 		queries: db.New(pool),
 	}
+	s.fetchPending = s.GetPendingTasks
+	s.fetchPlans = s.GetActivePlans
+	s.fetchStats = s.GetTodayStats
+	s.fetchProgress = s.GetRecentProgress
+	s.contextTimeout = defaultUserContextTimeout
+	return s
 }
 
 // GetPendingTasks fetches up to `limit` pending tasks for a user, ordered by priority and due date
@@ -226,59 +241,118 @@ func (s *UserContextService) GetRecentProgress(ctx context.Context, userID uuid.
 	return events, nil
 }
 
+func (s *UserContextService) ensureFetchers() {
+	if s.fetchPending == nil {
+		s.fetchPending = s.GetPendingTasks
+	}
+	if s.fetchPlans == nil {
+		s.fetchPlans = s.GetActivePlans
+	}
+	if s.fetchStats == nil {
+		s.fetchStats = s.GetTodayStats
+	}
+	if s.fetchProgress == nil {
+		s.fetchProgress = s.GetRecentProgress
+	}
+	if s.contextTimeout <= 0 {
+		s.contextTimeout = defaultUserContextTimeout
+	}
+}
+
 // GetUserContextData fetches all context data for a user and returns as JSON string
 func (s *UserContextService) GetUserContextData(ctx context.Context, userID uuid.UUID) (string, error) {
-	// Fetch all context in parallel
-	tasksChan := make(chan []TaskSummary, 1)
-	plansChan := make(chan []PlanSummary, 1)
-	statsChan := make(chan FocusStatsSummary, 1)
-	progressChan := make(chan []ProgressEvent, 1)
-	errChan := make(chan error, 4)
+	s.ensureFetchers()
 
-	go func() {
-		tasks, err := s.GetPendingTasks(ctx, userID, 5)
-		if err != nil {
-			errChan <- err
+	timeout := s.contextTimeout
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	var (
+		tasks    []TaskSummary
+		plans    []PlanSummary
+		stats    FocusStatsSummary
+		progress []ProgressEvent
+	)
+
+	g.Go(func() error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
 		}
-		tasksChan <- tasks
-	}()
 
-	go func() {
-		plans, err := s.GetActivePlans(ctx, userID, 3)
+		res, err := s.fetchPending(ctx, userID, 5)
 		if err != nil {
-			errChan <- err
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return err
+			}
+			log.Printf("Warning: error fetching pending tasks: %v", err)
 		}
-		plansChan <- plans
-	}()
+		tasks = res
+		return nil
+	})
 
-	go func() {
-		stats, err := s.GetTodayStats(ctx, userID)
+	g.Go(func() error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		res, err := s.fetchPlans(ctx, userID, 3)
 		if err != nil {
-			errChan <- err
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return err
+			}
+			log.Printf("Warning: error fetching active plans: %v", err)
 		}
-		statsChan <- stats
-	}()
+		plans = res
+		return nil
+	})
 
-	go func() {
-		progress, err := s.GetRecentProgress(ctx, userID, 24)
+	g.Go(func() error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		res, err := s.fetchStats(ctx, userID)
 		if err != nil {
-			errChan <- err
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return err
+			}
+			log.Printf("Warning: error fetching focus stats: %v", err)
 		}
-		progressChan <- progress
-	}()
+		stats = res
+		return nil
+	})
 
-	// Collect results (timeout protection: use context deadline)
-	tasks := <-tasksChan
-	plans := <-plansChan
-	stats := <-statsChan
-	progress := <-progressChan
+	g.Go(func() error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 
-	// Close error channel and check for errors (non-fatal)
-	close(errChan)
-	for err := range errChan {
+		res, err := s.fetchProgress(ctx, userID, 24)
 		if err != nil {
-			log.Printf("Warning: error fetching some context: %v", err)
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return err
+			}
+			log.Printf("Warning: error fetching recent progress: %v", err)
 		}
+		progress = res
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Printf("GetUserContextData timed out after %s for user %s", timeout, userID)
+		}
+		return "", err
 	}
 
 	// Build context data

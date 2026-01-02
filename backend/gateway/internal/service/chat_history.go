@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/sparkle/gateway/internal/db"
 )
 
 const (
@@ -18,12 +19,17 @@ const (
 )
 
 type ChatHistoryService struct {
-	rdb              *redis.Client
-	breakerThreshold atomic.Int64
+	rdb                 *redis.Client
+	breakerThreshold    atomic.Int64
+	enqueueScript       *redis.Script
+	droppedDueToBreaker atomic.Int64
 }
 
 func NewChatHistoryService(rdb *redis.Client) *ChatHistoryService {
-	s := &ChatHistoryService{rdb: rdb}
+	s := &ChatHistoryService{
+		rdb:           rdb,
+		enqueueScript: redis.NewScript(db.ChatHistoryEnqueueScript),
+	}
 	s.breakerThreshold.Store(DefaultMaxQueueSize)
 	return s
 }
@@ -64,7 +70,11 @@ func (s *ChatHistoryService) GetQueueLength(ctx context.Context, userID, sid str
 	return total + legacyLen, nil
 }
 
-func (s *ChatHistoryService) SaveMessage(ctx context.Context, userID, sid string, msg []byte) error {
+func (s *ChatHistoryService) GetDroppedDueToBreaker() int64 {
+	return s.droppedDueToBreaker.Load()
+}
+
+func (s *ChatHistoryService) SaveMessage(ctx context.Context, sid string, msg []byte) error {
 	pipe := s.rdb.Pipeline()
 
 	// 1. Write to cache (for AI context, with TTL)
@@ -76,79 +86,22 @@ func (s *ChatHistoryService) SaveMessage(ctx context.Context, userID, sid string
 	// 2. Write to persistent queue (for DB, with Circuit Breaker)
 	queueKey := historyQueueKey(userID, sid)
 
-	// Check queue length (Circuit Breaker)
-	// We do this check outside the pipeline for simplicity, acknowledging the small race condition.
-	// For strict atomicity, a Lua script could be used, but this is sufficient for OOM protection.
-	qLen, err := s.rdb.LLen(ctx, queueKey).Result()
-	if err != nil {
-		// If Redis is reachable but LLEN fails, it's risky.
-		// If Redis is unreachable, pipeline exec will fail anyway.
-		log.Printf("Failed to check queue length: %v", err)
+	// Execute cache writes regardless of breaker status
+	if _, err := pipe.Exec(ctx); err != nil {
 		return err
 	}
 
 	threshold := s.breakerThreshold.Load()
-	if qLen < threshold {
-		pipe.RPush(ctx, queueKey, msg)
-		pipe.Expire(ctx, queueKey, ChatQueueTTL)
-	} else {
-		// Circuit Breaker triggered
-		log.Printf("Persistence queue overloaded (%d/%d), dropping message for session %s", qLen, threshold, sid)
-		// We execute the pipeline (to save to cache) but skip the DB queue push.
-	}
-
-	_, err = pipe.Exec(ctx)
-	return err
-}
-
-func (s *ChatHistoryService) EnsureSessionOwner(ctx context.Context, userID, sid string) (bool, error) {
-	ownerKey := sessionOwnerKey(sid)
-
-	claimed, err := s.rdb.SetNX(ctx, ownerKey, userID, SessionOwnerTTL).Result()
+	result, err := s.enqueueScript.Run(ctx, s.rdb, []string{queueKey}, threshold, msg).Int()
 	if err != nil {
-		return false, err
-	}
-	if claimed {
-		return true, nil
+		log.Printf("Failed to enqueue chat history message: %v", err)
+		return err
 	}
 
-	owner, err := s.rdb.Get(ctx, ownerKey).Result()
-	if err != nil {
-		if err == redis.Nil {
-			// Try to establish ownership again if key expired between operations
-			claimed, err = s.rdb.SetNX(ctx, ownerKey, userID, SessionOwnerTTL).Result()
-			if err != nil {
-				return false, err
-			}
-			return claimed, nil
-		}
-		return false, err
+	if result == 0 {
+		dropped := s.droppedDueToBreaker.Add(1)
+		log.Printf("Persistence queue overloaded (threshold=%d), dropping message for session %s (drop_count=%d)", threshold, sid, dropped)
 	}
 
-	if owner != userID {
-		return false, nil
-	}
-
-	// Refresh TTL on valid reuse
-	if _, err := s.rdb.Expire(ctx, ownerKey, SessionOwnerTTL).Result(); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func historyCacheKey(userID, sid string) string {
-	return fmt.Sprintf("chat:history:%s:%s", userID, sid)
-}
-
-func historyQueuePrefix() string {
-	return "queue:persist:history"
-}
-
-func historyQueueKey(userID, sid string) string {
-	return fmt.Sprintf("%s:%s:%s", historyQueuePrefix(), userID, sid)
-}
-
-func sessionOwnerKey(sid string) string {
-	return fmt.Sprintf("session:owner:%s", sid)
+	return nil
 }
