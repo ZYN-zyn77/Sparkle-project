@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sparkle/core/design/tokens_v2/theme_manager.dart' show SparkleColors;
 import 'package:sparkle/data/models/task_model.dart' show TaskType;
 
 export 'package:sparkle/data/models/task_model.dart' show TaskType;
@@ -8,26 +9,24 @@ export 'package:sparkle/data/models/task_model.dart' show TaskType;
 /// DO NOT define task colors elsewhere in the UI layer.
 @immutable
 class TaskColors {
-  const TaskColors({required this.brightness});
+  const TaskColors({required this.colors});
 
-  final Brightness brightness;
-
-  bool get _isDark => brightness == Brightness.dark;
+  final SparkleColors colors;
 
   Color getColor(TaskType type) {
     switch (type) {
       case TaskType.learning:
-        return _isDark ? _RawTaskColors.learningDark : _RawTaskColors.learningLight;
+        return colors.taskLearning;
       case TaskType.training:
-        return _isDark ? _RawTaskColors.trainingDark : _RawTaskColors.trainingLight;
+        return colors.taskTraining;
       case TaskType.errorFix:
-        return _isDark ? _RawTaskColors.errorFixDark : _RawTaskColors.errorFixLight;
+        return colors.taskErrorFix;
       case TaskType.reflection:
-        return _isDark ? _RawTaskColors.reflectionDark : _RawTaskColors.reflectionLight;
+        return colors.taskReflection;
       case TaskType.social:
-        return _RawTaskColors.social;
+        return colors.taskSocial;
       case TaskType.planning:
-        return _isDark ? _RawTaskColors.planningDark : _RawTaskColors.planningLight;
+        return colors.taskPlanning;
     }
   }
 
@@ -35,26 +34,4 @@ class TaskColors {
   Color getBorder(TaskType type) => getColor(type).withValues(alpha: 0.3);
   Color getIcon(TaskType type) => getColor(type);
   Color getLabel(TaskType type) => getColor(type);
-}
-
-class _RawTaskColors {
-  _RawTaskColors._();
-
-  static const Color learningLight = Color(0xFF64B5F6);
-  static const Color learningDark = Color(0xFF4CC9F0);
-
-  static const Color trainingLight = Color(0xFFFF9800);
-  static const Color trainingDark = Color(0xFFFFB74D);
-
-  static const Color errorFixLight = Color(0xFFEF5350);
-  static const Color errorFixDark = Color(0xFFFF6B6B);
-
-  static const Color reflectionLight = Color(0xFF9C27B0);
-  static const Color reflectionDark = Color(0xFFBA68C8);
-
-  // Social must always be amber.
-  static const Color social = Color(0xFFFFB703);
-
-  static const Color planningLight = Color(0xFF009688);
-  static const Color planningDark = Color(0xFF4DB6AC);
 }
