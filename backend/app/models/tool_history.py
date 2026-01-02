@@ -3,11 +3,9 @@ User Tool History Model - 用户工具执行历史记录
 用于追踪工具执行的成功率、性能指标和偏好学习
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Index, ForeignKey, Float, func
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import JSON
-from sqlalchemy.orm import relationship
-from app.models.base import Base
+from uuid import UUID
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Index, ForeignKey, Float, func, JSON
+from app.models.base import Base, GUID
 
 
 class UserToolHistory(Base):
@@ -24,7 +22,7 @@ class UserToolHistory(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Foreign key to users table
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    user_id = Column(GUID(), ForeignKey('users.id'), nullable=False, index=True)
 
     # Tool information
     tool_name = Column(String(100), nullable=False, index=True)
@@ -120,7 +118,7 @@ class ToolSuccessRateView:
 class UserToolPreference:
     """用户工具偏好统计（用于路由学习）"""
 
-    def __init__(self, user_id: int, tool_name: str, preference_score: float,
+    def __init__(self, user_id: UUID, tool_name: str, preference_score: float,
                  last_30d_success_rate: float, last_30d_usage: int):
         self.user_id = user_id
         self.tool_name = tool_name
