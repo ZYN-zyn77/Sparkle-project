@@ -20,6 +20,7 @@ from app.schemas.error_book import (
 )
 from app.core.llm_client import llm_client
 from app.services.embedding_service import embedding_service
+from app.core.event_bus import event_bus, ErrorCreated
 
 class ReviewSchedulerService:
     """
@@ -108,6 +109,9 @@ class ErrorBookService:
             correct_answer=data.correct_answer,
             subject_code=data.subject.value,
             chapter=data.chapter,
+            
+            cognitive_tags=data.cognitive_tags,
+            ai_analysis_summary=data.ai_analysis_summary,
             
             # Initial State
             next_review_at=datetime.utcnow(), # Immediate review or +1 day? Usually immediate for first learn.
@@ -206,6 +210,18 @@ class ErrorBookService:
 
             await self.db.commit()
             logger.info(f"Analysis completed for error {error.id}")
+
+            # Publish Error Created Event
+            try:
+                if linked_ids:
+                    event = ErrorCreated(
+                        user_id=str(user_id),
+                        error_id=str(error.id),
+                        linked_node_ids=[str(i) for i in linked_ids]
+                    )
+                    await event_bus.publish(event.to_dict()['event_type'], event.to_dict())
+            except Exception as e:
+                logger.error(f"Failed to publish ErrorCreated event: {e}")
 
         except Exception as e:
             logger.error(f"Async analysis failed for error {error_id}: {e}")
@@ -326,12 +342,19 @@ class ErrorBookService:
             query = query.where(ErrorRecord.subject_code == params.subject.value)
         if params.chapter:
             query = query.where(ErrorRecord.chapter.ilike(f"%{params.chapter}%"))
+        if params.error_type:
+            query = query.where(
+                ErrorRecord.latest_analysis["error_type"].astext == params.error_type.value
+            )
         if params.mastery_min is not None:
             query = query.where(ErrorRecord.mastery_level >= params.mastery_min)
         if params.mastery_max is not None:
             query = query.where(ErrorRecord.mastery_level <= params.mastery_max)
         if params.need_review:
             query = query.where(ErrorRecord.next_review_at <= datetime.utcnow())
+        if params.cognitive_dimension:
+            # Filter where cognitive_tags contains the dimension
+            query = query.where(ErrorRecord.cognitive_tags.contains([params.cognitive_dimension]))
         if params.keyword:
             # Search in text or analysis or OCR
             query = query.where(

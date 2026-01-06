@@ -7,6 +7,11 @@ from app.models.user import User, PushPreference
 from app.models.task import Task, TaskType, TaskStatus
 from app.models.plan import Plan, PlanType
 from app.models.chat import ChatMessage, MessageRole
+from app.models.user import User
+from app.models.audit_log import SecurityAuditLog, DataAccessLog, ComplianceCheckLog, SystemConfigChangeLog
+from app.models.error_book import ErrorRecord
+from app.models.galaxy import KnowledgeNode, NodeRelation
+
 from app.models.error_book import ErrorRecord
 from app.models.job import Job, JobType, JobStatus
 from app.models.subject import Subject
@@ -24,12 +29,14 @@ from app.models.community import (
 )
 from app.models.cognitive import CognitiveFragment, BehaviorPattern
 from app.models.analytics import UserDailyMetric
+from app.models.compliance import LegalHold, UserPersonaKey, CryptoShreddingCertificate, DlqReplayAuditLog, PersonaSnapshot
 from app.models.curiosity_capsule import CuriosityCapsule
 from app.models.focus import FocusSession, FocusType, FocusStatus
 from app.models.vocabulary import WordBook, DictionaryEntry
 from app.models.file_storage import StoredFile
 from app.models.document_chunks import DocumentChunk
 from app.models.group_files import GroupFile
+from app.models.irt import IRTItemParameter, UserIRTAbility
 
 __all__ = [
     "BaseModel",
@@ -74,6 +81,11 @@ __all__ = [
     "BehaviorPattern",
     # Analytics
     "UserDailyMetric",
+    "LegalHold",
+    "UserPersonaKey",
+    "CryptoShreddingCertificate",
+    "DlqReplayAuditLog",
+    "PersonaSnapshot",
     "CuriosityCapsule",
     # Focus
     "FocusSession",
@@ -85,4 +97,6 @@ __all__ = [
     "StoredFile",
     "DocumentChunk",
     "GroupFile",
+    "IRTItemParameter",
+    "UserIRTAbility",
 ]
