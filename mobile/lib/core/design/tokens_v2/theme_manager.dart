@@ -137,6 +137,13 @@ class ThemeManager extends ChangeNotifier {
     await prefs.setInt('brand_preset', _brandPreset.index);
     await prefs.setBool('high_contrast', _highContrast);
   }
+
+  @override
+  void dispose() {
+    // Prevent disposal of the singleton instance by Riverpod or other owners.
+    // This instance is meant to live for the entire application lifecycle.
+    // Calling super.dispose() would mark it as disposed and prevent future use.
+  }
 }
 
 enum AppThemeMode { system, light, dark }
@@ -210,6 +217,10 @@ class SparkleColors {
     required this.surfacePrimary,
     required this.surfaceSecondary,
     required this.surfaceTertiary,
+    required this.surfaceAmbient,
+    required this.rimLight,
+    required this.glowPrimary,
+    required this.noiseColor,
     required this.textPrimary,
     required this.textSecondary,
     required this.textDisabled,
@@ -244,6 +255,10 @@ class SparkleColors {
         surfacePrimary: Color(0xFFFFFFFF),
         surfaceSecondary: Color(0xFFE0E0E0),
         surfaceTertiary: Color(0xFFC0C0C0),
+        surfaceAmbient: Color(0xFFFFFFFF),
+        rimLight: Color(0xFFFFFFFF),
+        glowPrimary: Color(0x00000000),
+        noiseColor: Color(0x00000000),
         textPrimary: Color(0xFF000000),
         textSecondary: Color(0xFF000000),
         textDisabled: Color(0xFF666666),
@@ -276,6 +291,10 @@ class SparkleColors {
       surfacePrimary: Color(0xFFFFFFFF),
       surfaceSecondary: Color(0xFFF5F5F5),
       surfaceTertiary: Color(0xFFE0E0E0),
+      surfaceAmbient: Color(0xFFFAFAF8),
+      rimLight: Color(0x99FFFFFF), // white 0.6
+      glowPrimary: Color(0x26FF6B35), // brandPrimary 0.15
+      noiseColor: Color(0x0D000000), // black 0.05
       textPrimary: Color(0xFF212121),
       textSecondary: Color(0xFF757575),
       textDisabled: Color(0xFFBDBDBD),
@@ -311,6 +330,10 @@ class SparkleColors {
         surfacePrimary: Color(0xFF000000),
         surfaceSecondary: Color(0xFF1A1A1A),
         surfaceTertiary: Color(0xFF333333),
+        surfaceAmbient: Color(0xFF000000),
+        rimLight: Color(0xFFFFFFFF),
+        glowPrimary: Color(0x00000000),
+        noiseColor: Color(0x00000000),
         textPrimary: Color(0xFFFFFFFF),
         textSecondary: Color(0xFFFFFFFF),
         textDisabled: Color(0xFF999999),
@@ -343,6 +366,10 @@ class SparkleColors {
       surfacePrimary: Color(0xFF121212),
       surfaceSecondary: Color(0xFF1E1E1E),
       surfaceTertiary: Color(0xFF2D2D2D),
+      surfaceAmbient: Color(0xFF050510),
+      rimLight: Color(0x33FFFFFF), // white 0.2
+      glowPrimary: Color(0x66FF8C5A), // brandPrimary 0.4
+      noiseColor: Color(0x08FFFFFF), // white 0.03
       textPrimary: Color(0xFFFFFFFF),
       textSecondary: Color(0xFFE0E0E0),
       textDisabled: Color(0xFF757575),
@@ -376,6 +403,11 @@ class SparkleColors {
   final Color surfacePrimary;
   final Color surfaceSecondary;
   final Color surfaceTertiary;
+  final Color surfaceAmbient;
+  
+  final Color rimLight;
+  final Color glowPrimary;
+  final Color noiseColor;
 
   final Color textPrimary;
   final Color textSecondary;
@@ -415,6 +447,10 @@ class SparkleColors {
     Color? surfacePrimary,
     Color? surfaceSecondary,
     Color? surfaceTertiary,
+    Color? surfaceAmbient,
+    Color? rimLight,
+    Color? glowPrimary,
+    Color? noiseColor,
     Color? textPrimary,
     Color? textSecondary,
     Color? textDisabled,
@@ -445,6 +481,10 @@ class SparkleColors {
         surfacePrimary: surfacePrimary ?? this.surfacePrimary,
         surfaceSecondary: surfaceSecondary ?? this.surfaceSecondary,
         surfaceTertiary: surfaceTertiary ?? this.surfaceTertiary,
+        surfaceAmbient: surfaceAmbient ?? this.surfaceAmbient,
+        rimLight: rimLight ?? this.rimLight,
+        glowPrimary: glowPrimary ?? this.glowPrimary,
+        noiseColor: noiseColor ?? this.noiseColor,
         textPrimary: textPrimary ?? this.textPrimary,
         textSecondary: textSecondary ?? this.textSecondary,
         textDisabled: textDisabled ?? this.textDisabled,

@@ -243,157 +243,125 @@ class _ChatBubbleState extends State<ChatBubble> with TickerProviderStateMixin {
                               children: [
                                 Container(
                                   margin: const EdgeInsets.symmetric(
-                                      horizontal: 8.0,),
+                                    horizontal: 8.0,
+                                  ),
                                   constraints: BoxConstraints(
-                                      maxWidth:
-                                          MediaQuery.of(context).size.width *
-                                              0.72,),
-                                  decoration: isUser
-                                      ? BoxDecoration(
-                                          gradient: DS.primaryGradient,
-                                          borderRadius: _getBorderRadius(true),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: DS.primaryBase
-                                                  .withValues(alpha: 0.25),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 4),
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width *
+                                            0.72,
+                                  ),
+                                  child: MaterialStyler(
+                                    material: isUser
+                                        ? SparkleMaterial(
+                                            backgroundGradient: LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                DS.brandPrimary,
+                                                DS.brandPrimary
+                                                    .withValues(alpha: 0.85),
+                                              ],
                                             ),
-                                          ],
-                                        )
-                                      : BoxDecoration(
-                                          color: context
-                                              .sparkleColors.surfaceSecondary,
-                                          borderRadius: _getBorderRadius(false),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: context
-                                                  .sparkleColors.brandPrimary
-                                                  .withValues(alpha: 0.05),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
+                                            noiseOpacity: 0.0,
+                                            shadows: [
+                                              BoxShadow(
+                                                color: DS.brandPrimary
+                                                    .withValues(alpha: 0.2),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          )
+                                        : AppMaterials.ceramic.copyWith(
+                                            glowColor: context
+                                                .sparkleColors.glowPrimary
+                                                .withValues(alpha: 0.2),
+                                          ),
+                                    shapeBorder: ContinuousRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                      horizontal: 14,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (widget.message is PrivateMessageInfo &&
+                                            (widget.message as PrivateMessageInfo)
+                                                    .quotedMessage !=
+                                                null)
+                                          _buildQuoteArea(
+                                              context,
+                                              isUser,
+                                              (widget.message as PrivateMessageInfo)
+                                                  .quotedMessage!,),
+                                        if (widget.message is ChatMessageModel &&
+                                            (widget.message as ChatMessageModel)
+                                                    .aiStatus !=
+                                                null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8.0,),
+                                            child: AiStatusBubble(
+                                                status: (widget.message
+                                                        as ChatMessageModel)
+                                                    .aiStatus!,),
+                                          ),
+                                        if (widget.message is ChatMessageModel &&
+                                            (widget.message as ChatMessageModel)
+                                                    .reasoningSteps !=
+                                                null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8.0,),
+                                            child: AgentReasoningBubble(
+                                              steps: (widget.message
+                                                      as ChatMessageModel)
+                                                  .reasoningSteps!,
+                                              totalDurationMs:
+                                                  _calculateReasoningDuration(
+                                                      widget.message
+                                                          as ChatMessageModel,),
                                             ),
-                                          ],
-                                          border: Border.all(
-                                              color: context
-                                                  .sparkleColors.neutral200
-                                                  .withValues(alpha: 0.5),),
-                                        ),
-                                  child: ClipRRect(
-                                    borderRadius: _getBorderRadius(isUser),
-                                    child: BackdropFilter(
-                                      filter: isUser
-                                          ? ImageFilter.blur()
-                                          : ImageFilter.blur(
-                                              sigmaX: 10, sigmaY: 10,),
-                                      child: Container(
-                                        decoration: isUser
-                                            ? null
-                                            : BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  colors: [
-                                                    context.sparkleColors
-                                                        .surfacePrimary
-                                                        .withValues(alpha: 0.8),
-                                                    context.sparkleColors
-                                                        .surfaceSecondary
-                                                        .withValues(alpha: 0.9),
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
-                                              ),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 10, horizontal: 14,),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (widget.message
-                                                    is PrivateMessageInfo &&
-                                                (widget.message
-                                                            as PrivateMessageInfo)
-                                                        .quotedMessage !=
-                                                    null)
-                                              _buildQuoteArea(
-                                                  context,
-                                                  isUser,
-                                                  (widget.message
-                                                          as PrivateMessageInfo)
-                                                      .quotedMessage!,),
-                                            if (widget.message
-                                                    is ChatMessageModel &&
-                                                (widget.message
-                                                            as ChatMessageModel)
-                                                        .aiStatus !=
-                                                    null)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    bottom: 8.0,),
-                                                child: AiStatusBubble(
-                                                    status: (widget.message
-                                                            as ChatMessageModel)
-                                                        .aiStatus!,),
-                                              ),
-                                            if (widget.message
-                                                    is ChatMessageModel &&
-                                                (widget.message
-                                                            as ChatMessageModel)
-                                                        .reasoningSteps !=
-                                                    null)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    bottom: 8.0,),
-                                                child: AgentReasoningBubble(
-                                                  steps: (widget.message
-                                                          as ChatMessageModel)
-                                                      .reasoningSteps!,
-                                                  totalDurationMs:
-                                                      _calculateReasoningDuration(
-                                                          widget.message
-                                                              as ChatMessageModel,),
-                                                ),
-                                              ),
-                                            MarkdownBody(
-                                              data: _content,
-                                              styleSheet: _getMarkdownStyle(
-                                                  context, isUser,),
-                                              onTapLink:
-                                                  (text, href, title) async {
-                                                if (href == null) return;
-                                                final uri = Uri.tryParse(href);
-                                                if (uri == null) return;
+                                          ),
+                                        MarkdownBody(
+                                          data: _content,
+                                          styleSheet: _getMarkdownStyle(
+                                              context, isUser,),
+                                          onTapLink: (text, href, title) async {
+                                            if (href == null) return;
+                                            final uri = Uri.tryParse(href);
+                                            if (uri == null) return;
 
-                                                final scheme =
-                                                    uri.scheme.toLowerCase();
-                                                const allowedSchemes = [
-                                                  'http',
-                                                  'https',
-                                                ];
-                                                if (!allowedSchemes
-                                                    .contains(scheme)) {
-                                                  // Prevent malicious schemes (javascript:, file:, etc.)
-                                                  return;
-                                                }
+                                            final scheme =
+                                                uri.scheme.toLowerCase();
+                                            const allowedSchemes = [
+                                              'http',
+                                              'https',
+                                            ];
+                                            if (!allowedSchemes
+                                                .contains(scheme)) {
+                                              return;
+                                            }
 
-                                                try {
-                                                  if (await canLaunchUrl(uri)) {
-                                                    await launchUrl(
-                                                      uri,
-                                                      mode: LaunchMode
-                                                          .externalApplication,
-                                                    );
-                                                  }
-                                                } catch (e) {
-                                                  debugPrint(
-                                                      'Failed to launch URL: $e',);
-                                                }
-                                              },
-                                            ),
-                                          ],
+                                            try {
+                                              if (await canLaunchUrl(uri)) {
+                                                await launchUrl(
+                                                  uri,
+                                                  mode: LaunchMode
+                                                      .externalApplication,
+                                                );
+                                              }
+                                            } catch (e) {
+                                              debugPrint(
+                                                  'Failed to launch URL: $e',);
+                                            }
+                                          },
                                         ),
-                                      ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -649,14 +617,7 @@ class _ChatBubbleState extends State<ChatBubble> with TickerProviderStateMixin {
             decoration: TextDecoration.underline,),
       );
 
-  BorderRadius _getBorderRadius(bool isUser) => BorderRadius.only(
-        topLeft: const Radius.circular(16),
-        topRight: const Radius.circular(16),
-        bottomLeft:
-            isUser ? const Radius.circular(16) : const Radius.circular(4),
-        bottomRight:
-            isUser ? const Radius.circular(4) : const Radius.circular(16),
-      );
+
 
   int? _calculateReasoningDuration(ChatMessageModel message) {
     if (message.reasoningSteps == null || message.reasoningSteps!.isEmpty) {
