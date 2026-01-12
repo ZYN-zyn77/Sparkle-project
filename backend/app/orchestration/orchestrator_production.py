@@ -22,6 +22,8 @@ import uuid
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from opentelemetry import trace
+
 # Prometheus metrics
 try:
     from prometheus_client import Counter, Histogram, Gauge
@@ -32,6 +34,7 @@ except ImportError:
 
 from app.services.llm_service import llm_service
 from app.services.knowledge_service import KnowledgeService
+from app.services.galaxy_service import GalaxyService
 from app.services.graph_knowledge_service import GraphKnowledgeService
 from app.services.user_service import UserService
 from app.orchestration.prompts import build_system_prompt
@@ -42,8 +45,12 @@ from app.orchestration.validator import RequestValidator, ValidationResult
 from app.orchestration.composer import ResponseComposer
 from app.orchestration.context_pruner import ContextPruner
 from app.orchestration.token_tracker import TokenTracker
+from app.orchestration.collaboration_workflows import create_collaboration_workflow, WorkflowState
+from app.routing.tool_preference_router import ToolPreferenceRouter
 from app.gen.agent.v1 import agent_service_pb2
 from app.config import settings
+
+TRACER = trace.get_tracer(__name__)
 
 # FSM States
 STATE_INIT = "INIT"
@@ -52,6 +59,7 @@ STATE_GENERATING = "GENERATING"
 STATE_TOOL_CALLING = "TOOL_CALLING"
 STATE_DONE = "DONE"
 STATE_FAILED = "FAILED"
+
 
 # Prometheus Metrics (if available)
 if PROMETHEUS_AVAILABLE:
@@ -142,34 +150,54 @@ class CircuitBreaker:
 
 
 class MessageTracker:
-    """消息 ID 追踪器 - 防止并发重复处理"""
+    """消息 ID 追踪器 - 防止并发重复处理，支持 TTL 清理"""
 
-    def __init__(self, max_size: int = 10000):
-        self.processed_messages: Set[str] = set()
+    def __init__(self, max_size: int = 10000, ttl_seconds: int = 3600):
+        self.processed_messages: Dict[str, float] = {}
         self.max_size = max_size
+        self.ttl_seconds = ttl_seconds
         self.lock = asyncio.Lock()
+
+    def _cleanup_expired(self, now: float) -> int:
+        cutoff = now - self.ttl_seconds
+        expired = [message_id for message_id, ts in self.processed_messages.items() if ts < cutoff]
+        for message_id in expired:
+            self.processed_messages.pop(message_id, None)
+        return len(expired)
+
+    def _cleanup_overflow(self) -> int:
+        if len(self.processed_messages) <= self.max_size:
+            return 0
+        sorted_items = sorted(self.processed_messages.items(), key=lambda item: item[1])
+        remove_count = len(self.processed_messages) - self.max_size // 2
+        for message_id, _ in sorted_items[:remove_count]:
+            self.processed_messages.pop(message_id, None)
+        return remove_count
 
     async def is_processed(self, message_id: str) -> bool:
         """检查消息是否已处理"""
         async with self.lock:
+            self._cleanup_expired(time.time())
             return message_id in self.processed_messages
 
     async def mark_processed(self, message_id: str):
         """标记消息为已处理"""
         async with self.lock:
-            if len(self.processed_messages) >= self.max_size:
-                # 清理旧消息，防止内存泄漏
-                to_remove = list(self.processed_messages)[:self.max_size // 2]
-                for msg_id in to_remove:
-                    self.processed_messages.remove(msg_id)
-                logger.warning(f"Message tracker cleanup: removed {len(to_remove)} old messages")
+            now = time.time()
+            expired = self._cleanup_expired(now)
+            if expired:
+                logger.debug(f"Message tracker TTL cleanup: removed {expired} expired messages")
 
-            self.processed_messages.add(message_id)
+            overflow = self._cleanup_overflow()
+            if overflow:
+                logger.warning(f"Message tracker cleanup: removed {overflow} old messages")
+
+            self.processed_messages[message_id] = now
 
     async def cleanup(self, message_id: str):
         """清理指定消息（用于测试或手动干预）"""
         async with self.lock:
-            self.processed_messages.discard(message_id)
+            self.processed_messages.pop(message_id, None)
 
 
 class ProductionChatOrchestrator:
@@ -246,6 +274,9 @@ class ProductionChatOrchestrator:
                 f"circuit_breaker={enable_circuit_breaker}, "
                 f"max_concurrent={max_concurrent_sessions}"
             )
+        
+        # Initialize Workflow Engine
+        self.workflow = create_collaboration_workflow()
 
         # 工具注册
         self._ensure_tools_registered()
@@ -310,13 +341,18 @@ class ProductionChatOrchestrator:
     async def _acquire_session_lock(self, session_id: str, request_id: str) -> bool:
         """获取分布式锁（带降级）"""
         if not self.state_manager:
+            logger.warning("Session lock disabled: Redis unavailable")
             return True
 
-        try:
-            return await self.state_manager.acquire_lock(session_id, request_id)
-        except Exception as e:
-            logger.warning(f"Lock acquisition failed: {e}, proceeding without lock")
-            return True
+        with TRACER.start_as_current_span("redis.acquire_lock") as span:
+            try:
+                acquired = await self.state_manager.acquire_lock(session_id, request_id)
+                span.set_attribute("lock.acquired", acquired)
+                return acquired
+            except Exception as e:
+                span.record_exception(e)
+                logger.warning(f"Lock acquisition failed: {e}, proceeding without lock")
+                return True
 
     async def _release_session_lock(self, session_id: str, request_id: str):
         """释放锁（带降级）"""
@@ -534,13 +570,15 @@ class ProductionChatOrchestrator:
 
         try:
             # 验证请求
-            with REQUEST_DURATION.labels(operation="validation").time():
-                validation_result = await self.validator.validate_chat_request(request)
-                if not validation_result.is_valid:
-                    raise ValueError(f"Validation failed: {validation_result.error_message}")
+            with TRACER.start_as_current_span("request.validate"):
+                with REQUEST_DURATION.labels(operation="validation").time():
+                    validation_result = await self.validator.validate_chat_request(request)
+                    if not validation_result.is_valid:
+                        raise ValueError(f"Validation failed: {validation_result.error_message}")
 
             # 幂等性检查
-            cached_response = await self._check_idempotency(session_id, request_id)
+            with TRACER.start_as_current_span("request.idempotency_check"):
+                cached_response = await self._check_idempotency(session_id, request_id)
             if cached_response:
                 logger.info(f"Cache hit for {session_id}/{request_id}")
                 yield agent_service_pb2.ChatResponse(
@@ -558,22 +596,38 @@ class ProductionChatOrchestrator:
                 raise ValueError("Another request is processing for this session")
 
             # 构建上下文
-            with REQUEST_DURATION.labels(operation="context_building").time():
-                user_context_data = await self._build_user_context(user_id, active_db)
-                conversation_context = await self._build_conversation_context(session_id, user_id)
+            with TRACER.start_as_current_span("context.build"):
+                with REQUEST_DURATION.labels(operation="context_building").time():
+                    user_context_data = await self._build_user_context(user_id, active_db)
+                    conversation_context = await self._build_conversation_context(session_id, user_id)
+
+                # P4: Tool Preference Routing
+                preferred_tools_hint = ""
+                try:
+                    if active_db and user_id:
+                        # Convert user_id string to UUID
+                        user_uuid = uuid.UUID(user_id)
+                        router = ToolPreferenceRouter(active_db, user_uuid, self.redis)
+                        preferred_tools = await router.get_preferred_tools(limit=3)
+                        if preferred_tools:
+                            preferred_tools_hint = f"\n\n## 工具偏好\n根据历史习惯，用户倾向于使用以下工具: {', '.join(preferred_tools)}"
+                            logger.info(f"Injected tool preferences for user {user_id}: {preferred_tools}")
+                except Exception as e:
+                    logger.warning(f"Failed to get tool preferences: {e}")
 
                 # GraphRAG 检索（增强版，带降级）
                 knowledge_context = ""
                 try:
                     if active_db and user_id:
-                        # 使用 GraphKnowledgeService 进行增强的 GraphRAG 检索
-                        graph_ks = GraphKnowledgeService(active_db)
-                        rag_result = await graph_ks.graph_rag_search(
-                            query=request.message if request.HasField("message") else "",
-                            user_id=uuid.UUID(user_id),
-                            depth=2,
-                            top_k=5
-                        )
+                        with TRACER.start_as_current_span("rag.graphrag"):
+                            # 使用 GraphKnowledgeService 进行增强的 GraphRAG 检索
+                            graph_ks = GraphKnowledgeService(active_db)
+                            rag_result = await graph_ks.graph_rag_search(
+                                query=request.message if request.HasField("message") else "",
+                                user_id=uuid.UUID(user_id),
+                                depth=2,
+                                top_k=5
+                            )
                         knowledge_context = rag_result.get("context", "")
 
                         # 记录 GraphRAG 指标
@@ -593,17 +647,40 @@ class ProductionChatOrchestrator:
                     # 降级到普通向量检索
                     try:
                         if active_db and user_id:
-                            ks = KnowledgeService(active_db)
-                            knowledge_context = await ks.retrieve_context(
-                                user_id=uuid.UUID(user_id),
-                                query=request.message if request.HasField("message") else ""
-                            )
+                            with TRACER.start_as_current_span("rag.vector_fallback"):
+                                ks = KnowledgeService(active_db)
+                                knowledge_context = await ks.retrieve_context(
+                                    user_id=uuid.UUID(user_id),
+                                    query=request.message if request.HasField("message") else ""
+                                )
                             if PROMETHEUS_AVAILABLE:
                                 REQUEST_COUNTER.labels(status="vector_success", session_id=session_id).inc()
                     except Exception as e2:
                         logger.error(f"Fallback knowledge retrieval also failed: {e2}")
                         if PROMETHEUS_AVAILABLE:
                             REQUEST_COUNTER.labels(status="rag_failed", session_id=session_id).inc()
+                        # 降级到关键词检索（避免向量服务依赖）
+                        try:
+                            if active_db and user_id:
+                                with TRACER.start_as_current_span("rag.keyword_fallback"):
+                                    galaxy_service = GalaxyService(active_db)
+                                    nodes = await galaxy_service.keyword_search(
+                                        user_id=uuid.UUID(user_id),
+                                        query=request.message if request.HasField("message") else "",
+                                        limit=5
+                                    )
+                                if nodes:
+                                    lines = ["Relevant Knowledge Base (Keyword Fallback):"]
+                                    for node in nodes:
+                                        line = f"- [{node.name}]: {node.description or 'No description'}"
+                                        if node.parent_name:
+                                            line += f" (Parent: {node.parent_name})"
+                                        lines.append(line)
+                                    knowledge_context = "\n".join(lines)
+                                    if PROMETHEUS_AVAILABLE:
+                                        REQUEST_COUNTER.labels(status="keyword_success", session_id=session_id).inc()
+                        except Exception as e3:
+                            logger.error(f"Keyword fallback failed: {e3}")
 
             # 构建 Prompt
             base_system_prompt = build_system_prompt(
@@ -611,8 +688,92 @@ class ProductionChatOrchestrator:
                 conversation_history=conversation_context
             )
 
+            if preferred_tools_hint:
+                base_system_prompt += preferred_tools_hint
+
             if knowledge_context:
                 base_system_prompt += f"\n\n## 检索到的知识背景\n{knowledge_context}"
+
+            # ------------------------------------------------------------------
+            # P2: Workflow Engine Integration
+            # ------------------------------------------------------------------
+            use_workflow = False
+            if request.HasField("extra_context"):
+                try:
+                    # extra_context is a Struct, converted to dict earlier if needed, 
+                    # but here we access the proto Struct directly or Convert
+                    # Actually request.extra_context is a google.protobuf.Struct
+                    # We can helper convert it or access fields if we know how.
+                    # Easier: check fields map.
+                    if "use_workflow" in request.extra_context.fields:
+                         if request.extra_context.fields["use_workflow"].bool_value:
+                             use_workflow = True
+                except Exception:
+                    pass
+
+            if use_workflow:
+                logger.info(f"🚀 Triggering Collaboration Workflow for session {session_id}")
+                
+                # Yield initial status
+                yield agent_service_pb2.ChatResponse(
+                    response_id=f"resp_{uuid.uuid4()}",
+                    created_at=int(datetime.now().timestamp()),
+                    request_id=request_id,
+                    status_update=agent_service_pb2.AgentStatus(
+                        state=agent_service_pb2.AgentStatus.THINKING,
+                        details="Initializing multi-agent workflow..."
+                    )
+                )
+
+                # Initialize State
+                initial_state = WorkflowState()
+                user_msg = request.message if request.HasField("message") else "Proceed"
+                initial_state.append_message("user", user_msg)
+                initial_state.context_data["user_id"] = user_id
+                initial_state.context_data["session_id"] = session_id
+                
+                # Run Workflow
+                final_state = await self.workflow.invoke(initial_state)
+                
+                # Process Results
+                # Yield execution logs as status updates or partials?
+                # For now, just yield the final "assistant" messages added by the workflow.
+                
+                # Send "Done" status
+                yield agent_service_pb2.ChatResponse(
+                    response_id=f"resp_{uuid.uuid4()}",
+                    created_at=int(datetime.now().timestamp()),
+                    request_id=request_id,
+                    status_update=agent_service_pb2.AgentStatus(
+                        state=agent_service_pb2.AgentStatus.DONE,
+                        details="Workflow completed"
+                    )
+                )
+
+                # Send all new assistant messages
+                for msg in final_state.messages:
+                    if msg["role"] == "assistant":
+                         # We can stream these or send as full text.
+                         # Since workflow is done, sending as full text chunks is fine.
+                         content = msg["content"]
+                         prefix = f"**[{msg.get('name', 'Agent')}]**: "
+                         yield agent_service_pb2.ChatResponse(
+                            response_id=f"resp_{uuid.uuid4()}",
+                            created_at=int(datetime.now().timestamp()),
+                            request_id=request_id,
+                            full_text=prefix + content
+                        )
+
+                # Record metrics and log success
+                if self.enable_metrics:
+                    REQUEST_COUNTER.labels(status="success_workflow", session_id=session_id).inc()
+                self._log_request(session_id, request_id, user_id, time.time() - start_time, "success_workflow")
+                
+                # Release lock and return
+                await self._release_session_lock(session_id, request_id)
+                await self._track_session(session_id, add=False)
+                return
+            # ------------------------------------------------------------------
 
             # 发送思考状态
             yield agent_service_pb2.ChatResponse(
@@ -631,59 +792,60 @@ class ProductionChatOrchestrator:
             total_prompt_tokens = 0
             total_completion_tokens = 0
 
-            with REQUEST_DURATION.labels(operation="llm_generation").time():
-                tools = await self._get_tools_schema()
-                user_message = ""
-                if request.HasField("message"):
-                    user_message = request.message
-                elif request.HasField("tool_result"):
-                    tool_result = request.tool_result
-                    user_message = f"Tool '{tool_result.tool_name}' result: {tool_result.result_json}"
+            with TRACER.start_as_current_span("llm.generate"):
+                with REQUEST_DURATION.labels(operation="llm_generation").time():
+                    tools = await self._get_tools_schema()
+                    user_message = ""
+                    if request.HasField("message"):
+                        user_message = request.message
+                    elif request.HasField("tool_result"):
+                        tool_result = request.tool_result
+                        user_message = f"Tool '{tool_result.tool_name}' result: {tool_result.result_json}"
 
-                async for chunk in llm_service.chat_stream_with_tools(
-                    system_prompt=base_system_prompt,
-                    user_message=user_message,
-                    tools=tools
-                ):
-                    if chunk.type == "text":
-                        full_response += chunk.content
-                        yield agent_service_pb2.ChatResponse(
-                            response_id=f"resp_{uuid.uuid4()}",
-                            created_at=int(datetime.now().timestamp()),
-                            request_id=request_id,
-                            delta=chunk.content
-                        )
-
-                    elif chunk.type == "tool_call_end":
-                        await self._update_state(session_id, STATE_TOOL_CALLING, f"Calling {chunk.tool_name}...")
-                        yield agent_service_pb2.ChatResponse(
-                            response_id=f"resp_{uuid.uuid4()}",
-                            created_at=int(datetime.now().timestamp()),
-                            request_id=request_id,
-                            status_update=agent_service_pb2.AgentStatus(
-                                state=agent_service_pb2.AgentStatus.TOOL_CALLING,
-                                details=f"Executing {chunk.tool_name}..."
-                            ),
-                            tool_call=agent_service_pb2.ToolCall(
-                                id=chunk.tool_call_id,
-                                name=chunk.tool_name,
-                                arguments=json.dumps(chunk.full_arguments)
+                    async for chunk in llm_service.chat_stream_with_tools(
+                        system_prompt=base_system_prompt,
+                        user_message=user_message,
+                        tools=tools
+                    ):
+                        if chunk.type == "text":
+                            full_response += chunk.content
+                            yield agent_service_pb2.ChatResponse(
+                                response_id=f"resp_{uuid.uuid4()}",
+                                created_at=int(datetime.now().timestamp()),
+                                request_id=request_id,
+                                delta=chunk.content
                             )
-                        )
 
-                    elif chunk.type == "usage" and self.token_tracker:
-                        total_prompt_tokens = chunk.prompt_tokens or 0
-                        total_completion_tokens = chunk.completion_tokens or 0
-                        yield agent_service_pb2.ChatResponse(
-                            response_id=f"resp_{uuid.uuid4()}",
-                            created_at=int(datetime.now().timestamp()),
-                            request_id=request_id,
-                            usage=agent_service_pb2.Usage(
-                                prompt_tokens=total_prompt_tokens,
-                                completion_tokens=total_completion_tokens,
-                                total_tokens=total_prompt_tokens + total_completion_tokens
+                        elif chunk.type == "tool_call_end":
+                            await self._update_state(session_id, STATE_TOOL_CALLING, f"Calling {chunk.tool_name}...")
+                            yield agent_service_pb2.ChatResponse(
+                                response_id=f"resp_{uuid.uuid4()}",
+                                created_at=int(datetime.now().timestamp()),
+                                request_id=request_id,
+                                status_update=agent_service_pb2.AgentStatus(
+                                    state=agent_service_pb2.AgentStatus.TOOL_CALLING,
+                                    details=f"Executing {chunk.tool_name}..."
+                                ),
+                                tool_call=agent_service_pb2.ToolCall(
+                                    id=chunk.tool_call_id,
+                                    name=chunk.tool_name,
+                                    arguments=json.dumps(chunk.full_arguments)
+                                )
                             )
-                        )
+
+                        elif chunk.type == "usage" and self.token_tracker:
+                            total_prompt_tokens = chunk.prompt_tokens or 0
+                            total_completion_tokens = chunk.completion_tokens or 0
+                            yield agent_service_pb2.ChatResponse(
+                                response_id=f"resp_{uuid.uuid4()}",
+                                created_at=int(datetime.now().timestamp()),
+                                request_id=request_id,
+                                usage=agent_service_pb2.Usage(
+                                    prompt_tokens=total_prompt_tokens,
+                                    completion_tokens=total_completion_tokens,
+                                    total_tokens=total_prompt_tokens + total_completion_tokens
+                                )
+                            )
 
             # 记录 Token 使用
             await self._record_token_usage(

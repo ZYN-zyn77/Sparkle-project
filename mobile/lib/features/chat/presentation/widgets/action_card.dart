@@ -418,7 +418,7 @@ class _ActionCardState extends State<ActionCard> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.check_circle_outline,
-                      size: DS.iconSizeXs, color: DS.neutral500),
+                      size: DS.iconSizeXs, color: DS.neutral500,),
                   const SizedBox(width: DS.spacing8),
                   Expanded(
                     child: Text(
