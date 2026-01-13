@@ -1,9 +1,15 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import '../analytics/models/user_analytics_event.dart';
 
 part 'local_database.g.dart';
 
+// Global provider for the database instance
+final localDatabaseProvider = Provider<LocalDatabase>((ref) => LocalDatabase());
+
 enum SyncStatus {
+// ... existing code ...
   pending,
   synced,
   conflict,
@@ -99,7 +105,13 @@ class LocalDatabase {
     // final encryptionKey = await secureStorage.read(key: 'db_key');
 
     isar = await Isar.open(
-      [LocalKnowledgeNodeSchema, PendingUpdateSchema, LocalCRDTSnapshotSchema, OutboxItemSchema],
+      [
+        LocalKnowledgeNodeSchema,
+        PendingUpdateSchema,
+        LocalCRDTSnapshotSchema,
+        OutboxItemSchema,
+        UserAnalyticsEventSchema, // Added for Edge AI
+      ],
       directory: dir.path,
     );
   }

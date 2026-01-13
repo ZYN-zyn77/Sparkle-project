@@ -81,6 +81,7 @@ dependencies:
   opentelemetry: ^0.18.10
 
   http_parser: any
+  llama_cpp_dart: ^0.2.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
