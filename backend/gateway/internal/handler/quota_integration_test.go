@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -16,6 +17,10 @@ import (
 // TestChatOrchestrator_QuotaIntegration verifies that the WebSocket handler
 // correctly interacts with the QuotaService (ReserveRequest).
 func TestChatOrchestrator_QuotaIntegration(t *testing.T) {
+	// Force production environment to enable quota checks
+	os.Setenv("ENVIRONMENT", "prod")
+	defer os.Unsetenv("ENVIRONMENT")
+
 	// 1. Setup Miniredis & QuotaService
 	s := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: s.Addr()})
@@ -32,7 +37,7 @@ func TestChatOrchestrator_QuotaIntegration(t *testing.T) {
 		nil, // queries
 		historySvc, // Mock/Nil history
 		quotaSvc,
-		&service.SemanticCacheService{}, // Mock/Nil semantic
+		nil, // Semantic cache (nil to avoid panic in SearchExact)
 		nil, // cost
 		nil, // wsFactory
 		nil, // userContext

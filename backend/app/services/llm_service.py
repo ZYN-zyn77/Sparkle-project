@@ -152,7 +152,7 @@ class LLMService:
             base_url=base_url
         )
         self.default_model = self.chat_model
-        self.demo_mode = getattr(settings, 'DEMO_MODE', False)
+        self.demo_mode = bool(getattr(settings, 'DEMO_MODE', False) or not api_key)
 
     def _check_demo_match(self, messages: List[Dict[str, str]]) -> Optional[str]:
         """
