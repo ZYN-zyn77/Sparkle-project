@@ -1,4 +1,5 @@
 import json
+import inspect
 from typing import List, Dict, AsyncGenerator, Optional, Any, AsyncIterator
 import asyncio
 from loguru import logger
@@ -314,7 +315,12 @@ class LLMService:
                 return
 
             logger.debug(f"Starting stream chat with model: {model}")
-            async for chunk in self.provider.stream_chat(messages, model=model, temperature=temperature, **kwargs):
+            stream = self.provider.stream_chat(messages, model=model, temperature=temperature, **kwargs)
+            if inspect.isawaitable(stream) and not hasattr(stream, "__aiter__"):
+                stream = await stream
+            if not hasattr(stream, "__aiter__"):
+                raise TypeError("stream_chat must return an async iterator")
+            async for chunk in stream:
                 yield chunk
 
     async def chat_with_tools(

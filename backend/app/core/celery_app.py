@@ -92,6 +92,9 @@ celery_app.conf.update(
     worker_log_level="INFO",
 )
 
+# Ensure tasks are registered when importing celery_app.
+from app.core import celery_tasks  # noqa: F401
+
 # =============================================================================
 # 任务定义
 # =============================================================================
@@ -381,12 +384,15 @@ def schedule_long_task(task_name: str, args: tuple = (), kwargs: dict = None, qu
     if kwargs is None:
         kwargs = {}
 
-    task = celery_app.send_task(
-        task_name,
-        args=args,
-        kwargs=kwargs,
-        queue=queue
-    )
+    try:
+        task = celery_app.send_task(
+            task_name,
+            args=args,
+            kwargs=kwargs,
+            queue=queue
+        )
+    except Exception as exc:
+        raise RuntimeError(f"Broker connection error: {exc}") from exc
 
     logger.info(f"📅 Scheduled task: {task_name} (ID: {task.id}, Queue: {queue})")
     return task.id
