@@ -34,6 +34,7 @@ from app.core.fingerprint import (
 from app.core.fuzzy_match import find_provenance, build_provenance_json
 from app.core.cache import cache_service
 from app.services.embedding_service import embedding_service
+from app.services.ab_test_service import ab_test_service
 
 
 # === Configuration ===
@@ -420,22 +421,29 @@ class LearningAssetService:
         Evaluate whether to suggest asset creation.
 
         Rules:
-        1. Must have looked up >= REPEAT_LOOKUP_THRESHOLD times
+        1. Must have looked up >= threshold times (A/B tested)
         2. Must not be in cooldown
 
         Returns:
             Tuple of (should_suggest, decision, reason_dict)
-            reason_dict contains: reason_code, reason_params, display_text
+            reason_dict contains: reason_code, reason_params, display_text, variant_id
         """
+        # Get threshold from A/B test (defaults to REPEAT_LOOKUP_THRESHOLD)
+        threshold = ab_test_service.get_suggestion_threshold(user_id)
+        variant_id = ab_test_service.get_variant_id_for_logging(
+            user_id, "suggestion_threshold_v1"
+        )
+
         # Check lookup threshold
-        if lookup_count < REPEAT_LOOKUP_THRESHOLD:
+        if lookup_count < threshold:
             return (
                 False,
                 SuggestionDecision.SKIPPED,
                 {
                     "reason_code": "lookup_count_below_threshold",
-                    "reason_params": {"lookup_count": lookup_count, "threshold": REPEAT_LOOKUP_THRESHOLD},
-                    "display_text": f"lookup_count_below_threshold ({lookup_count} < {REPEAT_LOOKUP_THRESHOLD})"
+                    "reason_params": {"lookup_count": lookup_count, "threshold": threshold},
+                    "display_text": f"lookup_count_below_threshold ({lookup_count} < {threshold})",
+                    "variant_id": variant_id,
                 }
             )
 
@@ -450,18 +458,30 @@ class LearningAssetService:
                 {
                     "reason_code": "cooldown_active",
                     "reason_params": {"cooldown_until": cooldown_until},
-                    "display_text": f"cooldown_active_until_{cooldown_until}"
+                    "display_text": f"cooldown_active_until_{cooldown_until}",
+                    "variant_id": variant_id,
                 }
             )
 
-        # All checks passed
+        # All checks passed - get reason template style from A/B test
+        template_style = ab_test_service.get_reason_template_style(user_id)
+        reason_variant_id = ab_test_service.get_variant_id_for_logging(
+            user_id, "reason_template_v1"
+        )
+
         return (
             True,
             SuggestionDecision.SUGGESTED,
             {
                 "reason_code": "repeated_lookup",
-                "reason_params": {"lookup_count": lookup_count, "threshold": REPEAT_LOOKUP_THRESHOLD},
-                "display_text": f"repeated_lookup_{lookup_count}_times"
+                "reason_params": {
+                    "lookup_count": lookup_count,
+                    "threshold": threshold,
+                    "template_style": template_style,
+                },
+                "display_text": f"repeated_lookup_{lookup_count}_times",
+                "variant_id": variant_id,
+                "reason_variant_id": reason_variant_id,
             }
         )
 

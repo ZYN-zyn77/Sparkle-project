@@ -99,6 +99,11 @@ class AssetSuggestion {
     switch (code) {
       case 'repeated_lookup':
         final count = params['lookup_count'] ?? 2;
+        final style = params['template_style']?.toString() ?? 'informative';
+        // A/B test: different template styles
+        if (style == 'encouraging') {
+          return '这个词值得记住！你已经查过 $count 次了';
+        }
         return '在本次会话中查询了 $count 次';
       case 'from_same_doc':
         final page = params['page']?.toString() ?? '';
