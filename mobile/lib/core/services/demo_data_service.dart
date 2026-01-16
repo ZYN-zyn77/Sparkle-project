@@ -4,10 +4,16 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/features/chat/data/models/chat_message_model.dart';
+import 'package:sparkle/features/community/data/models/community_model.dart';
+import 'package:sparkle/features/error_book/data/models/error_record.dart';
+import 'package:sparkle/features/error_book/data/models/error_semantic_summary.dart';
+import 'package:sparkle/features/focus/data/models/focus_session_model.dart';
 import 'package:sparkle/features/knowledge/data/models/knowledge_detail_model.dart';
 import 'package:sparkle/features/plan/data/models/plan_model.dart';
+import 'package:sparkle/features/reviews/data/models/nightly_review_payload.dart';
 import 'package:sparkle/shared/entities/galaxy_model.dart';
 import 'package:sparkle/shared/entities/task_model.dart';
+import 'package:sparkle/shared/entities/user_brief.dart';
 import 'package:sparkle/shared/entities/user_model.dart';
 import 'package:uuid/uuid.dart';
 
@@ -44,6 +50,268 @@ class DemoDataService {
   void updateDemoAvatar(String url) {
     _currentAvatarUrl = url;
   }
+
+  // --- Community Data ---
+  List<Post> get demoCommunityFeed => [
+        Post(
+          id: 'post_1',
+          author: UserBrief(
+            id: 'u2',
+            username: 'Alice',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Alice',
+            flameLevel: 12,
+          ),
+          content: '终于搞定了二叉树的非递归遍历！Feeling accomplished 🎉',
+          createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
+          updatedAt: DateTime.now().subtract(const Duration(minutes: 30)),
+          likes: 5,
+          comments: 2,
+          tags: ['DataStructures', 'Study'],
+        ),
+        Post(
+          id: 'post_2',
+          author: UserBrief(
+            id: 'u3',
+            username: 'Bob',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Bob',
+            flameLevel: 8,
+          ),
+          content: '今天的专注时长达到了 4 小时，效率很高！大家加油！',
+          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+          updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
+          likes: 12,
+          comments: 5,
+          tags: ['Focus', 'Productivity'],
+        ),
+      ];
+
+  List<FriendshipInfo> get demoFriends => [
+        FriendshipInfo(
+          id: 'friend_1',
+          friend: UserBrief(
+            id: 'u2',
+            username: 'Alice',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Alice',
+            flameLevel: 12,
+          ),
+          status: FriendshipStatus.accepted,
+          createdAt: DateTime.now().subtract(const Duration(days: 10)),
+          updatedAt: DateTime.now().subtract(const Duration(days: 10)),
+        ),
+        FriendshipInfo(
+          id: 'friend_2',
+          friend: UserBrief(
+            id: 'u3',
+            username: 'Bob',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Bob',
+            flameLevel: 8,
+          ),
+          status: FriendshipStatus.accepted,
+          createdAt: DateTime.now().subtract(const Duration(days: 5)),
+          updatedAt: DateTime.now().subtract(const Duration(days: 5)),
+        ),
+      ];
+
+  List<FriendshipInfo> get demoPendingRequests => [
+        FriendshipInfo(
+          id: 'req_1',
+          friend: UserBrief(
+            id: 'u4',
+            username: 'Charlie',
+            avatarUrl:
+                'https://api.dicebear.com/7.x/avataaars/png?seed=Charlie',
+            flameLevel: 5,
+          ),
+          status: FriendshipStatus.pending,
+          createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+          updatedAt: DateTime.now().subtract(const Duration(hours: 1)),
+        ),
+      ];
+
+  List<FriendRecommendation> get demoFriendRecommendations => [
+        FriendRecommendation(
+          user: UserBrief(
+            id: 'u5',
+            username: 'David',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=David',
+            flameLevel: 10,
+          ),
+          matchScore: 0.85,
+          matchReasons: ['都喜欢计算机科学', '都在学习数据结构'],
+        ),
+      ];
+
+  List<GroupListItem> get demoMyGroups => [
+        GroupListItem(
+          id: 'group_1',
+          name: 'CS 学习小组',
+          type: GroupType.squad,
+          memberCount: 5,
+          totalFlamePower: 50,
+          focusTags: ['CS', 'Algorithm'],
+          myRole: GroupRole.member,
+        ),
+        GroupListItem(
+          id: 'group_2',
+          name: '期末冲刺小队',
+          type: GroupType.sprint,
+          memberCount: 3,
+          totalFlamePower: 30,
+          focusTags: ['Exam', 'Math'],
+          myRole: GroupRole.owner,
+          deadline: DateTime.now().add(const Duration(days: 14)),
+          daysRemaining: 14,
+        ),
+      ];
+
+  List<MessageInfo> get demoGroupMessages => [
+        MessageInfo(
+          id: 'msg_1',
+          messageType: MessageType.text,
+          createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+          updatedAt: DateTime.now().subtract(const Duration(minutes: 5)),
+          sender: UserBrief(
+            id: 'u2',
+            username: 'Alice',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Alice',
+            flameLevel: 12,
+          ),
+          content: '大家今天的进度怎么样？',
+        ),
+        MessageInfo(
+          id: 'msg_2',
+          messageType: MessageType.text,
+          createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+          updatedAt: DateTime.now().subtract(const Duration(minutes: 2)),
+          sender: UserBrief(
+            id: 'u3',
+            username: 'Bob',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Bob',
+            flameLevel: 8,
+          ),
+          content: '还不错，刚刷完两道题。',
+        ),
+      ];
+
+  List<PrivateMessageInfo> get demoPrivateMessages => [
+        PrivateMessageInfo(
+          id: 'pm_1',
+          sender: UserBrief(
+            id: 'u2',
+            username: 'Alice',
+            avatarUrl: 'https://api.dicebear.com/7.x/avataaars/png?seed=Alice',
+            flameLevel: 12,
+          ),
+          receiver: UserBrief(
+            id: 'CS_Sophomore_12345',
+            username: 'AI_Learner_02',
+            avatarUrl:
+                'https://api.dicebear.com/9.x/avataaars/png?seed=AI_Learner_02',
+            flameLevel: 15,
+          ),
+          messageType: MessageType.text,
+          isRead: false,
+          createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
+          updatedAt: DateTime.now().subtract(const Duration(minutes: 10)),
+          content: '周末有空一起复习吗？',
+        ),
+      ];
+
+  GroupFlameStatus get demoFlameStatus => GroupFlameStatus(
+        groupId: 'group_1',
+        totalPower: 120,
+        bonfireLevel: 2,
+        flames: [
+          FlameStatus(
+            userId: 'u2',
+            flamePower: 40,
+            flameColor: '#FF5722',
+            flameSize: 1.2,
+            positionX: 0.2,
+            positionY: 0.3,
+          ),
+          FlameStatus(
+            userId: 'u3',
+            flamePower: 30,
+            flameColor: '#FFC107',
+            flameSize: 1.0,
+            positionX: 0.7,
+            positionY: 0.4,
+          ),
+        ],
+      );
+
+  // --- Focus Data ---
+  FocusStatsResponse get demoFocusStats => const FocusStatsResponse(
+        totalMinutes: 180,
+        pomodoroCount: 6,
+        todayDate: '2026-01-16',
+      );
+
+  String get demoLLMGuidance =>
+      '针对这个任务，建议采用费曼学习法。首先，尝试用简单的语言复述核心概念...';
+
+  List<String> get demoTaskBreakdown =>
+      ['阅读第一章概论', '完成课后习题 1-5', '整理笔记摘要'];
+
+  // --- Review Data ---
+  NightlyReviewPayload get demoNightlyReview => NightlyReviewPayload(
+        id: 'review_today',
+        status: 'generated',
+        reviewedAt: null,
+        widgetPayload: WidgetPayload(
+          type: 'summary',
+          data: {
+            'title': '今日回顾',
+            'summary': '今天你在数据结构上投入了大量精力，表现出色！',
+            'stats': {'focus_minutes': 180, 'tasks_completed': 2},
+          },
+        ),
+      );
+
+  // --- Error Book Data ---
+  ErrorListResponse get demoErrors => ErrorListResponse(
+        items: [
+          ErrorRecord(
+            id: 'err_1',
+            questionText: '二叉搜索树的时间复杂度是多少？',
+            userAnswer: 'O(1)',
+            correctAnswer: '平均 O(log n)，最坏 O(n)',
+            subject: 'Data Structures',
+            masteryLevel: 0.2,
+            reviewCount: 1,
+            createdAt: DateTime.now().subtract(const Duration(days: 1)),
+            updatedAt: DateTime.now().subtract(const Duration(days: 1)),
+            aiAnalysisSummary: '混淆了哈希表和BST的复杂度。',
+            latestAnalysis: ErrorAnalysis(
+              errorType: 'conceptual',
+              errorTypeLabel: '概念混淆',
+              rootCause: '对数据结构的底层实现理解不透彻',
+              correctApproach: '回顾 BST 的查找过程，即每次排除一半节点',
+              studySuggestion: '建议对比学习 BST、AVL 树和哈希表',
+              analyzedAt: DateTime.now(),
+            ),
+          ),
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+        hasNext: false,
+      );
+
+  ReviewStats get demoErrorStats => const ReviewStats(
+        totalErrors: 15,
+        masteredCount: 5,
+        needReviewCount: 3,
+        reviewStreakDays: 2,
+        subjectDistribution: {'Data Structures': 10, 'Math': 5},
+      );
+
+  ErrorSemanticSummary get demoSemanticSummary => const ErrorSemanticSummary(
+        summary: '你最近在树结构相关的题目上容易出错，主要集中在时间复杂度分析上。',
+        keywords: ['Tree', 'Complexity', 'BST'],
+        weakPoints: ['Time Complexity Analysis'],
+      );
 
   // --- Task Data ---
   List<TaskModel> get demoTasks {
