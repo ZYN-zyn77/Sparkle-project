@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from app.models.user import User
@@ -51,4 +51,4 @@ class AgeGateService:
         user.is_minor = decision.is_minor
         user.age_verified = True
         user.age_verification_source = decision.source
-        user.age_verified_at = datetime.utcnow()
+        user.age_verified_at = datetime.now(timezone.utc)

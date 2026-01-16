@@ -4,7 +4,7 @@ IRT Models
 """
 from sqlalchemy import Column, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.base import BaseModel, GUID
 
@@ -31,6 +31,6 @@ class UserIRTAbility(BaseModel):
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     subject_id = Column(String(32), nullable=True, index=True)
     theta = Column(Float, default=0.0, nullable=False)
-    last_updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User")

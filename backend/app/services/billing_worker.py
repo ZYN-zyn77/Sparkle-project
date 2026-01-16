@@ -8,7 +8,7 @@ import json
 import asyncio
 import time
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from loguru import logger
 import redis.asyncio as redis
 from sqlalchemy import insert
@@ -128,7 +128,7 @@ class BillingWorker:
                             "completion_tokens": r["completion_tokens"],
                             "total_tokens": r["total_tokens"],
                             "cost": r.get("cost", 0.0),
-                            "timestamp": datetime.fromtimestamp(r["timestamp"]) if "timestamp" in r else datetime.utcnow()
+                            "timestamp": datetime.fromtimestamp(r["timestamp"]) if "timestamp" in r else datetime.now(timezone.utc)
                         })
                     
                     # 批量插入
@@ -165,7 +165,7 @@ class BillingWorker:
                             "completion_tokens": r["completion_tokens"],
                             "total_tokens": r["total_tokens"],
                             "cost": r.get("cost", 0.0),
-                            "timestamp": datetime.fromtimestamp(r["timestamp"]) if "timestamp" in r else datetime.utcnow()
+                            "timestamp": datetime.fromtimestamp(r["timestamp"]) if "timestamp" in r else datetime.now(timezone.utc)
                         }
                         await session.execute(insert(TokenUsage), stmt_data)
                     await session.commit()

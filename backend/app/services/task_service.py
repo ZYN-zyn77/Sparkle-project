@@ -4,7 +4,7 @@ Handle task business logic
 """
 from typing import Optional, List, Tuple
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 import json
 import time
@@ -82,7 +82,7 @@ class TaskService:
     async def start(db: AsyncSession, db_obj: Task) -> Task:
         """Start task"""
         db_obj.status = TaskStatus.IN_PROGRESS
-        db_obj.started_at = datetime.utcnow()
+        db_obj.started_at = datetime.now(timezone.utc)
         
         db.add(db_obj)
         await db.commit()
@@ -95,7 +95,7 @@ class TaskService:
     ) -> Task:
         """Complete task and update plan progress if task belongs to a plan"""
         db_obj.status = TaskStatus.COMPLETED
-        db_obj.completed_at = datetime.utcnow()
+        db_obj.completed_at = datetime.now(timezone.utc)
         db_obj.actual_minutes = actual_minutes
         if note:
             db_obj.user_note = note
@@ -119,7 +119,7 @@ class TaskService:
     ) -> Task:
         """Abandon task"""
         db_obj.status = TaskStatus.ABANDONED
-        db_obj.completed_at = datetime.utcnow() # using completed_at for end time
+        db_obj.completed_at = datetime.now(timezone.utc) # using completed_at for end time
         if reason:
             db_obj.user_note = f"Abandoned: {reason}"
             
@@ -149,7 +149,7 @@ class TaskService:
         if not tasks:
             return []
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         for task in tasks:
             task.status = TaskStatus.IN_PROGRESS
             task.confirmed_at = current_time

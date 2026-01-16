@@ -2,7 +2,7 @@
 Security and Authentication Utilities
 JWT token generation, password hashing, etc.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
 
@@ -38,7 +38,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     创建 JWT access token
     """
     to_encode = data.copy()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if expires_delta:
         expire = now + expires_delta
     else:
@@ -57,7 +57,7 @@ def create_refresh_token(data: dict) -> str:
     创建 JWT refresh token
     """
     to_encode = data.copy()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expire = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update(
         {"exp": expire, "iat": now, "jti": str(uuid4()), "type": "refresh"}

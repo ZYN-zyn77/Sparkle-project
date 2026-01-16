@@ -7,7 +7,7 @@ Creates draft knowledge nodes that users can review and publish.
 Author: Claude Code (Opus 4.5)
 Created: 2026-01-15
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from uuid import UUID
 import uuid
@@ -19,6 +19,7 @@ from loguru import logger
 from app.models.galaxy import KnowledgeNode, UserNodeStatus
 from app.models.user import User
 from app.services.embedding_service import embedding_service
+from app.services.knowledge_asset_bridge import KnowledgeAssetBridgeService
 
 
 class KnowledgeIntegrationService:
@@ -95,8 +96,8 @@ class KnowledgeIntegrationService:
                 source_file_id=source_document_id,
                 status="draft",  # Allow user review before publishing
                 subject_id=subject_id,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
 
             self.db.add(node)
@@ -110,9 +111,9 @@ class KnowledgeIntegrationService:
                 node_id=node.id,
                 mastery_score=0.0,
                 is_unlocked=True,
-                first_unlock_at=datetime.utcnow(),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                first_unlock_at=datetime.now(timezone.utc),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
 
             self.db.add(user_status)
@@ -125,6 +126,11 @@ class KnowledgeIntegrationService:
 
             # Generate embedding asynchronously
             await self._generate_embedding_async(node.id, node.name, node.description)
+
+            # Bridge to LearningAsset system (Phase 2)
+            # This ensures the node appears in the new Review System (LearningAsset based)
+            bridge = KnowledgeAssetBridgeService(self.db)
+            await bridge.sync_node_to_asset(node, user_id)
 
             return node
 
@@ -156,9 +162,9 @@ class KnowledgeIntegrationService:
                 node_id=node.id,
                 mastery_score=0.0,
                 is_unlocked=True,
-                first_unlock_at=datetime.utcnow(),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                first_unlock_at=datetime.now(timezone.utc),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
             self.db.add(user_status)
             await self._schedule_first_review(user_status)
@@ -173,7 +179,7 @@ class KnowledgeIntegrationService:
                     append_text += f"\n*来源: {source_url}*"
                 
                 node.description += append_text
-                node.updated_at = datetime.utcnow()
+                node.updated_at = datetime.now(timezone.utc)
                 logger.info(f"📝 Appended context to node {node.id}")
         
         await self.db.commit()
@@ -222,8 +228,8 @@ class KnowledgeIntegrationService:
         - First review: 24 hours
         - Subsequent reviews determined by mastery score
         """
-        user_status.next_review_at = datetime.utcnow() + timedelta(hours=24)
-        user_status.last_study_at = datetime.utcnow()
+        user_status.next_review_at = datetime.now(timezone.utc) + timedelta(hours=24)
+        user_status.last_study_at = datetime.now(timezone.utc)
 
         logger.debug(f"📅 Scheduled first review: node={user_status.node_id}, "
                     f"review_at={user_status.next_review_at}")
@@ -253,7 +259,7 @@ class KnowledgeIntegrationService:
 
             if node:
                 node.embedding = embedding
-                node.updated_at = datetime.utcnow()
+                node.updated_at = datetime.now(timezone.utc)
                 await self.db.commit()
                 logger.debug(f"✅ Generated embedding for node {node_id}")
             else:
@@ -298,7 +304,7 @@ class KnowledgeIntegrationService:
 
         # Publish node
         node.status = "published"
-        node.updated_at = datetime.utcnow()
+        node.updated_at = datetime.now(timezone.utc)
 
         await self.db.commit()
         await self.db.refresh(node)
@@ -397,7 +403,7 @@ class KnowledgeIntegrationService:
         if keywords is not None:
             node.keywords = keywords
 
-        node.updated_at = datetime.utcnow()
+        node.updated_at = datetime.now(timezone.utc)
 
         await self.db.commit()
         await self.db.refresh(node)

@@ -71,10 +71,10 @@ class GalaxyLayoutEngine {
         // 优先复用现有位置
         if (existingPositions != null &&
             existingPositions.containsKey(node.id)) {
-          positions[node.id] = existingPositions[node.id];
+          positions[node.id] = existingPositions[node.id]!;
           _layoutChildrenRecursive(
             node.id,
-            positions[node.id],
+            positions[node.id]!,
             childrenMap,
             positions,
             nodes,
@@ -163,8 +163,8 @@ class GalaxyLayoutEngine {
 
       if (existingPositions != null &&
           existingPositions.containsKey(child.id)) {
-        positions[child.id] = existingPositions[child.id];
-        _layoutChildrenRecursive(child.id, positions[child.id], childrenMap,
+        positions[child.id] = existingPositions[child.id]!;
+        _layoutChildrenRecursive(child.id, positions[child.id]!, childrenMap,
             positions, allNodes, style, random, existingPositions,);
         continue;
       }
@@ -213,13 +213,11 @@ class GalaxyLayoutEngine {
         var hasOverlap = false;
         for (var i = 0; i < nodes.length; i++) {
           final nodeA = nodes[i];
-          final posA = positions[nodeA.id];
-          if (posA == null) continue;
+          final posA = positions[nodeA.id]!;
 
           for (var j = i + 1; j < nodes.length; j++) {
             final nodeB = nodes[j];
-            final posB = positions[nodeB.id];
-            if (posB == null) continue;
+            final posB = positions[nodeB.id]!;
 
             final minDist = minNodeSpacing + nodeA.radius + nodeB.radius;
             final delta = posA - posB;
@@ -458,12 +456,12 @@ Map<String, Offset> _forceDirectedOptimization(_LayoutOptimizationData data) {
   for (var iter = 0; iter < iterations; iter++) {
     for (final nodeA in nodes) {
       var force = Offset.zero;
-      final posA = positions[nodeA.id];
+      final posA = positions[nodeA.id]!;
 
       // 1. 斥力：节点之间互斥
       for (final nodeB in nodes) {
         if (nodeA.id == nodeB.id) continue;
-        final posB = positions[nodeB.id];
+        final posB = positions[nodeB.id]!;
         final delta = posA - posB;
         var distance = delta.distance;
         if (distance < 1) distance = 1;
@@ -544,7 +542,7 @@ Map<String, Offset> _forceDirectedOptimization(_LayoutOptimizationData data) {
       velocity[nodeA.id] = (velocity[nodeA.id]! + force) * damping;
 
       // 限制最大位移
-      var displacement = velocity[nodeA.id];
+      var displacement = velocity[nodeA.id]!;
       if (displacement.distance > maxDisplacement * temperature) {
         displacement = displacement /
             displacement.distance *

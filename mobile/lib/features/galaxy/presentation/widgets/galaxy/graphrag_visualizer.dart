@@ -170,14 +170,14 @@ class _GraphRAGVisualizerState extends State<GraphRAGVisualizer>
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(DS.md),
-                  child: _buildNodeVisualization(trace),
+                  child: _buildNodeVisualization(trace!),
                 ),
               ),
 
               // 统计信息
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: _buildStats(trace),
+                child: _buildStats(trace!),
               ),
             ],
           ),

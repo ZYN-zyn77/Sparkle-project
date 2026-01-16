@@ -4,7 +4,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, desc, update, or_, String
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Tuple, Dict
 from uuid import UUID
 import random
@@ -40,7 +40,7 @@ class ReviewSchedulerService:
         """
         Returns: (new_mastery, new_ef, new_interval, next_review_date)
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         # SM-2 Logic
         # Quality: Forgotten=1, Fuzzy=3, Remembered=5 (simplified mapping)
@@ -115,7 +115,7 @@ class ErrorBookService:
             ai_analysis_summary=data.ai_analysis_summary,
             
             # Initial State
-            next_review_at=datetime.utcnow(), # Immediate review or +1 day? Usually immediate for first learn.
+            next_review_at=datetime.now(timezone.utc), # Immediate review or +1 day? Usually immediate for first learn.
             interval_days=0.0,
             easiness_factor=2.5,
             review_count=0,
@@ -358,7 +358,7 @@ class ErrorBookService:
         if params.mastery_max is not None:
             query = query.where(ErrorRecord.mastery_level <= params.mastery_max)
         if params.need_review:
-            query = query.where(ErrorRecord.next_review_at <= datetime.utcnow())
+            query = query.where(ErrorRecord.next_review_at <= datetime.now(timezone.utc))
         if params.cognitive_dimension:
             # Filter where cognitive_tags contains the dimension
             query = query.where(ErrorRecord.cognitive_tags.contains([params.cognitive_dimension]))
@@ -441,7 +441,7 @@ class ErrorBookService:
         error.interval_days = new_interval
         error.next_review_at = next_review
         error.review_count = (error.review_count or 0) + 1
-        error.last_reviewed_at = datetime.utcnow()
+        error.last_reviewed_at = datetime.now(timezone.utc)
         
         await self.db.commit()
         await self.db.refresh(error)
@@ -464,7 +464,7 @@ class ErrorBookService:
         
         need_review = await self.db.scalar(
             select(func.count()).select_from(ErrorRecord).where(
-                and_(base_filter, ErrorRecord.next_review_at <= datetime.utcnow())
+                and_(base_filter, ErrorRecord.next_review_at <= datetime.now(timezone.utc))
             )
         )
         

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -25,7 +25,7 @@ class StateEstimatorService:
         self.db = db
 
     async def update_state(self, user_id: UUID, timezone_name: Optional[str]) -> UserStateSnapshot:
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         window = self._default_window()
         events = await self._fetch_recent_events(user_id, window)
         snapshot = self._compute_state(user_id, events, window, timezone_name)
@@ -33,7 +33,7 @@ class StateEstimatorService:
         await self.db.commit()
         await self.db.refresh(snapshot)
         STATE_ESTIMATOR_RUNS.labels(result="success").inc()
-        STATE_ESTIMATOR_LATENCY.observe((datetime.utcnow() - start_time).total_seconds())
+        STATE_ESTIMATOR_LATENCY.observe((datetime.now(timezone.utc) - start_time).total_seconds())
         return snapshot
 
     async def get_latest_snapshot(self, user_id: UUID) -> Optional[UserStateSnapshot]:
@@ -54,7 +54,7 @@ class StateEstimatorService:
         return result.scalar_one_or_none()
 
     def _default_window(self) -> StateWindow:
-        end = datetime.utcnow()
+        end = datetime.now(timezone.utc)
         start = end - timedelta(hours=24)
         return StateWindow(start=start, end=end)
 
@@ -98,7 +98,7 @@ class StateEstimatorService:
 
         focus_mode = False
         if focus_start_at and (not focus_end_at or focus_end_at < focus_start_at):
-            if datetime.utcnow() - focus_start_at < timedelta(hours=2):
+            if datetime.now(timezone.utc) - focus_start_at < timedelta(hours=2):
                 focus_mode = True
 
         wrong_ratio = wrong_events / max(1, total_events)
@@ -112,7 +112,7 @@ class StateEstimatorService:
                 tz = ZoneInfo(timezone_name)
             except Exception:
                 tz = None
-        now_local = datetime.utcnow().astimezone(tz) if tz else datetime.utcnow()
+        now_local = datetime.now(timezone.utc).astimezone(tz) if tz else datetime.now(timezone.utc)
         time_context = {
             "hour": now_local.hour,
             "weekday": now_local.weekday(),
@@ -122,7 +122,7 @@ class StateEstimatorService:
 
         return UserStateSnapshot(
             user_id=user_id,
-            snapshot_at=datetime.utcnow(),
+            snapshot_at=datetime.now(timezone.utc),
             window_start=window.start,
             window_end=window.end,
             cognitive_load=cognitive_load,

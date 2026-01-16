@@ -3,7 +3,7 @@ Knowledge Galaxy Models
 知识星图相关模型
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, ForeignKey, Text, Boolean, DateTime, Float, JSON, LargeBinary, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -48,8 +48,8 @@ class GalaxyUserPermission(Base):
     # 权限等级: owner, editor, viewer, contrib
     permission_level = Column(String(20), nullable=False)
     
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
     # 关系
     galaxy = relationship("CollaborativeGalaxy", back_populates="permissions")
@@ -67,8 +67,8 @@ class CRDTSnapshot(Base):
     state_data = Column(LargeBinary, nullable=False)  # Yjs 二进制更新
     operation_count = Column(Integer, default=0)
     
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
 
 class CRDTOperationLog(Base):
@@ -86,7 +86,7 @@ class CRDTOperationLog(Base):
     operation_type = Column(String(50))
     operation_data = Column(JSONB)
     
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc), nullable=False, index=True)
 
 
 class KnowledgeNode(BaseModel):
@@ -132,6 +132,7 @@ class KnowledgeNode(BaseModel):
     # Layout Coordinates (for Viewport Query)
     position_x = Column(Float, nullable=True, index=True)
     position_y = Column(Float, nullable=True, index=True)
+    position_updated_at = Column(DateTime, nullable=True)  # Phase 9: 24-hour cooldown tracking
 
     # Collaborative Data
     global_spark_count = Column(Integer, default=0, nullable=False)
@@ -148,23 +149,33 @@ class KnowledgeNode(BaseModel):
 class NodeRelation(BaseModel):
     """
     知识点关系表 (星座连线)
+
+    Phase 9 Update:
+    - Added user_id for user-private edges
+    - user_id IS NULL = global edge (seed/system generated)
+    - user_id IS NOT NULL = user private edge (co_activation/co_review)
     """
     __tablename__ = "node_relations"
 
     source_node_id = Column(GUID(), ForeignKey("knowledge_nodes.id"), nullable=False, index=True)
     target_node_id = Column(GUID(), ForeignKey("knowledge_nodes.id"), nullable=False, index=True)
 
-    # 关系类型: prerequisite, related, application, composition, evolution
+    # Phase 9: User private edge support
+    # NULL = global edge, NOT NULL = user-specific edge
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+
+    # 关系类型: prerequisite, related, application, composition, evolution, co_activation, co_review
     relation_type = Column(String(30), nullable=False)
-    
+
     # 关系强度 (0-1)
     strength = Column(Float, default=0.5)
 
-    created_by = Column(String(20), default='seed') # seed | user | llm
+    created_by = Column(String(20), default='seed') # seed | user | llm | system
 
     # 关系
     source_node = relationship("KnowledgeNode", foreign_keys=[source_node_id], back_populates="source_relations")
     target_node = relationship("KnowledgeNode", foreign_keys=[target_node_id], back_populates="target_relations")
+    user = relationship("User", backref="node_relations")
 
 
 class UserNodeStatus(Base):
@@ -197,7 +208,7 @@ class UserNodeStatus(Base):
     
     # 遗忘曲线相关
     last_study_at = Column(DateTime, nullable=True) # Doc uses last_study_at
-    last_interacted_at = Column(DateTime, default=datetime.utcnow, nullable=False) # Keep for compatibility or remove?
+    last_interacted_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False) # Keep for compatibility or remove?
     decay_paused = Column(Boolean, default=False)
     next_review_at = Column(DateTime, nullable=True, index=True)
     
@@ -206,11 +217,11 @@ class UserNodeStatus(Base):
     
     # 元数据
     first_unlock_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
         nullable=False,
     )
 

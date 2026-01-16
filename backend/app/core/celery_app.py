@@ -343,6 +343,13 @@ celery_app.conf.beat_schedule = {
         "args": (),
         "options": {"queue": "default"}
     },
+
+    # 每天凌晨4点清理过期收件箱
+    "inbox-decay": {
+        "task": "app.core.celery_tasks.process_inbox_decay",
+        "schedule": 86400.0,
+        "options": {"queue": "low_priority"}
+    },
 }
 
 

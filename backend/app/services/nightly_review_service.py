@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, date
+from datetime import datetime, timezone, timedelta, date
 from typing import List, Optional
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -68,7 +68,7 @@ class NightlyReviewService:
             return None
 
         review.status = "reviewed"
-        review.reviewed_at = datetime.utcnow()
+        review.reviewed_at = datetime.now(timezone.utc)
         await self.db.commit()
         await self.db.refresh(review)
         return review
@@ -106,7 +106,7 @@ class NightlyReviewService:
                 tz = ZoneInfo(timezone_name)
             except Exception:
                 tz = None
-        now_local = datetime.utcnow().astimezone(tz) if tz else datetime.utcnow()
+        now_local = datetime.now(timezone.utc).astimezone(tz) if tz else datetime.now(timezone.utc)
         target_date = review_date or (now_local.date() - timedelta(days=1))
         start_local = datetime.combine(target_date, datetime.min.time())
         end_local = datetime.combine(target_date, datetime.max.time())

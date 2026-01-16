@@ -4,7 +4,7 @@ Security Audit Log Models
 安全审计日志模型，用于记录所有安全相关事件
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 from sqlalchemy import Column, String, DateTime, JSON, Text, ForeignKey, Enum
@@ -37,8 +37,8 @@ class SecurityAuditLog(Base):
     details = Column(JSON, nullable=True)  # 事件详细信息
 
     # 时间戳
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
 
     # 关系
     user = relationship("User", back_populates="security_audit_logs")
@@ -70,8 +70,8 @@ class DataAccessLog(Base):
     response_status = Column(String(10), nullable=True)  # 响应状态
 
     # 时间戳
-    accessed_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    accessed_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
 
     # 关系
     user = relationship("User", back_populates="data_access_logs")
@@ -102,8 +102,8 @@ class SystemConfigChangeLog(Base):
     impact_level = Column(String(20), nullable=True)  # 影响级别: low, medium, high, critical
 
     # 时间戳
-    changed_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    changed_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
 
     # 关系
     changer = relationship("User", back_populates="system_config_change_logs")
@@ -133,8 +133,8 @@ class ComplianceCheckLog(Base):
     automated = Column(String(10), nullable=False, default="true")  # 是否自动执行
 
     # 时间戳
-    executed_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    executed_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
 
     # 关系
     executor = relationship("User", back_populates="compliance_check_logs")

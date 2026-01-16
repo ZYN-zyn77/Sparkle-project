@@ -6,7 +6,7 @@ Refactored to delegate to specialized services:
 """
 import asyncio
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 from typing import Optional, List, Any
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -431,7 +431,7 @@ class GalaxyService:
                     revision = EXCLUDED.revision
             """)
             
-            update_time = version or datetime.utcnow()
+            update_time = version or datetime.now(timezone.utc)
             
             await self.db.execute(upsert_query, {
                 "user_id": user_id, 
@@ -481,9 +481,9 @@ class GalaxyService:
                     "node_id": str(node_id),
                     "mastery_score": new_mastery,
                     "revision": new_revision,
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.now(timezone.utc).isoformat()
                 }),
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             })
             
             await self.db.flush()

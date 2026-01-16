@@ -56,6 +56,8 @@ from app.models.learning_assets import (
     SuggestionDecision,
     UserSuggestionResponse,
 )
+from app.models.asset_concept_link import AssetConceptLink, LinkType
+from app.models.review_calibration import ReviewCalibrationLog
 
 __all__ = [
     "BaseModel",
@@ -136,4 +138,8 @@ __all__ = [
     "MatchStrength",
     "SuggestionDecision",
     "UserSuggestionResponse",
+    # Phase 9: Asset-Concept Links & Review Calibration
+    "AssetConceptLink",
+    "LinkType",
+    "ReviewCalibrationLog",
 ]

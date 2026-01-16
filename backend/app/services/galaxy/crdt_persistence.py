@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from typing import Optional, List
 import y_py as Y
@@ -37,7 +37,7 @@ class CRDTPersistenceManager:
         # 记录最后同步时间
         await self.redis.set(
             f"crdt:timestamp:{galaxy_id}",
-            datetime.utcnow().isoformat(),
+            datetime.now(timezone.utc).isoformat(),
             ex=86400
         )
 
@@ -53,12 +53,12 @@ class CRDTPersistenceManager:
             galaxy_id=galaxy_id,
             state_data=update_data,
             operation_count=0, # TODO: implement operation count tracking
-            updated_at=datetime.utcnow()
+            updated_at=datetime.now(timezone.utc)
         ).on_conflict_do_update(
             index_elements=['galaxy_id'],
             set_={
                 'state_data': update_data,
-                'updated_at': datetime.utcnow()
+                'updated_at': datetime.now(timezone.utc)
             }
         )
         

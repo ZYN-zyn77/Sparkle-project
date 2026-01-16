@@ -33,7 +33,7 @@ def override_deps(mock_db):
     yield
     app.dependency_overrides = {}
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 @pytest.mark.asyncio
 async def test_create_error_api(override_deps, mock_db):
@@ -44,8 +44,8 @@ async def test_create_error_api(override_deps, mock_db):
     
     async def mock_refresh(obj):
         obj.id = uuid4()
-        obj.created_at = datetime.utcnow()
-        obj.updated_at = datetime.utcnow()
+        obj.created_at = datetime.now(timezone.utc)
+        obj.updated_at = datetime.now(timezone.utc)
         # Also need these fields which are expected by ErrorRecordResponse
         obj.suggested_concepts = []
         obj.knowledge_links = []

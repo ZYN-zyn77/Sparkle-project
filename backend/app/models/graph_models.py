@@ -7,7 +7,7 @@
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -41,7 +41,7 @@ class KnowledgeVertex:
     sector: str = "VOID"
     keywords: List[str] = field(default_factory=list)
     source_type: str = "seed"
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=datetime.now(timezone.utc))
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -63,7 +63,7 @@ class UserVertex:
     username: str
     nickname: str
     flame_level: int = 1
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=datetime.now(timezone.utc))
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -116,7 +116,7 @@ class UserInterestEdge:
     user_id: str
     knowledge_id: str
     strength: float = 0.5
-    last_accessed: datetime = field(default_factory=datetime.utcnow)
+    last_accessed: datetime = field(default_factory=datetime.now(timezone.utc))
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -132,7 +132,7 @@ class StudyRecordEdge:
     knowledge_id: str
     study_minutes: int = 0
     mastery_delta: float = 0.0
-    last_study: datetime = field(default_factory=datetime.utcnow)
+    last_study: datetime = field(default_factory=datetime.now(timezone.utc))
 
     def to_dict(self) -> Dict[str, Any]:
         return {

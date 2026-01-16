@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -53,7 +53,7 @@ async def test_ingest_stream_worker_state_summary():
                     "event_type": "question_submit",
                     "schema_version": "event.v1",
                     "source": "test",
-                    "ts_ms": int(datetime.utcnow().timestamp() * 1000),
+                    "ts_ms": int(datetime.now(timezone.utc).timestamp() * 1000),
                     "entities": {"question_id": "q1"},
                     "payload": {"correct": False},
                 }
@@ -70,7 +70,7 @@ async def test_ingest_stream_worker_state_summary():
                     "event_type": "question_submit",
                     "schema_version": "event.v1",
                     "source": "test",
-                    "ts_ms": int(datetime.utcnow().timestamp() * 1000),
+                    "ts_ms": int(datetime.now(timezone.utc).timestamp() * 1000),
                     "entities": {"question_id": "q1"},
                     "payload": {"correct": False},
                 }
@@ -156,10 +156,10 @@ async def test_delete_then_resolve_redacted():
             event_type="quiz_wrong",
             schema_version="event.v1",
             source="test",
-            ts_ms=int(datetime.utcnow().timestamp() * 1000),
+            ts_ms=int(datetime.now(timezone.utc).timestamp() * 1000),
             entities={"concept_id": "c1"},
             payload={"detail": "wrong"},
-            received_at=datetime.utcnow(),
+            received_at=datetime.now(timezone.utc),
         )
         db.add(event)
         await db.commit()

@@ -1,16 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:opentelemetry/api.dart' show globalTracerProvider, registerGlobalTracerProvider;
-import 'package:opentelemetry/api.dart' show Span, StatusCode;
-import 'package:opentelemetry/sdk.dart'
-    show
-        BatchSpanProcessor,
-        CollectorExporter,
-        ConsoleExporter,
-        SimpleSpanProcessor,
-        SpanProcessor,
-        TracerProviderBase;
-import 'package:opentelemetry/web_sdk.dart' as web_sdk;
+import 'package:opentelemetry/api.dart' as api;
+import 'package:opentelemetry/sdk.dart' as sdk;
 import 'package:uuid/uuid.dart';
+
+import 'tracing_service_stub.dart'
+    if (dart.library.io) 'tracing_service_mobile.dart'
+    if (dart.library.html) 'tracing_service_web.dart';
 
 class TracingService {
   TracingService._internal();
@@ -23,27 +18,22 @@ class TracingService {
   Future<void> initialize({Uri? collectorUri}) async {
     if (_initialized) return;
 
-    final processors = <SpanProcessor>[];
+    final processors = <sdk.SpanProcessor>[];
     if (collectorUri != null) {
       processors.add(
-        BatchSpanProcessor(CollectorExporter(collectorUri)),
+        sdk.BatchSpanProcessor(sdk.CollectorExporter(collectorUri)),
       );
     }
     if (kDebugMode) {
-      processors.add(SimpleSpanProcessor(ConsoleExporter()));
+      processors.add(sdk.SimpleSpanProcessor(sdk.ConsoleExporter()));
     }
 
-    final tracerProvider = kIsWeb
-        ? web_sdk.WebTracerProvider(
-            processors: processors,
-            timeProvider: web_sdk.WebTimeProvider(),
-          )
-        : TracerProviderBase(processors: processors);
-    registerGlobalTracerProvider(tracerProvider);
+    final tracerProvider = createTracerProvider(processors);
+    api.registerGlobalTracerProvider(tracerProvider);
     _initialized = true;
   }
 
-  Span startSpan(String name) => globalTracerProvider.getTracer('sparkle-mobile').startSpan(name);
+  api.Span startSpan(String name) => api.globalTracerProvider.getTracer('sparkle-mobile').startSpan(name);
 
   String createTraceId({String spanName = 'trace.generate'}) {
     if (!_initialized) {
@@ -52,12 +42,12 @@ class TracingService {
     final span = startSpan(spanName);
     final traceId = span.spanContext.traceId;
     span.end();
-    return traceId;
+    return traceId.toString();
   }
 
-  void recordException(Span span, Object error, StackTrace stackTrace) {
+  void recordException(api.Span span, Object error, StackTrace stackTrace) {
     span
       ..recordException(error, stackTrace: stackTrace)
-      ..setStatus(StatusCode.error, error.toString());
+      ..setStatus(api.StatusCode.error, error.toString());
   }
 }

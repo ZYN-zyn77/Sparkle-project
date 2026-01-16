@@ -155,6 +155,10 @@ func main() {
 	}
 	authHandler := handler.NewAuthHandler(cfg, queries, appleAuthService)
 
+	// Sync Service (Phase 9)
+	syncService := service.NewSyncService(pool)
+	syncHandler := handler.NewSyncHandler(syncService)
+
 	// ==================== CQRS Infrastructure Initialization ====================
 
 	// Initialize CQRS Metrics
@@ -376,6 +380,9 @@ func main() {
 
 		// File Routes
 		fileHandler.RegisterRoutes(api, authMiddleware)
+
+		// Sync Routes (Phase 9)
+		syncHandler.RegisterRoutes(api, authMiddleware)
 	}
 
 	// Internal Routes (Gateway <-> Backend)

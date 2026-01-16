@@ -3,10 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/network/api_client.dart';
 import 'package:sparkle/core/network/api_endpoints.dart';
+import 'package:sparkle/core/services/demo_data_service.dart';
 import 'package:sparkle/features/focus/data/models/focus_session_model.dart';
 
 /// Repository for focus session operations (P0.3)
-class FocusRepository {
+class FocusRepository implements IFocusRepository {
   FocusRepository(this._apiClient);
 
   final ApiClient _apiClient;
@@ -117,7 +118,83 @@ class FocusRepository {
 }
 
 /// Focus repository provider (P0.3)
-final focusRepositoryProvider = Provider<FocusRepository>((ref) {
+final focusRepositoryProvider = Provider<IFocusRepository>((ref) {
+  if (DemoDataService.isDemoMode) {
+    return MockFocusRepository();
+  }
   final apiClient = ref.watch(apiClientProvider);
   return FocusRepository(apiClient);
 });
+
+/// Interface for focus repository
+abstract class IFocusRepository {
+  Future<FocusSessionResponse> logFocusSession({
+    required DateTime startTime,
+    required DateTime endTime,
+    required int durationMinutes,
+    String? taskId,
+    String focusType,
+    String status,
+    String? whiteNoiseType,
+  });
+
+  Future<FocusStatsResponse> getFocusStats();
+
+  Future<String> getLLMGuidance({
+    required String taskTitle,
+    required String context,
+  });
+
+  Future<List<String>> breakdownTask({
+    required String taskTitle,
+    required String taskType,
+  });
+}
+
+class MockFocusRepository implements IFocusRepository {
+  final DemoDataService _demoData = DemoDataService();
+
+  Future<FocusSessionResponse> logFocusSession({
+    required DateTime startTime,
+    required DateTime endTime,
+    required int durationMinutes,
+    String? taskId,
+    String focusType = 'pomodoro',
+    String status = 'completed',
+    String? whiteNoiseType,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    return FocusSessionResponse(
+      success: true,
+      id: 'focus_${DateTime.now().millisecondsSinceEpoch}',
+      rewards: FocusSessionRewards(
+        flameEarned: durationMinutes ~/ 10,
+        leveledUp: false,
+        newLevel: 15,
+      ),
+    );
+  }
+
+  Future<FocusStatsResponse> getFocusStats() async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoFocusStats;
+    return FocusStatsResponse.fromJson(demoData);
+  }
+
+  Future<String> getLLMGuidance({
+    required String taskTitle,
+    required String context,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoLLMGuidance;
+    return demoData['guidance'] as String;
+  }
+
+  Future<List<String>> breakdownTask({
+    required String taskTitle,
+    required String taskType,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    return _demoData.demoTaskBreakdown;
+  }
+}

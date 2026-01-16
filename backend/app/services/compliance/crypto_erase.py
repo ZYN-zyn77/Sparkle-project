@@ -1,6 +1,6 @@
 import base64
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Tuple
 from uuid import uuid4, UUID
 
@@ -100,7 +100,7 @@ class CryptoEraseManager:
             raise ValueError("Active user key not found")
 
         key.is_active = False
-        key.destroyed_at = datetime.utcnow()
+        key.destroyed_at = datetime.now(timezone.utc)
         key.encrypted_key = None
         await self.db.commit()
 

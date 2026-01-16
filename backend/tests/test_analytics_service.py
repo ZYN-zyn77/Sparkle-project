@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import uuid
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -60,7 +60,7 @@ async def test_analytics_service(db: AsyncSession):
         estimated_minutes=30,
         actual_minutes=30,
         status=TaskStatus.COMPLETED,
-        completed_at=datetime.utcnow()
+        completed_at=datetime.now(timezone.utc)
     )
     db.add(task1)
     
@@ -72,7 +72,7 @@ async def test_analytics_service(db: AsyncSession):
         estimated_minutes=20,
         actual_minutes=20,
         status=TaskStatus.COMPLETED,
-        completed_at=datetime.utcnow()
+        completed_at=datetime.now(timezone.utc)
     )
     db.add(task2)
     

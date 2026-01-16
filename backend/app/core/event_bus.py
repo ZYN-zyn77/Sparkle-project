@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional, Callable, List
 import json
 import os
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from loguru import logger
 import redis.asyncio as redis
 from redis.exceptions import ResponseError
@@ -21,7 +21,7 @@ class KnowledgeNodeUpdated(Event):
         self.user_id = user_id
         self.node_id = node_id
         self.new_mastery = new_mastery
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
 
     def to_dict(self):
         return {
@@ -39,7 +39,7 @@ class NodeMasteryUpdatedEvent(Event):
         self.old_mastery = old_mastery
         self.new_mastery = new_mastery
         self.reason = reason
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
 
     def to_dict(self):
         return {
@@ -57,7 +57,7 @@ class ErrorCreated(Event):
         self.user_id = user_id
         self.error_id = error_id
         self.linked_node_ids = linked_node_ids or []
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
 
     def to_dict(self):
         return {

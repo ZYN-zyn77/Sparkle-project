@@ -88,7 +88,7 @@ class NotificationService {
             // Parse taskId from payload
             final taskId = payload['taskId'] as String?;
             if (taskId != null) {
-              unawaited(GoRouter.of(context)
+              unawaited(GoRouter.of(context!)
                   .pushNamed('taskExecution', pathParameters: {'id': taskId}),);
             }
           }

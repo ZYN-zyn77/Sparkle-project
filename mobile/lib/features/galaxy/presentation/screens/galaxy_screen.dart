@@ -36,7 +36,6 @@ class _GalaxyScreenState extends ConsumerState<GalaxyScreen>
   late final GalaxyRenderEngine _renderEngine;
   late final AnimationController _selectionPulseController;
   final List<AnimationController> _transientControllers = [];
-  ProviderSubscription<GalaxyState>? _focusSubscription;
   bool _isDisposing = false;
 
   // State
@@ -72,8 +71,7 @@ class _GalaxyScreenState extends ConsumerState<GalaxyScreen>
     // Start Performance Monitoring
     PerformanceService.instance.startMonitoring();
 
-    _focusSubscription =
-        ref.listen<GalaxyState>(galaxyProvider, (previous, next) {
+    ref.listen<GalaxyState>(galaxyProvider, (previous, next) {
       final focusBounds = next.focusBounds;
       if (focusBounds != null && focusBounds != previous?.focusBounds) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -129,7 +127,6 @@ class _GalaxyScreenState extends ConsumerState<GalaxyScreen>
     _selectionPulseController.dispose();
     _transformationController.removeListener(_onTransformChanged);
     _transformationController.dispose();
-    _focusSubscription?.close();
     _renderEngine.dispose();
     PerformanceService.instance.stopMonitoring();
     super.dispose();
@@ -647,7 +644,7 @@ class _GalaxyScreenState extends ConsumerState<GalaxyScreen>
                     final content = Stack(
                       children: [
                         // 1. Background: Sector nebula and stars (Static, Cached)
-                        const Positioned.fill(
+                        Positioned.fill(
                           child: TiledSectorBackground(
                             width: canvasSize,
                             height: canvasSize,

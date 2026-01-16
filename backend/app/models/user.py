@@ -2,7 +2,7 @@
 用户模型
 User Model - 核心用户信息和个性化偏好
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Float, Boolean, Index, JSON, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
 import enum
@@ -226,7 +226,7 @@ class LoginAttempt(BaseModel):
     ip_address = Column(String(45), nullable=False, index=True)  # 支持IPv6
     user_agent = Column(String(500), nullable=True)  # 用户代理
     success = Column(Boolean, nullable=False, index=True)  # 是否登录成功
-    attempted_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    attempted_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), index=True)
 
     # 关系
     user = relationship("User", back_populates="login_attempts")

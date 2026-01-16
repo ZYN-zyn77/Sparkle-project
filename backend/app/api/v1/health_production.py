@@ -11,7 +11,7 @@
 
 import time
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,7 +84,7 @@ async def health_check(
         "version": settings.APP_VERSION,
         "environment": "production" if not settings.DEBUG else "development",
         "uptime_seconds": round(time.time() - START_TIME, 2),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
     # 4. 基础响应
@@ -187,7 +187,7 @@ async def liveness_check() -> Dict[str, Any]:
     """
     return {
         "status": "alive",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -307,5 +307,5 @@ async def prometheus_alerts(
     return {
         "alerts": alerts,
         "firing": len(alerts) > 0,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }

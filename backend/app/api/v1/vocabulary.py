@@ -64,7 +64,22 @@ async def get_review_list(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    return await vocabulary_service.get_review_list(db, current_user.id)
+    # Phase 2: Switch to LearningAsset system
+    # Return ACTIVE assets due for review
+    from app.services.learning_asset_service import learning_asset_service
+    assets = await learning_asset_service.get_review_list(db, current_user.id)
+    
+    # Map to legacy format for frontend compatibility
+    return [
+        {
+            "id": str(asset.id),
+            "word": asset.headword,
+            "definition": asset.translation or asset.definition, # Prefer translation for easy review
+            "next_review_at": asset.review_due_at,
+            "review_count": asset.review_count,
+        }
+        for asset in assets
+    ]
 
 @router.post("/wordbook/review", summary="记录复习结果")
 async def record_review(

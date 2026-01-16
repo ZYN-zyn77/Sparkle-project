@@ -1,7 +1,64 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sparkle/core/services/demo_data_service.dart';
 import 'package:sparkle/features/error_book/data/models/error_record.dart';
 import 'package:sparkle/features/error_book/data/models/error_semantic_summary.dart';
 import 'package:sparkle/shared/entities/cognitive_analysis.dart';
+
+/// Interface for error book repository
+abstract class IErrorBookRepository {
+  Future<ErrorRecord> createError({
+    required String questionText,
+    required String userAnswer,
+    required String correctAnswer,
+    required String subject,
+    String? chapter,
+    String? questionImageUrl,
+  });
+
+  Future<ErrorListResponse> getErrors({
+    String? subject,
+    String? chapter,
+    bool? needReview,
+    String? keyword,
+    double? masteryMin,
+    double? masteryMax,
+    CognitiveDimension? cognitiveDimension,
+    int page,
+    int pageSize,
+  });
+
+  Future<ErrorRecord> getError(String errorId);
+
+  Future<ErrorRecord> updateError(
+    String errorId, {
+    String? questionText,
+    String? userAnswer,
+    String? correctAnswer,
+    String? subject,
+    String? chapter,
+  });
+
+  Future<void> deleteError(String errorId);
+
+  Future<void> reAnalyzeError(String errorId);
+
+  Future<ErrorRecord> submitReview({
+    required String errorId,
+    required String performance,
+    int? timeSpentSeconds,
+    String reviewType,
+  });
+
+  Future<ErrorListResponse> getTodayReviewList({
+    int page,
+    int pageSize,
+  });
+
+  Future<ReviewStats> getStats();
+
+  Future<ErrorSemanticSummary> getSemanticSummary(String errorId);
+}
 
 /// 错题档案 Repository
 ///
@@ -10,7 +67,7 @@ import 'package:sparkle/shared/entities/cognitive_analysis.dart';
 /// - 单一数据源：所有网络请求从这里发起
 /// - 异常统一处理：转换 HTTP 异常为业务异常
 /// - 可测试性：通过依赖注入 Dio 实例便于 mock
-class ErrorBookRepository {
+class ErrorBookRepository implements IErrorBookRepository {
   ErrorBookRepository(this._dio);
   final Dio _dio;
   static const String _basePath = '/api/v1/errors';
@@ -281,3 +338,131 @@ class ErrorBookRepository {
     return Exception(defaultMessage);
   }
 }
+
+class MockErrorBookRepository implements IErrorBookRepository {
+  final DemoDataService _demoData = DemoDataService();
+
+  @override
+  Future<ErrorRecord> createError({
+    required String questionText,
+    required String userAnswer,
+    required String correctAnswer,
+    required String subject,
+    String? chapter,
+    String? questionImageUrl,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoErrors.first;
+    return ErrorRecord.fromJson(demoData);
+  }
+
+  @override
+  Future<ErrorListResponse> getErrors({
+    String? subject,
+    String? chapter,
+    bool? needReview,
+    String? keyword,
+    double? masteryMin,
+    double? masteryMax,
+    CognitiveDimension? cognitiveDimension,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoErrors;
+    return ErrorListResponse(
+      items: demoData.map(ErrorRecord.fromJson).toList(),
+      total: demoData.length,
+      page: page,
+      pageSize: pageSize,
+      hasNext: false,
+    );
+  }
+
+  @override
+  Future<ErrorRecord> getError(String errorId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoErrors.firstWhere(
+      (e) => e['id'] == errorId,
+      orElse: () => _demoData.demoErrors.first,
+    );
+    return ErrorRecord.fromJson(demoData);
+  }
+
+  @override
+  Future<ErrorRecord> updateError(
+    String errorId, {
+    String? questionText,
+    String? userAnswer,
+    String? correctAnswer,
+    String? subject,
+    String? chapter,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoErrors.first;
+    return ErrorRecord.fromJson(demoData);
+  }
+
+  @override
+  Future<void> deleteError(String errorId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    return;
+  }
+
+  @override
+  Future<void> reAnalyzeError(String errorId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    return;
+  }
+
+  @override
+  Future<ErrorRecord> submitReview({
+    required String errorId,
+    required String performance,
+    int? timeSpentSeconds,
+    String reviewType = 'active',
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoErrors.first;
+    return ErrorRecord.fromJson(demoData);
+  }
+
+  @override
+  Future<ErrorListResponse> getTodayReviewList({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoErrors;
+    return ErrorListResponse(
+      items: demoData.map(ErrorRecord.fromJson).toList(),
+      total: demoData.length,
+      page: page,
+      pageSize: pageSize,
+      hasNext: false,
+    );
+  }
+
+  @override
+  Future<ReviewStats> getStats() async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoErrorStats;
+    return ReviewStats.fromJson(demoData);
+  }
+
+  @override
+  Future<ErrorSemanticSummary> getSemanticSummary(String errorId) async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final demoData = _demoData.demoSemanticSummary;
+    return ErrorSemanticSummary.fromJson(demoData);
+  }
+}
+
+final errorBookRepositoryProvider = Provider<IErrorBookRepository>(
+  (ref) {
+    if (DemoDataService.isDemoMode) {
+      return MockErrorBookRepository();
+    }
+    return ErrorBookRepository(Dio());
+  },
+);

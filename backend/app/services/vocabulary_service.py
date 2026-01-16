@@ -2,7 +2,7 @@ import json
 import csv
 import io
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
@@ -84,7 +84,7 @@ class VocabularyService:
         
         if existing:
             existing.definition = definition
-            existing.next_review_at = datetime.utcnow() # Reset review if re-added?
+            existing.next_review_at = datetime.now(timezone.utc) # Reset review if re-added?
             return existing
 
         word_book = WordBook(
@@ -94,7 +94,7 @@ class VocabularyService:
             definition=definition,
             context_sentence=context_sentence,
             source_task_id=task_id,
-            next_review_at=datetime.utcnow()
+            next_review_at=datetime.now(timezone.utc)
         )
         db.add(word_book)
         await db.commit()
@@ -107,7 +107,7 @@ class VocabularyService:
         stmt = select(WordBook).where(
             and_(
                 WordBook.user_id == user_id,
-                WordBook.next_review_at <= datetime.utcnow()
+                WordBook.next_review_at <= datetime.now(timezone.utc)
             )
         ).order_by(WordBook.next_review_at)
         
@@ -117,7 +117,7 @@ class VocabularyService:
     @staticmethod
     async def get_today_creation_count(db: AsyncSession, user_id: UUID) -> int:
         """Get number of words added today (UTC)"""
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         
         stmt = select(func.count()).select_from(WordBook).where(
             and_(
@@ -141,8 +141,8 @@ class VocabularyService:
             word_book.mastery_level = max(0, word_book.mastery_level - 1)
             
         interval_days = VocabularyService.REVIEW_INTERVALS[word_book.mastery_level]
-        word_book.next_review_at = datetime.utcnow() + timedelta(days=interval_days)
-        word_book.last_review_at = datetime.utcnow()
+        word_book.next_review_at = datetime.now(timezone.utc) + timedelta(days=interval_days)
+        word_book.last_review_at = datetime.now(timezone.utc)
         word_book.review_count += 1
         
         await db.commit()

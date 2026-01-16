@@ -81,6 +81,30 @@ class SuggestionFeedbackRequest(BaseModel):
     asset_id: Optional[str] = Field(None, description="Created asset ID if accepted")
 
 
+class InboxStatsResponse(BaseModel):
+    """Response for inbox statistics"""
+    total_count: int
+    expiring_soon_count: int
+
+
+class ReviewRequest(BaseModel):
+    """Request to record a review result"""
+    difficulty: str = Field(
+        ...,
+        description="User's self-assessment: 'easy', 'good', or 'hard'"
+    )
+
+
+class ReviewResponse(BaseModel):
+    """Response after recording a review"""
+    success: bool
+    asset_id: str
+    review_count: int
+    review_success_rate: float
+    next_review_at: str
+    days_until_next: int
+
+
 # ============ Endpoints ============
 
 @router.post("", response_model=AssetResponse, summary="创建学习资产")
@@ -213,13 +237,19 @@ async def archive_asset(
 @router.get("", response_model=AssetListResponse, summary="获取资产列表")
 async def list_assets(
     status: Optional[str] = Query(None, description="Filter by status: INBOX, ACTIVE, ARCHIVED"),
+    search: Optional[str] = Query(None, description="Search query for semantic/text search"),
     limit: int = Query(50, ge=1, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    List user's learning assets with optional status filter.
+    List user's learning assets with optional status filter and search.
+
+    **Search behavior**:
+    - When `search` is provided, uses semantic search (embedding similarity)
+    - Falls back to text matching if embedding service is unavailable
+    - Without `search`, returns assets ordered by update time
     """
     # Parse status filter
     status_filter = None
@@ -232,13 +262,23 @@ async def list_assets(
                 detail=f"Invalid status. Must be one of: {[s.value for s in AssetStatus]}"
             )
 
-    assets = await learning_asset_service.get_user_assets(
-        db=db,
-        user_id=current_user.id,
-        status=status_filter,
-        limit=limit,
-        offset=offset,
-    )
+    # Use semantic search if search query provided
+    if search:
+        assets = await learning_asset_service.semantic_search(
+            db=db,
+            user_id=current_user.id,
+            query=search,
+            limit=limit,
+            status=status_filter,
+        )
+    else:
+        assets = await learning_asset_service.get_user_assets(
+            db=db,
+            user_id=current_user.id,
+            status=status_filter,
+            limit=limit,
+            offset=offset,
+        )
 
     return AssetListResponse(
         assets=[_asset_to_response(a) for a in assets],
@@ -246,6 +286,18 @@ async def list_assets(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/inbox/stats", response_model=InboxStatsResponse, summary="获取Inbox统计")
+async def get_inbox_stats(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get statistics for the user's inbox (total items, expiring soon).
+    """
+    stats = await learning_asset_service.get_inbox_stats(db, current_user.id)
+    return InboxStatsResponse(**stats)
 
 
 @router.get("/{asset_id}", response_model=AssetResponse, summary="获取单个资产")
@@ -343,6 +395,97 @@ async def record_suggestion_feedback(
     except Exception as e:
         logger.error(f"Failed to record feedback: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to record feedback: {str(e)}")
+
+
+@router.post("/{asset_id}/review", response_model=ReviewResponse, summary="记录复习结果")
+async def record_review(
+    asset_id: str,
+    request: ReviewRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Record a review result and schedule the next review.
+
+    Uses simplified SM-2 algorithm with three difficulty levels:
+    - **easy**: Fast progression (1, 3, 7, 16, 35, 70 days)
+    - **good**: Standard progression (1, 2, 5, 10, 21, 45 days)
+    - **hard**: Slow progression (1, 1, 3, 7, 15, 30 days)
+
+    The difficulty affects:
+    1. Days until next review
+    2. Success rate calculation (exponential moving average)
+    """
+    try:
+        asset_uuid = UUID(asset_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid asset_id format")
+
+    difficulty = request.difficulty.lower()
+    if difficulty not in ['easy', 'good', 'hard']:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid difficulty. Must be 'easy', 'good', or 'hard'"
+        )
+
+    try:
+        asset = await learning_asset_service.record_review(
+            db=db,
+            user_id=current_user.id,
+            asset_id=asset_uuid,
+            difficulty=difficulty,
+        )
+        await db.commit()
+
+        # Calculate days until next review
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        days_until_next = (asset.review_due_at - now).days
+
+        logger.info(
+            f"Review recorded for asset {asset_id}: "
+            f"difficulty={difficulty}, next_review={asset.review_due_at}"
+        )
+
+        return ReviewResponse(
+            success=True,
+            asset_id=str(asset.id),
+            review_count=asset.review_count,
+            review_success_rate=round(asset.review_success_rate, 3),
+            next_review_at=asset.review_due_at.isoformat(),
+            days_until_next=days_until_next,
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to record review: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to record review: {str(e)}")
+
+
+@router.get("/due/list", response_model=AssetListResponse, summary="获取待复习资产")
+async def list_due_assets(
+    limit: int = Query(20, ge=1, le=100, description="Max results"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List assets that are due for review.
+
+    Returns active assets where review_due_at <= now, ordered by due date.
+    """
+    assets = await learning_asset_service.get_due_for_review(
+        db=db,
+        user_id=current_user.id,
+        limit=limit,
+    )
+
+    return AssetListResponse(
+        assets=[_asset_to_response(a) for a in assets],
+        total=len(assets),
+        limit=limit,
+        offset=0,
+    )
 
 
 # ============ Helpers ============

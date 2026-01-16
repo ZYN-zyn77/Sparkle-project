@@ -1,5 +1,5 @@
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,7 +57,7 @@ class CognitiveService:
             source_event_id=source_event_id,
             persona_version=persona_version,
             analysis_status=AnalysisStatus.PENDING,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         
         logger.info(f"Creating fragment {fragment.id} for user {user_id}: {self._sanitize_content(content)}")
@@ -98,7 +98,7 @@ class CognitiveService:
         Analyze a specific fragment using RAG + LLM to identify behavioral patterns.
         Returns the analysis result and potentially created/updated pattern.
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         # 1. Fetch Target Fragment
         stmt = select(CognitiveFragment).where(CognitiveFragment.id == fragment_id)
         result = await self.db.execute(stmt)
@@ -264,7 +264,7 @@ class CognitiveService:
             analysis["_meta"] = {
                 "strategy_used": "raw+hyde" if use_hyde else "raw",
                 "hyde_cancelled": hyde_cancelled,
-                "latency_ms": (datetime.utcnow() - start_time).total_seconds() * 1000
+                "latency_ms": (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
             }
             
             logger.info(f"Successfully analyzed fragment {fragment_id}")

@@ -3628,7 +3628,7 @@ CREATE INDEX idx_learning_assets_headword ON public.learning_assets USING btree 
 -- Name: idx_learning_assets_selection_fp; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_learning_assets_selection_fp ON public.learning_assets USING btree (user_id, selection_fp);
+CREATE UNIQUE INDEX idx_learning_assets_selection_fp ON public.learning_assets USING btree (user_id, selection_fp) WHERE (deleted_at IS NULL);
 
 
 --

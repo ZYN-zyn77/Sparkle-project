@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/network/api_client.dart';
 import 'package:sparkle/core/network/api_endpoints.dart';
+import 'package:sparkle/core/services/demo_data_service.dart';
 import 'package:sparkle/features/cognitive/data/models/behavior_pattern_model.dart';
 import 'package:sparkle/features/cognitive/data/models/cognitive_fragment_model.dart';
 import 'package:sparkle/features/cognitive/data/repositories/i_cognitive_repository.dart';
@@ -82,11 +83,8 @@ class ApiCognitiveRepository implements ICognitiveRepository {
 }
 
 final cognitiveRepositoryProvider = Provider<ICognitiveRepository>((ref) {
-  // Toggle between Mock and Real API
-  // In production, this should be controlled by environment variables or build flags
-  const useMock = bool.fromEnvironment('USE_MOCK');
-
-  if (useMock) {
+  // Use DemoDataService.isDemoMode for runtime demo mode switching
+  if (DemoDataService.isDemoMode) {
     return MockCognitiveRepository();
   }
 

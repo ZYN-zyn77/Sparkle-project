@@ -1,7 +1,7 @@
 """
 Agent Execution Statistics Models
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import JSON
@@ -38,7 +38,7 @@ class AgentExecutionStats(Base):
     error_message = Column(Text, nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False, index=True)
 
     __table_args__ = (
         Index('ix_agent_stats_user_agent_type', 'user_id', 'agent_type'),

@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,7 +42,7 @@ class GraphStructureService:
             node_id=node.id,
             is_unlocked=True,
             mastery_score=0,
-            first_unlock_at=datetime.utcnow()
+            first_unlock_at=datetime.now(timezone.utc)
         )
         self.db.add(status)
         

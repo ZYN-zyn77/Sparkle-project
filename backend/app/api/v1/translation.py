@@ -2,7 +2,7 @@
 Translation API
 Provides text translation with segmentation, caching, and glossary support
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,7 +73,9 @@ class AssetSuggestion(BaseModel):
     suggest_asset: bool = False
     suggestion_log_id: Optional[str] = None
     selection_fp: Optional[str] = None
-    reason: Optional[str] = None
+    reason: Optional[str] = None  # Legacy field, kept for backward compatibility
+    reason_code: Optional[str] = None  # Structured reason code
+    reason_params: Optional[Dict[str, Any]] = None  # Parameters for reason
 
 
 class TranslateResponse(BaseModel):
@@ -190,12 +192,16 @@ async def translate_text(
                         suggest_asset=True,
                         suggestion_log_id=suggestion_result.get("suggestion_log_id"),
                         selection_fp=suggestion_result.get("selection_fp"),
-                        reason=suggestion_result.get("reason"),
+                        reason=suggestion_result.get("reason"),  # Legacy field
+                        reason_code=suggestion_result.get("reason_code"),
+                        reason_params=suggestion_result.get("reason_params"),
                     )
                 else:
                     asset_suggestion_obj = AssetSuggestion(
                         suggest_asset=False,
-                        reason=suggestion_result.get("reason"),
+                        reason=suggestion_result.get("reason"),  # Legacy field
+                        reason_code=suggestion_result.get("reason_code"),
+                        reason_params=suggestion_result.get("reason_params"),
                     )
 
                 await db.commit()

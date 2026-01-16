@@ -691,8 +691,8 @@ async def search_groups(
         days_remaining = None
         deadline = group_dict.get('deadline')
         if deadline:
-            from datetime import datetime
-            delta = deadline - datetime.utcnow()
+            from datetime import datetime, timezone
+            delta = deadline - datetime.now(timezone.utc)
             days_remaining = max(0, delta.days)
 
         result.append(GroupListItem(

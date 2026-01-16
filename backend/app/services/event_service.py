@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
@@ -41,7 +41,7 @@ class EventService:
         results = []
 
         new_records: List[TrackingEvent] = []
-        now_ms = int(datetime.utcnow().timestamp() * 1000)
+        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
 
         for item in events:
             event_id = item["event_id"]
@@ -67,7 +67,7 @@ class EventService:
                     ts_ms=ts_ms,
                     entities=item.get("entities"),
                     payload=item.get("payload"),
-                    received_at=datetime.utcnow(),
+                    received_at=datetime.now(timezone.utc),
                 )
                 new_records.append(record)
                 results.append({"event_id": event_id, "status": "accepted"})
@@ -109,7 +109,7 @@ class EventService:
         event = await self.get_event(user_id, event_id)
         if not event:
             return False
-        event.deleted_at = datetime.utcnow()
+        event.deleted_at = datetime.now(timezone.utc)
         event.payload = None
         event.entities = None
         await self.db.commit()

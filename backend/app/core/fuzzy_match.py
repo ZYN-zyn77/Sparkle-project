@@ -198,7 +198,8 @@ async def find_provenance(
     file_id: UUID,
     page_no: Optional[int] = None,
     user_id: Optional[UUID] = None,
-    top_k: int = DEFAULT_TOP_K
+    top_k: int = DEFAULT_TOP_K,
+    timeout_ms: int = 200
 ) -> ProvenanceMatch:
     """
     Find provenance for selected text in document chunks.
@@ -206,6 +207,7 @@ async def find_provenance(
     Strategy:
     1. If page_no provided: Query chunks with that page number
     2. Otherwise: Query all chunks for the file (limited to top_k)
+    3. Respect timeout to avoid blocking main thread
 
     Args:
         db: Database session
@@ -214,76 +216,96 @@ async def find_provenance(
         page_no: Page number hint (optional)
         user_id: User UUID for filtering (optional)
         top_k: Maximum candidates to consider
+        timeout_ms: Max time in milliseconds (default: 200)
 
     Returns:
         ProvenanceMatch with best match and all candidates
     """
-    # Build query
-    query = select(DocumentChunk).where(
-        and_(
-            DocumentChunk.file_id == file_id,
-            DocumentChunk.deleted_at.is_(None)
+    import asyncio
+    from datetime import datetime
+    
+    start_time = datetime.now()
+    
+    async def _search():
+        # Build query
+        query = select(DocumentChunk).where(
+            and_(
+                DocumentChunk.file_id == file_id,
+                DocumentChunk.deleted_at.is_(None)
+            )
         )
-    )
 
-    if user_id:
-        query = query.where(DocumentChunk.user_id == user_id)
+        if user_id:
+            query = query.where(DocumentChunk.user_id == user_id)
 
-    # Limit results
-    query = query.limit(top_k * 2)  # Get more candidates for filtering
+        # Limit results
+        query = query.limit(top_k * 2)  # Get more candidates for filtering
 
-    result = await db.execute(query)
-    chunks = result.scalars().all()
+        result = await db.execute(query)
+        chunks = result.scalars().all()
 
-    candidates: List[MatchCandidate] = []
-    search_params = {
-        "file_id": str(file_id),
-        "page_no": page_no,
-        "user_id": str(user_id) if user_id else None,
-        "top_k": top_k,
-        "chunks_searched": len(chunks)
-    }
+        candidates: List[MatchCandidate] = []
+        search_params = {
+            "file_id": str(file_id),
+            "page_no": page_no,
+            "user_id": str(user_id) if user_id else None,
+            "top_k": top_k,
+            "chunks_searched": len(chunks)
+        }
 
-    for chunk in chunks:
-        chunk_pages = chunk.page_numbers or []
+        for chunk in chunks:
+            chunk_pages = chunk.page_numbers or []
 
-        # Skip if page_no specified but chunk doesn't contain that page
-        # (or chunk has no page info when page_no is specified)
-        if page_no is not None:
-            if not chunk_pages or page_no not in chunk_pages:
-                continue
+            # Skip if page_no specified but chunk doesn't contain that page
+            # (or chunk has no page info when page_no is specified)
+            if page_no is not None:
+                if not chunk_pages or page_no not in chunk_pages:
+                    continue
 
-        # Calculate similarity
-        score, matched_text = find_best_substring_match(selected_text, chunk.content)
-        strength = determine_match_strength(score)
+            # Calculate similarity
+            score, matched_text = find_best_substring_match(selected_text, chunk.content)
+            strength = determine_match_strength(score)
 
-        # Only include if score >= WEAK threshold or we have few candidates
-        if score >= WEAK_THRESHOLD or len(candidates) < 3:
-            candidates.append(MatchCandidate(
-                chunk_id=chunk.id,
-                file_id=chunk.file_id,
-                page_numbers=chunk_pages,
-                score=score,
-                match_strength=strength,
-                matched_text=matched_text[:500]  # Truncate for storage
-            ))
+            # Only include if score >= WEAK threshold or we have few candidates
+            if score >= WEAK_THRESHOLD or len(candidates) < 3:
+                candidates.append(MatchCandidate(
+                    chunk_id=chunk.id,
+                    file_id=chunk.file_id,
+                    page_numbers=chunk_pages,
+                    score=score,
+                    match_strength=strength,
+                    matched_text=matched_text[:500]  # Truncate for storage
+                ))
 
-    # Sort by score descending
-    candidates.sort(key=lambda c: c.score, reverse=True)
+        # Sort by score descending
+        candidates.sort(key=lambda c: c.score, reverse=True)
 
-    # Take top_k
-    candidates = candidates[:top_k]
+        # Take top_k
+        candidates = candidates[:top_k]
 
-    # Determine best match
-    best_match = None
-    if candidates and candidates[0].score >= WEAK_THRESHOLD:
-        best_match = candidates[0]
+        # Determine best match
+        best_match = None
+        if candidates and candidates[0].score >= WEAK_THRESHOLD:
+            best_match = candidates[0]
 
-    return ProvenanceMatch(
-        best_match=best_match,
-        all_candidates=candidates,
-        search_params=search_params
-    )
+        return ProvenanceMatch(
+            best_match=best_match,
+            all_candidates=candidates,
+            search_params=search_params
+        )
+
+    try:
+        return await asyncio.wait_for(_search(), timeout=timeout_ms / 1000.0)
+    except asyncio.TimeoutError:
+        return ProvenanceMatch(
+            best_match=None,
+            all_candidates=[],
+            search_params={
+                "file_id": str(file_id),
+                "error": "timeout",
+                "timeout_ms": timeout_ms
+            }
+        )
 
 
 def build_provenance_json(match: ProvenanceMatch) -> Dict[str, Any]:

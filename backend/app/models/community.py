@@ -16,7 +16,7 @@ Community Models - 好友系统、群组、消息、任务、加密、风控
 - OfflineMessageQueue: 离线消息队列
 """
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlalchemy import (
@@ -259,8 +259,8 @@ class GroupMember(BaseModel):
     last_checkin_date = Column(DateTime, nullable=True)
 
     # 时间戳
-    joined_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    last_active_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    joined_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    last_active_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
 
     # 关系
     group = relationship("Group", back_populates="members")
@@ -409,7 +409,7 @@ class GroupTaskClaim(BaseModel):
     completed_at = Column(DateTime, nullable=True)
 
     # 认领时间
-    claimed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    claimed_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
 
     # 关系
     group_task = relationship("GroupTask", back_populates="claims")

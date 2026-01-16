@@ -52,12 +52,109 @@ class TranslationRecommendation {
   }
 }
 
+/// Asset suggestion data with structured reason
+class AssetSuggestion {
+  final bool suggestAsset;
+  final String? suggestionLogId;
+  final String? selectionFp;
+  final String? reason; // Legacy field for backward compatibility
+  final String? reasonCode; // Structured reason code (e.g., "repeated_lookup")
+  final Map<String, dynamic>? reasonParams; // Parameters for reason template
+
+  AssetSuggestion({
+    required this.suggestAsset,
+    this.suggestionLogId,
+    this.selectionFp,
+    this.reason,
+    this.reasonCode,
+    this.reasonParams,
+  });
+
+  factory AssetSuggestion.fromJson(Map<String, dynamic> json) {
+    return AssetSuggestion(
+      suggestAsset: json['suggest_asset'] as bool? ?? false,
+      suggestionLogId: json['suggestion_log_id'] as String?,
+      selectionFp: json['selection_fp'] as String?,
+      reason: json['reason'] as String?,
+      reasonCode: json['reason_code'] as String?,
+      reasonParams: json['reason_params'] as Map<String, dynamic>?,
+    );
+  }
+
+  /// Format reason for display using structured templates
+  String formatReason() {
+    // Use structured reason if available
+    if (reasonCode != null && reasonParams != null) {
+      return _formatReasonFromTemplate(reasonCode!, reasonParams!);
+    }
+    // Fall back to legacy reason parsing
+    return _formatLegacyReason(reason);
+  }
+
+  /// Format reason using template system
+  static String _formatReasonFromTemplate(
+    String code,
+    Map<String, dynamic> params,
+  ) {
+    switch (code) {
+      case 'repeated_lookup':
+        final count = params['lookup_count'] ?? 2;
+        final style = params['template_style']?.toString() ?? 'informative';
+        // A/B test: different template styles
+        if (style == 'encouraging') {
+          return '这个词值得记住！你已经查过 $count 次了';
+        }
+        return '在本次会话中查询了 $count 次';
+      case 'from_same_doc':
+        final page = params['page']?.toString() ?? '';
+        return '来自同一篇文档${page.isNotEmpty ? "第$page页" : ""}';
+      case 'dismissed_recently':
+        final days = params['days']?.toString() ?? '';
+        return '上次忽略是在 $days 天前';
+      case 'lookup_count_below_threshold':
+        return '查询次数不足，继续学习';
+      case 'cooldown_active':
+        return '建议冷却中，稍后再试';
+      case 'already_exists':
+        return '已存在于生词本中';
+      default:
+        return '建议加入生词本';
+    }
+  }
+
+  /// Format legacy reason string (backward compatibility)
+  static String _formatLegacyReason(String? backendReason) {
+    if (backendReason == null) return '建议加入生词本';
+
+    const reasonMap = {
+      'repeated_lookup_2_times': '在本次会话中查询了 2 次',
+      'repeated_lookup_3_times': '在本次会话中查询了 3 次',
+      'lookup_count_below_threshold': '查询次数不足',
+      'cooldown_active_until': '冷却中，稍后再试',
+      'already_exists': '已存在于生词本',
+    };
+
+    for (final key in reasonMap.keys) {
+      if (backendReason.contains(key)) {
+        return reasonMap[key]!;
+      }
+    }
+
+    // Fallback: use the original reason or default message
+    if (backendReason.length > 50) {
+      return '建议加入生词本';
+    }
+    return backendReason.replaceAll('_', ' ');
+  }
+}
+
 /// Translation result
 class TranslationResult {
   final bool success;
   final String translation;
   final List<TranslationSegmentData> segments;
   final TranslationRecommendation? recommendation;
+  final AssetSuggestion? assetSuggestion;
   final Map<String, dynamic> meta;
 
   TranslationResult({
@@ -65,6 +162,7 @@ class TranslationResult {
     required this.translation,
     required this.segments,
     this.recommendation,
+    this.assetSuggestion,
     required this.meta,
   });
 
@@ -78,6 +176,10 @@ class TranslationResult {
       recommendation: json['recommendation'] != null
           ? TranslationRecommendation.fromJson(
               json['recommendation'] as Map<String, dynamic>)
+          : null,
+      assetSuggestion: json['asset_suggestion'] != null
+          ? AssetSuggestion.fromJson(
+              json['asset_suggestion'] as Map<String, dynamic>)
           : null,
       meta: json['meta'] as Map<String, dynamic>,
     );

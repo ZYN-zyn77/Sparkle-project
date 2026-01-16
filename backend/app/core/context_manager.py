@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 import json
 from loguru import logger
@@ -95,7 +95,7 @@ class ContextOrchestrator:
         # Construct Context Object
         context = CognitiveContext(
             user_id=user_id,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             
             knowledge_stats=knowledge_data.get("stats", {}),
             recent_mastery_changes=knowledge_data.get("recent", []),

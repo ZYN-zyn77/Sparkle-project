@@ -79,12 +79,13 @@ class ApiClient {
   Stream<SSEEvent> getStream(
     String path, {
     Map<String, dynamic>? queryParameters,
+    Options? options,
   }) async* {
     try {
       final response = await _dio.get<ResponseBody>(
         path,
         queryParameters: queryParameters,
-        options: Options(
+        options: options ?? Options(
           responseType: ResponseType.stream,
           headers: {
             'Accept': 'text/event-stream',
@@ -208,17 +209,20 @@ class ApiClient {
   SSEEvent? _parseSSEEvent(String eventStr) {
     String? event;
     String? data;
+    String? id;
 
     for (final line in eventStr.split('\n')) {
       if (line.startsWith('event:')) {
         event = line.substring(6).trim();
       } else if (line.startsWith('data:')) {
         data = line.substring(5).trim();
+      } else if (line.startsWith('id:')) {
+        id = line.substring(3).trim();
       }
     }
 
     if (data != null) {
-      return SSEEvent(event: event ?? 'message', data: data);
+      return SSEEvent(event: event ?? 'message', data: data, id: id);
     }
     return null;
   }
@@ -226,9 +230,10 @@ class ApiClient {
 
 /// SSE 事件数据类
 class SSEEvent {
-  SSEEvent({required this.event, required this.data});
+  SSEEvent({required this.event, required this.data, this.id});
   final String event;
   final String data;
+  final String? id;
 
   /// 解析 data 为 JSON Map
   Map<String, dynamic>? get jsonData {

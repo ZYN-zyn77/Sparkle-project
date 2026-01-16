@@ -39,7 +39,7 @@ class _SmartPushSettingsScreenState
     if (user != null && user.pushPreferences != null) {
       final prefs = user.pushPreferences;
       setState(() {
-        _persona = prefs.personaType;
+        _persona = prefs!.personaType;
         _dailyCap = prefs.dailyCap;
         _activeSlots = List.from(prefs.activeSlots ?? []);
       });
