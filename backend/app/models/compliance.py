@@ -5,7 +5,7 @@ Compliance Models
 from sqlalchemy import Column, String, Text, Boolean, DateTime, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.base import BaseModel, GUID
 
@@ -54,7 +54,7 @@ class CryptoShreddingCertificate(BaseModel):
 
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     key_id = Column(String(128), nullable=False)
-    destruction_time = Column(DateTime, default=datetime.utcnow, nullable=False)
+    destruction_time = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     cloud_provider_ack = Column(Text, nullable=True)
     certificate_data = Column(JSONB, nullable=True)
 

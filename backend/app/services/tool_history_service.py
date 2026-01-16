@@ -9,7 +9,7 @@ Tool History Service - 工具执行历史记录和学习服务
 """
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -100,7 +100,7 @@ class ToolHistoryService:
         Returns:
             成功率 (0-100)
         """
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
 
         query = select(
             func.count(UserToolHistory.id).label('total'),
@@ -143,7 +143,7 @@ class ToolHistoryService:
         Returns:
             UserToolPreference列表
         """
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
 
         query = select(
             UserToolHistory.tool_name,
@@ -208,7 +208,7 @@ class ToolHistoryService:
         Returns:
             ToolSuccessRateView: 统计视图
         """
-        since = datetime.utcnow() - timedelta(days=days)
+        since = datetime.now(timezone.utc) - timedelta(days=days)
 
         query = select(
             UserToolHistory.tool_name,
@@ -322,7 +322,7 @@ class ToolHistoryService:
         Returns:
             删除的记录数
         """
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         query = select(UserToolHistory).where(
             UserToolHistory.created_at < cutoff_date

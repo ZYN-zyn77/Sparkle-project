@@ -4,7 +4,7 @@ Idempotency Store - 用于管理幂等性键
 """
 import json
 from typing import Optional, Any, Dict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -46,7 +46,7 @@ class MemoryIdempotencyStore(IdempotencyStore):
         if not data:
             return None
         
-        if datetime.utcnow() > data["expires_at"]:
+        if datetime.now(timezone.utc) > data["expires_at"]:
             del self._cache[key]
             return None
             
@@ -55,7 +55,7 @@ class MemoryIdempotencyStore(IdempotencyStore):
     async def set(self, key: str, value: Dict[str, Any], ttl: int) -> None:
         self._cache[key] = {
             "value": value,
-            "expires_at": datetime.utcnow() + timedelta(seconds=ttl)
+            "expires_at": datetime.now(timezone.utc) + timedelta(seconds=ttl)
         }
 
     async def lock(self, key: str) -> bool:
@@ -182,7 +182,7 @@ class DBIdempotencyStore(IdempotencyStore):
             logger.warning("DB idempotency store skipped: missing user_id")
             return
 
-        expires_at = datetime.utcnow() + timedelta(seconds=ttl)
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl)
         async with AsyncSessionLocal() as db:
             record = IdempotencyKey(
                 key=key,
@@ -202,7 +202,7 @@ class DBIdempotencyStore(IdempotencyStore):
                     await db.commit()
 
     async def lock(self, key: str) -> bool:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires_at = self._local_locks.get(key)
         if expires_at and expires_at > now:
             return False

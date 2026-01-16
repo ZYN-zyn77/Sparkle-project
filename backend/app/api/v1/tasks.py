@@ -3,7 +3,7 @@ Tasks API Endpoints
 """
 from typing import Dict, Any, List, Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Path, Header, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, desc, func
@@ -192,7 +192,7 @@ async def start_task(
         raise NotFoundError(message="Task not found")
         
     task.status = TaskStatus.IN_PROGRESS
-    task.started_at = datetime.utcnow()
+    task.started_at = datetime.now(timezone.utc)
     
     await db.commit()
     await db.refresh(task)
@@ -242,7 +242,7 @@ async def complete_task(
     
     # 更新状态
     task.status = TaskStatus.COMPLETED
-    task.completed_at = datetime.utcnow()
+    task.completed_at = datetime.now(timezone.utc)
     task.actual_minutes = request.actual_minutes
     task.user_note = request.note
     # request.completion_quality is used for stats, ignored in model for now if not in schema

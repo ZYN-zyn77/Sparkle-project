@@ -35,7 +35,7 @@ def test_validate_contract_requires_evidence_and_confidence():
 
 def test_validate_contract_rejects_expired():
     service = InterventionService(db=None)
-    expired = datetime.utcnow()
+    expired = datetime.now(timezone.utc)
     payload = _build_payload(expires_at=expired)
     errors = service.validate_contract(payload)
     assert "expired_request" in errors

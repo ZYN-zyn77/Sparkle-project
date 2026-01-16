@@ -6,7 +6,7 @@ Tool Preference Router - 工具偏好路由
 """
 import uuid
 from typing import List, Dict, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from loguru import logger
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -150,7 +150,7 @@ class ToolPreferenceRouter:
             return True
 
         # 如果距上次失败超过3小时，也值得重试
-        time_since_failure = datetime.utcnow() - last_failure_time
+        time_since_failure = datetime.now(timezone.utc) - last_failure_time
         if time_since_failure > timedelta(hours=3):
             return True
 
@@ -195,7 +195,7 @@ class ToolPreferenceRouter:
         """
         try:
             # 获取最近30天的执行历史
-            since = datetime.utcnow() - timedelta(days=30)
+            since = datetime.now(timezone.utc) - timedelta(days=30)
 
             query = select(UserToolHistory).where(
                 and_(

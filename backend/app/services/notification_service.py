@@ -2,7 +2,7 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate
@@ -46,7 +46,7 @@ class NotificationService:
         notification = result.scalar_one_or_none()
         if notification:
             notification.is_read = True
-            notification.read_at = datetime.utcnow()
+            notification.read_at = datetime.now(timezone.utc)
             await db.commit()
             await db.refresh(notification)
         return notification

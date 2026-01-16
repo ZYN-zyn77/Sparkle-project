@@ -2,7 +2,7 @@
 Tracking Event Models
 Phase 1 unified event schema.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, JSON, DateTime, BigInteger, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -20,6 +20,6 @@ class TrackingEvent(BaseModel):
     ts_ms = Column(BigInteger, nullable=False, index=True)
     entities = Column(JSON, nullable=True)
     payload = Column(JSON, nullable=True)
-    received_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    received_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
 
     user = relationship("User", backref="tracking_events")

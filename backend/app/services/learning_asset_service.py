@@ -9,11 +9,11 @@ Handles:
 - Inbox expiry and status transitions
 """
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, and_, func, text
+from sqlalchemy import select, and_, func, text, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
@@ -33,6 +33,7 @@ from app.core.fingerprint import (
 )
 from app.core.fuzzy_match import find_provenance, build_provenance_json
 from app.core.cache import cache_service
+from app.services.embedding_service import embedding_service
 
 
 # === Configuration ===
@@ -119,7 +120,7 @@ class LearningAssetService:
             "ambiguity_hint": norm_result.ambiguity_hint,
             "norm_version": NORM_VERSION,
             "match_profile": DEFAULT_MATCH_PROFILE,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
         # 3. Try to find provenance if source_file_id provided
@@ -132,6 +133,7 @@ class LearningAssetService:
                     file_id=source_file_id,
                     page_no=page_no,
                     user_id=user_id,
+                    timeout_ms=200,  # Strict timeout for MVP
                 )
                 provenance = build_provenance_json(match_result)
             except Exception as e:
@@ -144,7 +146,7 @@ class LearningAssetService:
         # 4. Set inbox expiry if starting in INBOX
         inbox_expires_at = None
         if initial_status == AssetStatus.INBOX:
-            inbox_expires_at = datetime.utcnow() + timedelta(days=INBOX_EXPIRY_DAYS)
+            inbox_expires_at = datetime.now(timezone.utc) + timedelta(days=INBOX_EXPIRY_DAYS)
 
         # 5. Create asset
         asset = LearningAsset(
@@ -161,7 +163,7 @@ class LearningAssetService:
             snapshot_json=snapshot,
             snapshot_schema_version=1,
             provenance_json=provenance,
-            provenance_updated_at=datetime.utcnow() if provenance else None,
+            provenance_updated_at=datetime.now(timezone.utc) if provenance else None,
             selection_fp=fp_result.selection_fp,
             anchor_fp=fp_result.anchor_fp,
             doc_fp=fp_result.doc_fp,
@@ -328,7 +330,7 @@ class LearningAssetService:
         if existing:
             # Update lookup count
             existing.lookup_count += 1
-            existing.last_seen_at = datetime.utcnow()
+            existing.last_seen_at = datetime.now(timezone.utc)
             await db.flush()
             return {
                 "suggest_asset": False,
@@ -336,13 +338,32 @@ class LearningAssetService:
                 "asset_id": str(existing.id),
             }
 
-        # Increment session lookup counter
+        # Increment session lookup counter (Redis with DB fallback)
         lookup_key = self._session_lookup_key(session_id, selection_fp)
-        lookup_count = await cache_service.incr(lookup_key)
-        await cache_service.expire(lookup_key, SESSION_TTL_HOURS * 3600)
+        lookup_count = 0
+        
+        try:
+            lookup_count = await cache_service.incr(lookup_key)
+            await cache_service.expire(lookup_key, SESSION_TTL_HOURS * 3600)
+        except Exception as e:
+            logger.warning(f"Redis unavailable for lookup count, falling back to DB: {e}")
+            # DB Fallback: Count recent logs for this session/fp
+            # Optimization: We just need to know if it's >= threshold
+            # Since we are about to insert a new log, we count existing ones + 1
+            query = select(func.count(AssetSuggestionLog.id)).where(
+                and_(
+                    AssetSuggestionLog.user_id == user_id,
+                    AssetSuggestionLog.session_id == session_id,
+                    AssetSuggestionLog.evidence_json['selection_fp'].astext == selection_fp,
+                    AssetSuggestionLog.created_at >= datetime.now(timezone.utc) - timedelta(hours=SESSION_TTL_HOURS)
+                )
+            )
+            result = await db.execute(query)
+            db_count = result.scalar() or 0
+            lookup_count = db_count + 1
 
         # Evaluate suggestion
-        should_suggest, decision, reason = await self._evaluate_suggestion(
+        should_suggest, decision, reason_dict = await self._evaluate_suggestion(
             db=db,
             user_id=user_id,
             session_id=session_id,
@@ -362,7 +383,7 @@ class LearningAssetService:
                 "selected_text_preview": selected_text[:100],
             },
             decision=decision.value,
-            decision_reason=reason,
+            decision_reason=reason_dict["display_text"],
         )
         db.add(log)
         await db.flush()
@@ -375,12 +396,16 @@ class LearningAssetService:
                 "selected_text": selected_text,
                 "translation": translation,
                 "source_file_id": str(source_file_id) if source_file_id else None,
-                "reason": reason,
+                "reason": reason_dict["display_text"],  # Legacy field
+                "reason_code": reason_dict["reason_code"],
+                "reason_params": reason_dict["reason_params"],
             }
         else:
             return {
                 "suggest_asset": False,
-                "reason": reason,
+                "reason": reason_dict["display_text"],  # Legacy field
+                "reason_code": reason_dict["reason_code"],
+                "reason_params": reason_dict["reason_params"],
             }
 
     async def _evaluate_suggestion(
@@ -390,7 +415,7 @@ class LearningAssetService:
         session_id: str,
         selection_fp: str,
         lookup_count: int,
-    ) -> Tuple[bool, SuggestionDecision, str]:
+    ) -> Tuple[bool, SuggestionDecision, Dict[str, Any]]:
         """
         Evaluate whether to suggest asset creation.
 
@@ -399,14 +424,19 @@ class LearningAssetService:
         2. Must not be in cooldown
 
         Returns:
-            Tuple of (should_suggest, decision, reason)
+            Tuple of (should_suggest, decision, reason_dict)
+            reason_dict contains: reason_code, reason_params, display_text
         """
         # Check lookup threshold
         if lookup_count < REPEAT_LOOKUP_THRESHOLD:
             return (
                 False,
                 SuggestionDecision.SKIPPED,
-                f"lookup_count_below_threshold ({lookup_count} < {REPEAT_LOOKUP_THRESHOLD})"
+                {
+                    "reason_code": "lookup_count_below_threshold",
+                    "reason_params": {"lookup_count": lookup_count, "threshold": REPEAT_LOOKUP_THRESHOLD},
+                    "display_text": f"lookup_count_below_threshold ({lookup_count} < {REPEAT_LOOKUP_THRESHOLD})"
+                }
             )
 
         # Check cooldown
@@ -417,14 +447,22 @@ class LearningAssetService:
             return (
                 False,
                 SuggestionDecision.NOT_SUGGESTED,
-                f"cooldown_active_until_{cooldown_until}"
+                {
+                    "reason_code": "cooldown_active",
+                    "reason_params": {"cooldown_until": cooldown_until},
+                    "display_text": f"cooldown_active_until_{cooldown_until}"
+                }
             )
 
         # All checks passed
         return (
             True,
             SuggestionDecision.SUGGESTED,
-            f"repeated_lookup_{lookup_count}_times"
+            {
+                "reason_code": "repeated_lookup",
+                "reason_params": {"lookup_count": lookup_count, "threshold": REPEAT_LOOKUP_THRESHOLD},
+                "display_text": f"repeated_lookup_{lookup_count}_times"
+            }
         )
 
     async def record_suggestion_feedback(
@@ -453,12 +491,12 @@ class LearningAssetService:
             raise ValueError("Suggestion log not found or access denied")
 
         log.user_response = response.value
-        log.response_at = datetime.utcnow()
+        log.response_at = datetime.now(timezone.utc)
         log.asset_id = asset_id
 
         # Set cooldown if dismissed
         if response == UserSuggestionResponse.DISMISS:
-            cooldown_until = datetime.utcnow() + timedelta(days=DISMISS_COOLDOWN_DAYS)
+            cooldown_until = datetime.now(timezone.utc) + timedelta(days=DISMISS_COOLDOWN_DAYS)
             log.cooldown_until = cooldown_until
 
             cooldown_key = self._user_cooldown_key(user_id, "suggest_repeat_lookup")
@@ -541,6 +579,74 @@ class LearningAssetService:
         result = await db.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_review_list(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        limit: int = 50,
+    ) -> List[LearningAsset]:
+        """
+        Get assets due for review.
+
+        Args:
+            db: Database session
+            user_id: User UUID
+            limit: Max results
+
+        Returns:
+            List of LearningAsset instances
+        """
+        now = datetime.now(timezone.utc)
+        query = select(LearningAsset).where(
+            and_(
+                LearningAsset.user_id == user_id,
+                LearningAsset.status == AssetStatus.ACTIVE.value,
+                LearningAsset.review_due_at <= now,
+                LearningAsset.deleted_at.is_(None),
+            )
+        ).order_by(LearningAsset.review_due_at.asc()).limit(limit)
+
+        result = await db.execute(query)
+        return list(result.scalars().all())
+
+    async def get_inbox_stats(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+    ) -> Dict[str, Any]:
+        """
+        Get inbox statistics for user.
+        
+        Returns:
+            dict with total_count, expiring_soon_count
+        """
+        now = datetime.now(timezone.utc)
+        soon = now + timedelta(hours=24)
+        
+        query = select(
+            func.count(LearningAsset.id).label("total"),
+            func.sum(
+                case(
+                    (LearningAsset.inbox_expires_at <= soon, 1),
+                    else_=0
+                )
+            ).label("expiring")
+        ).where(
+            and_(
+                LearningAsset.user_id == user_id,
+                LearningAsset.status == AssetStatus.INBOX.value,
+                LearningAsset.deleted_at.is_(None),
+            )
+        )
+        
+        result = await db.execute(query)
+        row = result.one()
+        
+        return {
+            "total_count": row.total or 0,
+            "expiring_soon_count": row.expiring or 0,
+        }
+
     # === Inbox Decay ===
 
     async def process_inbox_expiry(self, db: AsyncSession) -> int:
@@ -552,7 +658,7 @@ class LearningAssetService:
         Returns:
             Number of assets archived
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Find expired inbox items
         query = select(LearningAsset).where(
@@ -621,6 +727,294 @@ class LearningAssetService:
                 "metadata": json.dumps({"service": "learning_asset_service"}),
             }
         )
+
+    # === Spaced Repetition System (SRS) ===
+
+    # Simplified SM-2 inspired intervals (in days)
+    # Based on user self-assessment: easy/good/hard
+    REVIEW_INTERVALS = {
+        'easy': [1, 3, 7, 16, 35, 70],   # Fast progression
+        'good': [1, 2, 5, 10, 21, 45],   # Standard progression
+        'hard': [1, 1, 3, 7, 15, 30],    # Slow progression
+    }
+
+    async def record_review(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        asset_id: UUID,
+        difficulty: str,  # 'easy', 'good', 'hard'
+    ) -> LearningAsset:
+        """
+        Record a review result and schedule next review.
+
+        Implements simplified SM-2 algorithm with three difficulty levels.
+
+        Args:
+            db: Database session
+            user_id: User UUID
+            asset_id: Asset UUID
+            difficulty: User's assessment ('easy', 'good', 'hard')
+
+        Returns:
+            Updated LearningAsset with new review_due_at
+
+        Raises:
+            ValueError: If difficulty is invalid or asset not found
+        """
+        if difficulty not in self.REVIEW_INTERVALS:
+            raise ValueError(f"Invalid difficulty: {difficulty}. Must be 'easy', 'good', or 'hard'")
+
+        # Get asset
+        asset = await db.get(LearningAsset, asset_id)
+        if not asset or asset.user_id != user_id or asset.deleted_at is not None:
+            raise ValueError(f"Asset not found: {asset_id}")
+
+        if asset.status != AssetStatus.ACTIVE.value:
+            raise ValueError(f"Asset is not active: {asset_id}")
+
+        # Get interval based on review count and difficulty
+        intervals = self.REVIEW_INTERVALS[difficulty]
+        interval_index = min(asset.review_count, len(intervals) - 1)
+        days_until_next = intervals[interval_index]
+
+        # Update review statistics
+        now = datetime.now(timezone.utc)
+        asset.review_count += 1
+        asset.last_seen_at = now
+        asset.review_due_at = now + timedelta(days=days_until_next)
+
+        # Update success rate (simple moving average)
+        # easy=1.0, good=0.7, hard=0.3
+        success_score = {'easy': 1.0, 'good': 0.7, 'hard': 0.3}[difficulty]
+        if asset.review_count == 1:
+            asset.review_success_rate = success_score
+        else:
+            # Exponential moving average (alpha=0.3)
+            alpha = 0.3
+            asset.review_success_rate = (
+                alpha * success_score + (1 - alpha) * asset.review_success_rate
+            )
+
+        await db.flush()
+
+        logger.info(
+            f"Review recorded: asset={asset_id}, difficulty={difficulty}, "
+            f"next_review={asset.review_due_at}, count={asset.review_count}"
+        )
+
+        # Write event for audit
+        await self._write_event_outbox(
+            db=db,
+            aggregate_type="learning_asset",
+            aggregate_id=asset_id,
+            event_type="review_recorded",
+            payload={
+                "asset_id": str(asset_id),
+                "user_id": str(user_id),
+                "difficulty": difficulty,
+                "review_count": asset.review_count,
+                "next_review_at": asset.review_due_at.isoformat(),
+                "success_rate": asset.review_success_rate,
+            },
+        )
+
+        return asset
+
+    def calculate_next_review(
+        self,
+        review_count: int,
+        difficulty: str,
+    ) -> int:
+        """
+        Calculate days until next review (pure function for testing).
+
+        Args:
+            review_count: Current number of successful reviews
+            difficulty: User's assessment ('easy', 'good', 'hard')
+
+        Returns:
+            Number of days until next review
+        """
+        if difficulty not in self.REVIEW_INTERVALS:
+            raise ValueError(f"Invalid difficulty: {difficulty}")
+
+        intervals = self.REVIEW_INTERVALS[difficulty]
+        interval_index = min(review_count, len(intervals) - 1)
+        return intervals[interval_index]
+
+    # === Semantic Search ===
+
+    async def generate_asset_embedding(
+        self,
+        db: AsyncSession,
+        asset: LearningAsset,
+    ) -> bool:
+        """
+        Generate and store embedding for an asset.
+
+        Uses the headword + definition + translation for semantic representation.
+        Gracefully degrades if embedding service is unavailable.
+
+        Args:
+            db: Database session
+            asset: LearningAsset to generate embedding for
+
+        Returns:
+            True if embedding was generated, False otherwise
+        """
+        try:
+            # Build text for embedding
+            parts = [asset.headword]
+            if asset.definition:
+                parts.append(asset.definition)
+            if asset.translation:
+                parts.append(asset.translation)
+            text = " ".join(parts)
+
+            # Generate embedding
+            embedding = await embedding_service.get_embedding(text)
+
+            # Store embedding
+            asset.embedding = embedding
+            asset.embedding_updated_at = datetime.now(timezone.utc)
+            await db.flush()
+
+            logger.debug(f"Generated embedding for asset {asset.id}")
+            return True
+
+        except Exception as e:
+            logger.warning(f"Failed to generate embedding for asset {asset.id}: {e}")
+            return False
+
+    async def semantic_search(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        query: str,
+        limit: int = 20,
+        status: Optional[AssetStatus] = None,
+    ) -> List[LearningAsset]:
+        """
+        Search assets using semantic similarity.
+
+        Falls back to text matching if embedding service is unavailable.
+
+        Args:
+            db: Database session
+            user_id: User UUID
+            query: Search query
+            limit: Maximum results
+            status: Optional status filter
+
+        Returns:
+            List of matching assets, ordered by relevance
+        """
+        try:
+            # Generate query embedding
+            query_embedding = await embedding_service.get_embedding(query)
+
+            # Build conditions
+            conditions = [
+                LearningAsset.user_id == user_id,
+                LearningAsset.deleted_at.is_(None),
+                LearningAsset.embedding.isnot(None),
+            ]
+            if status:
+                conditions.append(LearningAsset.status == status.value)
+
+            # Semantic search using cosine distance
+            # pgvector uses <=> for cosine distance (lower = more similar)
+            query = select(LearningAsset).where(
+                and_(*conditions)
+            ).order_by(
+                LearningAsset.embedding.cosine_distance(query_embedding)
+            ).limit(limit)
+
+            result = await db.execute(query)
+            return list(result.scalars().all())
+
+        except Exception as e:
+            logger.warning(f"Semantic search failed, falling back to text search: {e}")
+            return await self._fallback_text_search(db, user_id, query, limit, status)
+
+    async def _fallback_text_search(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        query: str,
+        limit: int,
+        status: Optional[AssetStatus] = None,
+    ) -> List[LearningAsset]:
+        """
+        Fallback text search using ILIKE.
+
+        Used when embedding service is unavailable.
+        """
+        conditions = [
+            LearningAsset.user_id == user_id,
+            LearningAsset.deleted_at.is_(None),
+        ]
+        if status:
+            conditions.append(LearningAsset.status == status.value)
+
+        # Text search on headword and definition
+        search_pattern = f"%{query}%"
+        text_conditions = [
+            LearningAsset.headword.ilike(search_pattern),
+            LearningAsset.definition.ilike(search_pattern),
+            LearningAsset.translation.ilike(search_pattern),
+        ]
+
+        from sqlalchemy import or_
+        query_stmt = select(LearningAsset).where(
+            and_(*conditions, or_(*text_conditions))
+        ).order_by(LearningAsset.updated_at.desc()).limit(limit)
+
+        result = await db.execute(query_stmt)
+        return list(result.scalars().all())
+
+    async def batch_generate_embeddings(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        batch_size: int = 50,
+    ) -> int:
+        """
+        Generate embeddings for assets that don't have them.
+
+        Called by background task to backfill embeddings.
+
+        Args:
+            db: Database session
+            user_id: User UUID
+            batch_size: Number of assets to process
+
+        Returns:
+            Number of embeddings generated
+        """
+        # Find assets without embeddings
+        query = select(LearningAsset).where(
+            and_(
+                LearningAsset.user_id == user_id,
+                LearningAsset.embedding.is_(None),
+                LearningAsset.deleted_at.is_(None),
+            )
+        ).limit(batch_size)
+
+        result = await db.execute(query)
+        assets = list(result.scalars().all())
+
+        count = 0
+        for asset in assets:
+            success = await self.generate_asset_embedding(db, asset)
+            if success:
+                count += 1
+
+        if count > 0:
+            logger.info(f"Generated {count} embeddings for user {user_id}")
+
+        return count
 
 
 # Singleton instance

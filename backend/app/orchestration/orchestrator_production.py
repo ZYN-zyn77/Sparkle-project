@@ -16,7 +16,7 @@ import json
 import asyncio
 import time
 from typing import AsyncGenerator, List, Dict, Optional, Any, Set
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from loguru import logger
@@ -479,7 +479,7 @@ class ProductionChatOrchestrator:
     ):
         """结构化日志"""
         log_data = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "session_id": session_id,
             "request_id": request_id,
             "user_id": user_id,

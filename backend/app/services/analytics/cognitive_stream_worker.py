@@ -2,7 +2,7 @@ import asyncio
 import hashlib
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from uuid import UUID
 
@@ -92,7 +92,7 @@ class CognitiveStreamWorker:
         await self.event_bus.subscribe(
             stream=self.STREAM_NAME,
             group_name=self.GROUP_NAME,
-            consumer_name=f"consumer-{datetime.utcnow().timestamp()}",
+            consumer_name=f"consumer-{datetime.now(timezone.utc).timestamp()}",
             callback=self.handle_event
         )
 
@@ -110,7 +110,7 @@ class CognitiveStreamWorker:
         if ts_ms is None:
             return
         try:
-            lag_seconds = max(0.0, (datetime.utcnow().timestamp() * 1000 - float(ts_ms)) / 1000.0)
+            lag_seconds = max(0.0, (datetime.now(timezone.utc).timestamp() * 1000 - float(ts_ms)) / 1000.0)
         except (TypeError, ValueError):
             return
         EVENT_STREAM_LAG.labels(stream=self.STREAM_NAME).set(lag_seconds)
@@ -227,7 +227,7 @@ class CognitiveStreamWorker:
         payload = {
             "event": event,
             "error": error,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await self.redis.xadd(self.DLQ_STREAM, {"data": json.dumps(payload)})
 

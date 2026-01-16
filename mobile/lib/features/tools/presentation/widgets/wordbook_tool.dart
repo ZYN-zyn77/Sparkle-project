@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/design/widgets/custom_button.dart';
 import 'package:sparkle/features/knowledge/presentation/providers/vocabulary_provider.dart';
+import 'package:sparkle/features/knowledge/presentation/widgets/inbox_list.dart';
 
 /// 生词本工具 - 查看和复习生词
 class WordbookTool extends ConsumerStatefulWidget {
@@ -25,7 +26,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     // 获取复习列表
     ref.read(vocabularyProvider.notifier).fetchReviewList();
   }
@@ -171,6 +172,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
               unselectedLabelColor: DS.neutral500,
               dividerColor: Colors.transparent,
               tabs: const [
+                Tab(text: '待办箱'),
                 Tab(text: '待复习'),
                 Tab(text: '全部'),
               ],
@@ -185,6 +187,7 @@ class _WordbookToolState extends ConsumerState<WordbookTool>
                 : TabBarView(
                     controller: _tabController,
                     children: [
+                      const InboxList(),
                       _buildReviewList(state.reviewList),
                       _buildAllWords(state.wordbook),
                     ],

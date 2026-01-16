@@ -8,7 +8,7 @@ import json
 import hashlib
 import asyncio
 from typing import Optional, Dict, Any, List, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from loguru import logger
 import numpy as np
 
@@ -67,7 +67,7 @@ class SemanticCacheService:
                 "total_misses": 0,
                 "total_sets": 0,
                 "semantic_hits": 0,
-                "start_time": datetime.utcnow().isoformat()
+                "start_time": datetime.now(timezone.utc).isoformat()
             }
             await self.redis.hset(self.STATS_KEY, mapping={
                 k: json.dumps(v) for k, v in stats.items()
@@ -133,7 +133,7 @@ class SemanticCacheService:
             "embedding": embedding,
             "user_id": user_id,
             "normalized_query": normalized_query,
-            "updated_at": datetime.utcnow().isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat()
         }
         await self.redis.setex(emb_key, ttl, json.dumps(payload))
         await self.redis.sadd(self.KEY_SET, cache_key)
@@ -364,7 +364,7 @@ class SemanticCacheService:
                 "query": query,
                 "normalized_query": normalized_query,
                 "user_id": user_id,
-                "cached_at": datetime.utcnow().isoformat(),
+                "cached_at": datetime.now(timezone.utc).isoformat(),
             }
 
             # 序列化并存储

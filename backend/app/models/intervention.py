@@ -2,7 +2,7 @@
 Intervention Models
 Phase 0: Contract, guardrails, audit, and feedback storage.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, Boolean, JSON, ForeignKey, Integer, Float
 from sqlalchemy.orm import relationship
 
@@ -63,7 +63,7 @@ class InterventionAuditLog(BaseModel):
     model_version = Column(String(80), nullable=True)
     schema_version = Column(String(50), nullable=True)
 
-    occurred_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    occurred_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), index=True)
 
     request = relationship("InterventionRequest", back_populates="audits")
 

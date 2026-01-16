@@ -7,7 +7,7 @@ Agent Stats Integration Test
 3. 验证数据准确性
 """
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 import sys
@@ -97,7 +97,7 @@ async def test_agent_stats_integration():
         ]
 
         for i, case in enumerate(test_cases):
-            start_time = datetime.utcnow() - timedelta(seconds=case['duration'] / 1000)
+            start_time = datetime.now(timezone.utc) - timedelta(seconds=case['duration'] / 1000)
             end_time = start_time + timedelta(milliseconds=case['duration'])
 
             await service.record_agent_execution(

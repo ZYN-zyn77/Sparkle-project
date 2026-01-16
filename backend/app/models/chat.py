@@ -4,7 +4,7 @@ ChatMessage Model - 用户与AI的对话记录
 """
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Text, Enum, ForeignKey, Index, JSON, Boolean, Float
 from sqlalchemy.orm import relationship
 
@@ -43,7 +43,7 @@ class ChatMessage(BaseModel):
     # Partitioning Support: Primary Key must include partition key
     # Note: We override the fields inherited from BaseModel to include primary_key=True
     id = Column(GUID(), primary_key=True, default=uuid.uuid4, nullable=False)
-    created_at = Column(DateTime, primary_key=True, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, primary_key=True, default=datetime.now(timezone.utc), nullable=False)
 
     # 关联关系
     user_id = Column(GUID(), ForeignKey("users.id"), nullable=False, index=True)

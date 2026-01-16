@@ -3,7 +3,7 @@ Learning Assets Models (学习资产模型)
 Represents user's vocabulary, sentences, and concepts collected from translation lookups.
 """
 import enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy import (
     Column, String, Text, Integer, Float, Boolean,
@@ -11,6 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
 
 from app.models.base import BaseModel, HardDeleteBaseModel, GUID
 
@@ -86,6 +87,10 @@ class LearningAsset(BaseModel):
     review_success_rate = Column(Float, default=0.0, nullable=False)  # 0.0 - 1.0
     last_seen_at = Column(DateTime, nullable=True)
 
+    # === Semantic Search ===
+    embedding = Column(Vector(1536), nullable=True)  # For semantic search
+    embedding_updated_at = Column(DateTime, nullable=True)
+
     # === Statistics ===
     lookup_count = Column(Integer, default=1, nullable=False)  # Times looked up
     star_count = Column(Integer, default=0, nullable=False)    # User stars/favorites
@@ -114,13 +119,13 @@ class LearningAsset(BaseModel):
             return False
         if self.inbox_expires_at is None:
             return False
-        return datetime.utcnow() > self.inbox_expires_at
+        return datetime.now(timezone.utc) > self.inbox_expires_at
 
     def activate(self) -> None:
         """Move from INBOX to ACTIVE status"""
         self.status = AssetStatus.ACTIVE.value
         self.inbox_expires_at = None
-        self.review_due_at = datetime.utcnow()  # Start review scheduling
+        self.review_due_at = datetime.now(timezone.utc)  # Start review scheduling
 
     def archive(self) -> None:
         """Archive the asset"""

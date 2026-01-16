@@ -375,6 +375,33 @@ def visualize_graph(self, user_id: str, graph_data: dict):
         raise self.retry(exc=exc, countdown=2 ** self.request.retries)
 
 
+@celery_app.task(bind=True, name="process_inbox_decay")
+def process_inbox_decay(self):
+    """
+    清理过期的收件箱资产 (定时任务)
+    """
+    import asyncio
+    from app.db.session import AsyncSessionLocal
+    from app.services.learning_asset_service import learning_asset_service
+    from loguru import logger
+
+    async def _process():
+        async with AsyncSessionLocal() as session:
+            try:
+                count = await learning_asset_service.process_inbox_expiry(session)
+                await session.commit()
+                logger.info(f"✅ Processed inbox decay: archived {count} assets")
+                return {"status": "success", "archived_count": count}
+            except Exception as e:
+                logger.error(f"❌ Failed to process inbox decay: {e}")
+                raise
+
+    try:
+        return asyncio.run(_process())
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=60)
+
+
 # =============================================================================
 # 任务监控装饰器
 # =============================================================================

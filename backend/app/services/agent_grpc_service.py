@@ -4,7 +4,7 @@ AgentService gRPC Implementation
 """
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from typing import AsyncIterator, Callable
 
 import grpc
@@ -220,7 +220,7 @@ class AgentServiceImpl(agent_service_pb2_grpc.AgentServiceServicer):
                 context.set_details("user_id is required")
                 return agent_service_pb2.WeeklyReport()
 
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
             start_date = end_date - timedelta(days=7)
 
             async with self.db_session_factory() as db_session:

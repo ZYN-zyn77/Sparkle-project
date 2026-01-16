@@ -533,7 +533,7 @@ async def get_user_context(db: AsyncSession, user_id: UUID) -> dict:
     获取用户上下文信息
     为 LLM 提供用户的学习状态，帮助其做出更个性化的决策
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from app.models.task import Task
     from app.models.plan import Plan
     from app.models.knowledge import UserNodeStatus
@@ -569,7 +569,7 @@ async def get_user_context(db: AsyncSession, user_id: UUID) -> dict:
             }
 
         # 2. 获取近期任务（最近7天）
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
         tasks_stmt = (
             select(Task)
             .where(

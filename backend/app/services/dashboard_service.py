@@ -1,7 +1,7 @@
 
 from uuid import UUID
 from typing import Dict, Any, List, Optional
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, and_, func
 
@@ -129,7 +129,7 @@ class DashboardService:
         latest_pattern = result.scalar_one_or_none()
 
         # Check if there are new patterns created in last 24 hours
-        yesterday = datetime.utcnow() - timedelta(days=1)
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
         new_pattern_query = select(func.count(BehaviorPattern.id)).where(
             and_(
                 BehaviorPattern.user_id == user_id,
@@ -160,7 +160,7 @@ class DashboardService:
 
     async def _get_recent_anxiety_level(self, user_id: UUID) -> float:
         """Check recent cognitive fragments for anxiety"""
-        two_days_ago = datetime.utcnow() - timedelta(days=2)
+        two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
 
         query = select(CognitiveFragment).where(
             and_(
@@ -197,7 +197,7 @@ class DashboardService:
                 condition = "势头正旺"
 
         # 2. Check recent study records (if no task completed for 2 days -> cloudy)
-        two_days_ago = datetime.utcnow() - timedelta(days=2)
+        two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
         recent_task_query = select(func.count(Task.id)).where(
             and_(
                 Task.user_id == user_id,

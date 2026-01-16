@@ -349,8 +349,8 @@ class UserService:
             if not user:
                 return False
 
-            from datetime import datetime
-            user.last_login_at = datetime.utcnow()
+            from datetime import datetime, timedelta, timezone
+            user.last_login_at = datetime.now(timezone.utc)
             await self.db.commit()
             logger.debug(f"Updated last login for user {user_id}")
             return True

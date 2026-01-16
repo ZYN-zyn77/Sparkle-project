@@ -5,7 +5,7 @@
 import json
 from uuid import UUID
 from typing import List, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -71,7 +71,7 @@ class ExpansionService:
     async def _should_expand(self, node_id: UUID, user_id: UUID) -> bool:
         """检查是否应该触发拓展"""
         # 检查最近是否已拓展过
-        cooldown_time = datetime.utcnow() - timedelta(hours=self.EXPANSION_COOLDOWN_HOURS)
+        cooldown_time = datetime.now(timezone.utc) - timedelta(hours=self.EXPANSION_COOLDOWN_HOURS)
 
         query = select(NodeExpansionQueue).where(
             and_(
@@ -192,7 +192,7 @@ class ExpansionService:
             queue_item.expanded_nodes = json.dumps([
                 {"id": str(n.id), "name": n.name} for n in new_nodes
             ], ensure_ascii=False)
-            queue_item.processed_at = datetime.utcnow()
+            queue_item.processed_at = datetime.now(timezone.utc)
             await self.db.commit()
 
             return new_nodes

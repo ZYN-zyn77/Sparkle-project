@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from app.models.event import TrackingEvent
@@ -12,15 +12,15 @@ def _event(event_type, payload=None, received_at=None):
         event_type=event_type,
         schema_version="event.v1",
         source="test",
-        ts_ms=int(datetime.utcnow().timestamp() * 1000),
+        ts_ms=int(datetime.now(timezone.utc).timestamp() * 1000),
         entities=None,
         payload=payload or {},
-        received_at=received_at or datetime.utcnow(),
+        received_at=received_at or datetime.now(timezone.utc),
     )
 
 
 def test_compute_state_focus_and_wrong_events():
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events = [
         _event("focus_start", received_at=now - timedelta(minutes=10)),
         _event("question_submit", payload={"correct": False}, received_at=now - timedelta(minutes=5)),

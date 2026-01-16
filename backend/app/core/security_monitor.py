@@ -11,7 +11,7 @@ Security Monitoring Service
 import asyncio
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from uuid import UUID
 from dataclasses import dataclass, asdict
@@ -63,7 +63,7 @@ class SecurityEvent:
 
     def __post_init__(self):
         if self.timestamp is None:
-            self.timestamp = datetime.utcnow()
+            self.timestamp = datetime.now(timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
@@ -123,7 +123,7 @@ class SecurityMonitor:
                 ip_address=ip_address,
                 user_agent=user_agent,
                 success=success,
-                attempted_at=datetime.utcnow()
+                attempted_at=datetime.now(timezone.utc)
             )
             db.add(login_attempt)
             await db.commit()
@@ -316,7 +316,7 @@ class SecurityMonitor:
     ) -> Dict[str, Any]:
         """获取安全统计信息"""
         try:
-            since_time = datetime.utcnow() - timedelta(hours=hours)
+            since_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
             # 查询失败登录次数
             failed_logins_stmt = select(func.count(LoginAttempt.id)).where(
@@ -592,7 +592,7 @@ class SecurityMonitor:
         try:
             # 检查审计日志是否完整
             stmt = select(func.count(SecurityAuditLog.id)).where(
-                SecurityAuditLog.timestamp >= datetime.utcnow() - timedelta(hours=24)
+                SecurityAuditLog.timestamp >= datetime.now(timezone.utc) - timedelta(hours=24)
             )
             result = await db.execute(stmt)
             count = result.scalar() or 0

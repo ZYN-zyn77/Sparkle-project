@@ -3,7 +3,7 @@ Base Model Classes
 所有数据库模型的基类
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, TypeVar, Type
 
 from sqlalchemy import Column, DateTime, String, select, and_
@@ -70,7 +70,7 @@ class SoftDeleteMixin:
 
     def soft_delete(self) -> None:
         """标记记录为已删除"""
-        self.deleted_at = datetime.utcnow()
+        self.deleted_at = datetime.now(timezone.utc)
 
     def restore(self) -> None:
         """恢复已删除的记录"""
@@ -102,11 +102,11 @@ class BaseModel(SoftDeleteMixin, Base):
         default=uuid.uuid4,
         nullable=False,
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
         nullable=False,
     )
 
@@ -204,11 +204,11 @@ class HardDeleteBaseModel(Base):
         default=uuid.uuid4,
         nullable=False,
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
         nullable=False,
     )
 

@@ -12,7 +12,7 @@ Advanced Community Service - 加密、风控、搜索、离线队列等
 - BroadcastService: 跨群广播
 """
 from typing import Optional, List, Dict, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 import re
 
@@ -61,7 +61,7 @@ class EncryptionService:
             key_type=data.key_type,
             device_id=data.device_id,
             is_active=True,
-            expires_at=datetime.utcnow() + timedelta(days=365)  # 1年有效期
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365)  # 1年有效期
         )
         db.add(key)
         await db.flush()
@@ -80,7 +80,7 @@ class EncryptionService:
                 UserEncryptionKey.is_active == True,
                 or_(
                     UserEncryptionKey.expires_at == None,
-                    UserEncryptionKey.expires_at > datetime.utcnow()
+                    UserEncryptionKey.expires_at > datetime.now(timezone.utc)
                 )
             )
         )
@@ -144,7 +144,7 @@ class ModerationService:
             raise ValueError("群组不存在")
 
         group.announcement = data.announcement
-        group.announcement_updated_at = datetime.utcnow()
+        group.announcement_updated_at = datetime.now(timezone.utc)
         await db.flush()
         return group
 
@@ -206,7 +206,7 @@ class ModerationService:
             raise ValueError("只有群主可以禁言管理员")
 
         target.is_muted = True
-        target.mute_until = datetime.utcnow() + timedelta(minutes=data.duration_minutes)
+        target.mute_until = datetime.now(timezone.utc) + timedelta(minutes=data.duration_minutes)
         await db.flush()
         return target
 
@@ -342,7 +342,7 @@ class ReportService:
         report.status = data.status
         report.action_taken = data.action_taken
         report.reviewed_by = reviewer_id
-        report.reviewed_at = datetime.utcnow()
+        report.reviewed_at = datetime.now(timezone.utc)
         await db.flush()
         return report
 
@@ -696,7 +696,7 @@ class OfflineQueueService:
             target_id=target_id,
             payload=payload,
             status=OfflineMessageStatus.PENDING,
-            expires_at=datetime.utcnow() + timedelta(hours=expires_in_hours)
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
         )
         db.add(message)
         await db.flush()
@@ -716,7 +716,7 @@ class OfflineQueueService:
                 OfflineMessageQueue.status == OfflineMessageStatus.PENDING,
                 or_(
                     OfflineMessageQueue.expires_at == None,
-                    OfflineMessageQueue.expires_at > datetime.utcnow()
+                    OfflineMessageQueue.expires_at > datetime.now(timezone.utc)
                 )
             ).order_by(OfflineMessageQueue.created_at.asc()).limit(limit)
         )
@@ -756,7 +756,7 @@ class OfflineQueueService:
         message.status = OfflineMessageStatus.FAILED
         message.error_message = error
         message.retry_count += 1
-        message.last_retry_at = datetime.utcnow()
+        message.last_retry_at = datetime.now(timezone.utc)
         await db.flush()
         return True
 
@@ -793,7 +793,7 @@ class OfflineQueueService:
         result = await db.execute(
             update(OfflineMessageQueue).where(
                 OfflineMessageQueue.status == OfflineMessageStatus.PENDING,
-                OfflineMessageQueue.expires_at < datetime.utcnow()
+                OfflineMessageQueue.expires_at < datetime.now(timezone.utc)
             ).values(status=OfflineMessageStatus.EXPIRED)
         )
         return result.rowcount

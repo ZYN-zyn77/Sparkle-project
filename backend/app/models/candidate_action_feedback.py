@@ -4,7 +4,7 @@ Candidate Action Feedback Model
 Tracks user feedback on predicted candidate actions for learning loop.
 Enables daily analysis to calibrate signal thresholds and improve predictions.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -33,8 +33,8 @@ class CandidateActionFeedback(Base):
     executed = Column(Boolean, nullable=False, default=False)  # Was action actually executed
     completion_result = Column(JSONB, nullable=True)  # Result of executed action (if any)
     context_snapshot = Column(JSONB, nullable=False)  # ContextEnvelope at time of feedback
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships

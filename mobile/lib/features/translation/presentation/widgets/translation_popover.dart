@@ -1,9 +1,10 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sparkle/core/design/design_system.dart';
 import 'package:sparkle/core/network/api_client.dart';
 import 'package:sparkle/features/translation/data/services/translation_service.dart';
-import 'package:sparkle/features/translation/data/services/knowledge_integration_service.dart';
 
 /// Lightweight popover for word/phrase translation
 ///
@@ -41,6 +42,10 @@ class _TranslationPopoverState extends ConsumerState<TranslationPopover> {
   String? _errorMessage;
   bool _isSaving = false;
   bool _saved = false;
+
+  // Suggestion tracking
+  bool _suggestionResponded = false;
+  bool _suggestionAccepted = false;
 
   @override
   void initState() {
@@ -89,29 +94,55 @@ class _TranslationPopoverState extends ConsumerState<TranslationPopover> {
 
     try {
       final apiClient = ref.read(apiClientProvider);
-      final knowledgeService = KnowledgeIntegrationService(apiClient.dio);
 
-      final result = await knowledgeService.createVocabularyNode(
-        sourceText: widget.sourceText,
-        translation: _result!.translation,
-        context: widget.readingContext ?? widget.sourceText,
-        sourceUrl: widget.sourceUrl,
-        sourceDocumentId: widget.sourceDocumentId,
-        language: widget.sourceLang,
-        domain: widget.domain,
+      // Create learning asset
+      final assetResponse = await apiClient.post<dynamic>(
+        '/assets',
+        data: {
+          'selected_text': widget.sourceText,
+          'translation': _result!.translation,
+          'definition': widget.readingContext ?? widget.sourceText,
+          'source_file_id': widget.sourceDocumentId,
+          'language_code': widget.sourceLang,
+          'asset_kind': 'WORD',
+          'activate_immediately': false, // Create to INBOX first
+        },
       );
 
-      if (result != null && result.success) {
+      if (assetResponse.statusCode == 200) {
+        // Record feedback if this was from a suggestion
+        if (_result?.assetSuggestion?.suggestAsset == true &&
+            _result?.assetSuggestion?.suggestionLogId != null) {
+          try {
+            await apiClient.post<dynamic>(
+              '/assets/suggestions/feedback',
+              data: {
+                'suggestion_log_id': _result!.assetSuggestion!.suggestionLogId,
+                'response': 'ACCEPT',
+                'asset_id': assetResponse.data['id'],
+              },
+            );
+          } catch (e) {
+            // Feedback recording is non-critical, log but don't fail
+            debugPrint('Failed to record suggestion feedback: $e');
+          }
+        }
+
         if (mounted) {
           setState(() {
             _saved = true;
             _isSaving = false;
+            // Mark suggestion as accepted if it was from a suggestion
+            if (_result?.assetSuggestion?.suggestAsset == true) {
+              _suggestionResponded = true;
+              _suggestionAccepted = true;
+            }
           });
 
           // Show success feedback
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✅ 已加入生词卡，24小时后复习'),
+              content: Text('✅ 已存入待办箱，请在7天内开始学习'),
               duration: Duration(seconds: 2),
             ),
           );
@@ -230,6 +261,35 @@ class _TranslationPopoverState extends ConsumerState<TranslationPopover> {
     }
   }
 
+  Future<void> _dismissSuggestion() async {
+    if (_result?.assetSuggestion?.suggestionLogId == null) return;
+
+    setState(() {
+      _suggestionResponded = true;
+      _suggestionAccepted = false;
+    });
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await apiClient.post<dynamic>(
+        '/assets/suggestions/feedback',
+        data: {
+          'suggestion_log_id': _result!.assetSuggestion!.suggestionLogId,
+          'response': 'DISMISS',
+        },
+      );
+      debugPrint('Suggestion dismissed');
+    } catch (e) {
+      debugPrint('Failed to dismiss suggestion: $e');
+      // Don't revert state on error - UI should reflect user's intent
+    }
+  }
+
+  /// Delegates to AssetSuggestion.formatReason() for structured reason handling
+  String _formatReason(AssetSuggestion suggestion) {
+    return suggestion.formatReason();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -271,31 +331,37 @@ class _TranslationPopoverState extends ConsumerState<TranslationPopover> {
           else
             _buildTranslation(),
 
-          // Actions: Save buttons
+          // Actions: Save buttons or suggestion
           if (_result != null) ...[
             const SizedBox(height: DS.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  icon: Icon(
-                    _saved ? Icons.bookmark : Icons.bookmark_add_outlined,
-                    size: 16,
-                  ),
-                  label: Text(
-                    _saved ? '已保存' : (_isSaving ? '保存中...' : '生词卡'),
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  onPressed: _saved || _isSaving ? null : _saveToKnowledgeGraph,
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DS.sm,
-                      vertical: 4,
+            // Show suggestion card if we have a suggestion and haven't responded yet
+            if (_result!.assetSuggestion?.suggestAsset == true &&
+                !_suggestionResponded &&
+                !_saved)
+              _buildSuggestionCard()
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    icon: Icon(
+                      _saved ? Icons.bookmark : Icons.bookmark_add_outlined,
+                      size: 16,
+                    ),
+                    label: Text(
+                      _saved ? '已保存' : (_isSaving ? '保存中...' : '生词卡'),
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    onPressed: _saved || _isSaving ? null : _saveToKnowledgeGraph,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: DS.sm,
+                        vertical: 4,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ],
       ),
@@ -328,6 +394,84 @@ class _TranslationPopoverState extends ConsumerState<TranslationPopover> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSuggestionCard() {
+    final suggestion = _result!.assetSuggestion!;
+    final reason = _formatReason(suggestion);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: DS.sm),
+      padding: const EdgeInsets.all(DS.sm),
+      decoration: BoxDecoration(
+        color: DS.brandPrimary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: DS.brandPrimary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  '💡 建议加入生词本',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: DS.brandPrimary,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                onPressed: _dismissSuggestion,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                iconSize: 16,
+              ),
+            ],
+          ),
+          Text(
+            reason,
+            style: TextStyle(
+              fontSize: 12,
+              color: DS.neutral600,
+            ),
+          ),
+          const SizedBox(height: DS.xs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: _dismissSuggestion,
+                style: TextButton.styleFrom(
+                  foregroundColor: DS.neutral500,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('忽略', style: TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _saveToKnowledgeGraph,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: DS.brandPrimary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('加入待办箱', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

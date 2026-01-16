@@ -7,7 +7,7 @@ while enforcing guardrails to prevent over-intervention.
 """
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import random
 from loguru import logger
 
@@ -202,7 +202,7 @@ class CandidateGenerationService:
         template = templates.get(action_type, templates["review"])
 
         # Generate unique ID
-        candidate_id = f"ca_{int(datetime.utcnow().timestamp() * 1000)}"
+        candidate_id = f"ca_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
 
         return CandidateAction(
             id=candidate_id,
@@ -301,7 +301,7 @@ class CandidateGenerationService:
         Returns:
             Number of interventions today
         """
-        today = datetime.utcnow().date().isoformat()
+        today = datetime.now(timezone.utc).date().isoformat()
         key = f"daily_interventions:{user_id}:{today}"
         count = await cache_service.get(key)
         return int(count) if count else 0
@@ -314,7 +314,7 @@ class CandidateGenerationService:
             user_id: User identifier
             count: Number to increment by
         """
-        today = datetime.utcnow().date().isoformat()
+        today = datetime.now(timezone.utc).date().isoformat()
         key = f"daily_interventions:{user_id}:{today}"
         current = await self._get_daily_intervention_count(user_id)
         new_count = current + count

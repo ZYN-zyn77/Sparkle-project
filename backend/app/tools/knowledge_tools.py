@@ -89,7 +89,7 @@ class CreateKnowledgeNodeTool(BaseTool):
                     "summary": node.description,
                     "tags": node.keywords,
                     "mastery_level": 0, # Initial mastery
-                    "created_at": datetime.utcnow().isoformat() if not hasattr(node, 'created_at') else node.created_at.isoformat()
+                    "created_at": datetime.now(timezone.utc).isoformat() if not hasattr(node, 'created_at') else node.created_at.isoformat()
                 }
             )
         except Exception as e:
@@ -100,7 +100,7 @@ class CreateKnowledgeNodeTool(BaseTool):
                 suggestion="创建知识节点失败，请检查参数"
             )
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 class QueryKnowledgeTool(BaseTool):
     """查询知识图谱（LLM 先看再动）"""

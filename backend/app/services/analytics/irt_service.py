@@ -1,5 +1,5 @@
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -35,7 +35,7 @@ class IRTService:
         p = self._prob(ability.theta, item.a, item.b, item.c)
         gradient = (1.0 if correct else 0.0) - p
         ability.theta += self.lr * gradient
-        ability.last_updated_at = datetime.utcnow()
+        ability.last_updated_at = datetime.now(timezone.utc)
         await self.db.commit()
         await self.db.refresh(ability)
         return ability

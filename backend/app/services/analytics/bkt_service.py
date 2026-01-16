@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -52,7 +52,7 @@ class BKTService:
 
         current = status.bkt_mastery_prob or self.params.p_init
         status.bkt_mastery_prob = self._update_prob(current, correct)
-        status.bkt_last_updated_at = datetime.utcnow()
+        status.bkt_last_updated_at = datetime.now(timezone.utc)
         await self.db.commit()
         await self.db.refresh(status)
         return status

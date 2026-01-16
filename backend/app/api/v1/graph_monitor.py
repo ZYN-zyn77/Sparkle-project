@@ -6,7 +6,7 @@ GraphRAG 监控 API
 
 import time
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -93,7 +93,7 @@ async def graph_rag_health(
     """
     health_status = {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "components": {},
         "metrics": {},
         "alerts": []
@@ -250,7 +250,7 @@ async def graph_statistics(
 
         return {
             "status": "success",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "statistics": stats
         }
 
@@ -477,7 +477,7 @@ async def detailed_health_check(
 
     health_report = {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "uptime_ms": 0,
         "components": {},
         "metrics": {},

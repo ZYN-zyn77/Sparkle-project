@@ -2,7 +2,7 @@
 生词本与词典模型 (Vocabulary & Dictionary Models)
 """
 import enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import (
     Column, String, Text, Integer, Float, Boolean,
     ForeignKey, DateTime, Index, JSON, UniqueConstraint
@@ -25,7 +25,7 @@ class WordBook(BaseModel):
     
     # 艾宾浩斯复习字段
     mastery_level = Column(Integer, default=0) # 0-7 阶段
-    next_review_at = Column(DateTime, default=datetime.utcnow)
+    next_review_at = Column(DateTime, default=datetime.now(timezone.utc))
     last_review_at = Column(DateTime, nullable=True)
     review_count = Column(Integer, default=0)
     

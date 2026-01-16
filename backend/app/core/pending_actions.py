@@ -5,7 +5,7 @@
 MVP 阶段使用内存存储，生产环境可升级为 Redis
 """
 from typing import Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import asyncio
 from uuid import uuid4
 
@@ -57,8 +57,8 @@ class PendingActionsStore:
             "user_id": user_id,
             "description": description,
             "preview_data": preview_data or {},
-            "created_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + timedelta(minutes=self._expire_minutes),
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": datetime.now(timezone.utc) + timedelta(minutes=self._expire_minutes),
         }
 
         # 启动清理任务（如果尚未启动）
@@ -84,7 +84,7 @@ class PendingActionsStore:
             return None
 
         # 检查是否过期
-        if action["expires_at"] < datetime.utcnow():
+        if action["expires_at"] < datetime.now(timezone.utc):
             del self._store[action_id]
             return None
 
@@ -126,7 +126,7 @@ class PendingActionsStore:
             try:
                 await asyncio.sleep(60)  # 每分钟清理一次
 
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 expired_keys = [
                     key
                     for key, value in self._store.items()
@@ -155,7 +155,7 @@ class PendingActionsStore:
         return [
             action
             for action in self._store.values()
-            if action["user_id"] == user_id and action["expires_at"] > datetime.utcnow()
+            if action["user_id"] == user_id and action["expires_at"] > datetime.now(timezone.utc)
         ]
 
     def clear_all(self):

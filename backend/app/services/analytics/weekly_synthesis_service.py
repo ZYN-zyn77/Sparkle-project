@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os
 
@@ -54,7 +54,7 @@ class WeeklySynthesisService:
         Generate full weekly report data and PDF.
         """
         if not end_date:
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(days=7)
 
         # 1. Gather Data
@@ -73,7 +73,7 @@ class WeeklySynthesisService:
             "blindspots": blindspots,
             "ai_insight": synthesis.get("insight", "No insight generated."),
             "ai_suggestion": synthesis.get("suggestion", "Keep learning!"),
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.now(timezone.utc).isoformat()
         }
 
         # 3. Generate PDF (Optional: can be triggered separately or here)
