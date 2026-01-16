@@ -1,15 +1,13 @@
-// This is a generated file - do not edit.
 //
-// Generated from websocket.proto.
-
-// @dart = 3.3
+//  Generated code. Do not modify.
+//  source: websocket.proto
+//
+// @dart = 2.12
 
 // ignore_for_file: annotate_overrides, camel_case_types, comment_references
-// ignore_for_file: constant_identifier_names
-// ignore_for_file: curly_braces_in_flow_control_structures
-// ignore_for_file: deprecated_member_use_from_same_package, library_prefixes
-// ignore_for_file: non_constant_identifier_names, prefer_relative_imports
-// ignore_for_file: unused_import
+// ignore_for_file: constant_identifier_names, library_prefixes
+// ignore_for_file: non_constant_identifier_names, prefer_final_fields
+// ignore_for_file: unnecessary_import, unnecessary_this, unused_import
 
 import 'dart:convert' as $convert;
 import 'dart:core' as $core;
@@ -42,14 +40,7 @@ const ChatMessage$json = {
     {'1': 'session_id', '3': 1, '4': 1, '5': 9, '10': 'sessionId'},
     {'1': 'user_id', '3': 2, '4': 1, '5': 9, '10': 'userId'},
     {'1': 'message', '3': 3, '4': 1, '5': 9, '10': 'message'},
-    {
-      '1': 'tool_calls',
-      '3': 4,
-      '4': 3,
-      '5': 11,
-      '6': '.agent.v1.ToolCall',
-      '10': 'toolCalls'
-    },
+    {'1': 'tool_calls', '3': 4, '4': 3, '5': 11, '6': '.agent.v1.ToolCall', '10': 'toolCalls'},
   ],
 };
 
@@ -77,3 +68,4 @@ final $typed_data.Uint8List updateNodeMasteryRequestDescriptor = $convert.base64
     '1hc3RlcnkYAiABKAVSB21hc3RlcnkSHAoJdGltZXN0YW1wGAMgASgDUgl0aW1lc3RhbXASHQoK'
     'cmVxdWVzdF9pZBgEIAEoCVIJcmVxdWVzdElkEhoKCHJldmlzaW9uGAUgASgFUghyZXZpc2lvbg'
     '==');
+

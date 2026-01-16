@@ -403,7 +403,7 @@ class GalaxyNotifier extends StateNotifier<GalaxyState> {
         return;
       }
 
-      final response = result.data;
+      final response = result.data!;
       final aggregationLevel = _levelForScale(state.currentScale);
       final selectedNodeId = state.selectedNodeId;
       final predictedNodeId = state.predictedNodeId;
@@ -518,8 +518,8 @@ class GalaxyNotifier extends StateNotifier<GalaxyState> {
 
       // Only update if viewport changed significantly
       if (state.viewport != null) {
-        final old = state.viewport;
-        final dx = (old.center.dx - viewport.center.dx).abs();
+        final old = state.viewport!;
+        final dx = (old.center.dx - viewport!.center.dx).abs();
         final dy = (old.center.dy - viewport.center.dy).abs();
         final dw = (old.width - viewport.width).abs();
         final dh = (old.height - viewport.height).abs();
