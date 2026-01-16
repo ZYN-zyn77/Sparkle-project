@@ -132,6 +132,7 @@ class KnowledgeNode(BaseModel):
     # Layout Coordinates (for Viewport Query)
     position_x = Column(Float, nullable=True, index=True)
     position_y = Column(Float, nullable=True, index=True)
+    position_updated_at = Column(DateTime, nullable=True)  # Phase 9: 24-hour cooldown tracking
 
     # Collaborative Data
     global_spark_count = Column(Integer, default=0, nullable=False)
@@ -148,23 +149,33 @@ class KnowledgeNode(BaseModel):
 class NodeRelation(BaseModel):
     """
     知识点关系表 (星座连线)
+
+    Phase 9 Update:
+    - Added user_id for user-private edges
+    - user_id IS NULL = global edge (seed/system generated)
+    - user_id IS NOT NULL = user private edge (co_activation/co_review)
     """
     __tablename__ = "node_relations"
 
     source_node_id = Column(GUID(), ForeignKey("knowledge_nodes.id"), nullable=False, index=True)
     target_node_id = Column(GUID(), ForeignKey("knowledge_nodes.id"), nullable=False, index=True)
 
-    # 关系类型: prerequisite, related, application, composition, evolution
+    # Phase 9: User private edge support
+    # NULL = global edge, NOT NULL = user-specific edge
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+
+    # 关系类型: prerequisite, related, application, composition, evolution, co_activation, co_review
     relation_type = Column(String(30), nullable=False)
-    
+
     # 关系强度 (0-1)
     strength = Column(Float, default=0.5)
 
-    created_by = Column(String(20), default='seed') # seed | user | llm
+    created_by = Column(String(20), default='seed') # seed | user | llm | system
 
     # 关系
     source_node = relationship("KnowledgeNode", foreign_keys=[source_node_id], back_populates="source_relations")
     target_node = relationship("KnowledgeNode", foreign_keys=[target_node_id], back_populates="target_relations")
+    user = relationship("User", backref="node_relations")
 
 
 class UserNodeStatus(Base):

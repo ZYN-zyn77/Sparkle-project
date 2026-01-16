@@ -196,6 +196,14 @@ class LearningAssetService:
             f"kind={asset_kind.value}, status={initial_status.value}"
         )
 
+        # 7. Generate concept links (Phase 9: Graph Flywheel)
+        try:
+            from app.services.asset_concept_link_service import asset_concept_link_service
+            await asset_concept_link_service.generate_links_for_asset(db, asset)
+        except Exception as e:
+            # Link generation failure should not block asset creation
+            logger.warning(f"Failed to generate concept links for asset {asset.id}: {e}")
+
         return asset
 
     async def check_existing_asset(
@@ -840,6 +848,168 @@ class LearningAssetService:
         )
 
         return asset
+
+    # === Phase 9: Review Calibration ===
+
+    async def record_review_with_calibration(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        asset_id: UUID,
+        difficulty: str,
+    ) -> Tuple[LearningAsset, Dict[str, Any]]:
+        """
+        Record review with personalized interval calibration.
+
+        Analyzes recent review patterns and adjusts intervals accordingly:
+        - Consecutive hard: Shorten intervals (learning difficulty)
+        - Consecutive easy: Lengthen intervals (mastery acceleration)
+
+        Returns:
+            Tuple of (updated asset, calibration info dict)
+        """
+        from app.models.review_calibration import ReviewCalibrationLog
+
+        if difficulty not in self.REVIEW_INTERVALS:
+            raise ValueError(f"Invalid difficulty: {difficulty}")
+
+        asset = await db.get(LearningAsset, asset_id)
+        if not asset or asset.user_id != user_id or asset.deleted_at is not None:
+            raise ValueError(f"Asset not found: {asset_id}")
+
+        if asset.status != AssetStatus.ACTIVE.value:
+            raise ValueError(f"Asset is not active: {asset_id}")
+
+        # 1. Get interval before update
+        interval_before = None
+        if asset.review_due_at and asset.last_seen_at:
+            interval_before = (asset.review_due_at - asset.last_seen_at).days
+
+        # 2. Check calibration adjustment
+        adjustment = await self._check_interval_adjustment(db, user_id, asset_id)
+
+        # 3. Calculate base interval
+        base_intervals = self.REVIEW_INTERVALS[difficulty]
+        interval_index = min(asset.review_count, len(base_intervals) - 1)
+        base_interval = base_intervals[interval_index]
+
+        # 4. Apply adjustment if needed
+        if adjustment["should_adjust"]:
+            factor = adjustment.get("factor", 1.0)
+            adjusted_interval = max(1, int(base_interval * factor))
+        else:
+            adjusted_interval = base_interval
+
+        # 5. Update asset
+        now = datetime.now(timezone.utc)
+        asset.review_count += 1
+        asset.last_seen_at = now
+        asset.review_due_at = now + timedelta(days=adjusted_interval)
+
+        # 6. Update success rate
+        success_score = {'easy': 1.0, 'good': 0.7, 'hard': 0.3}[difficulty]
+        alpha = 0.3
+        if asset.review_count == 1:
+            asset.review_success_rate = success_score
+        else:
+            asset.review_success_rate = alpha * success_score + (1 - alpha) * asset.review_success_rate
+
+        # 7. Record calibration log
+        calibration_log = ReviewCalibrationLog(
+            user_id=user_id,
+            asset_id=asset_id,
+            reviewed_at=now,
+            difficulty=difficulty,
+            review_count=asset.review_count,
+            interval_days_before=interval_before,
+            interval_days_after=adjusted_interval,
+            explanation_code=adjustment.get("explanation_code", "standard"),
+            metadata={
+                "base_interval": base_interval,
+                "adjustment_factor": adjustment.get("factor", 1.0),
+            },
+        )
+        db.add(calibration_log)
+
+        await db.flush()
+
+        # 8. Write event
+        await self._write_event_outbox(
+            db=db,
+            aggregate_type="learning_asset",
+            aggregate_id=asset_id,
+            event_type="review_calibrated",
+            payload={
+                "asset_id": str(asset_id),
+                "user_id": str(user_id),
+                "difficulty": difficulty,
+                "interval_days": adjusted_interval,
+                "review_count": asset.review_count,
+                "explanation_code": adjustment.get("explanation_code", "standard"),
+                "adjustment_factor": adjustment.get("factor", 1.0),
+            },
+        )
+
+        logger.info(
+            f"Calibrated review: asset={asset_id}, difficulty={difficulty}, "
+            f"interval={adjusted_interval}d, explanation={adjustment.get('explanation_code', 'standard')}"
+        )
+
+        return asset, {
+            "interval_days": adjusted_interval,
+            "explanation_code": adjustment.get("explanation_code", "standard"),
+            "next_review_at": asset.review_due_at.isoformat(),
+            "adjustment_factor": adjustment.get("factor", 1.0),
+        }
+
+    async def _check_interval_adjustment(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        asset_id: UUID,
+    ) -> Dict[str, Any]:
+        """
+        Check if interval adjustment is needed based on review patterns.
+
+        Rules:
+        - 3 consecutive hard → factor=0.5 (halve interval)
+        - 3 consecutive easy → factor=1.5 (extend interval 50%)
+        """
+        from app.models.review_calibration import ReviewCalibrationLog
+
+        query = select(ReviewCalibrationLog).where(
+            and_(
+                ReviewCalibrationLog.user_id == user_id,
+                ReviewCalibrationLog.asset_id == asset_id,
+            )
+        ).order_by(ReviewCalibrationLog.reviewed_at.desc()).limit(5)
+
+        result = await db.execute(query)
+        recent_logs = list(result.scalars().all())
+
+        if len(recent_logs) < 3:
+            return {"should_adjust": False}
+
+        # Check last 3 difficulties
+        last_three = [log.difficulty for log in recent_logs[:3]]
+
+        # Rule: 3 consecutive hard
+        if last_three == ["hard", "hard", "hard"]:
+            return {
+                "should_adjust": True,
+                "factor": 0.5,
+                "explanation_code": "learning_difficulty_adjusted",
+            }
+
+        # Rule: 3 consecutive easy
+        if last_three == ["easy", "easy", "easy"]:
+            return {
+                "should_adjust": True,
+                "factor": 1.5,
+                "explanation_code": "mastery_accelerated",
+            }
+
+        return {"should_adjust": False}
 
     def calculate_next_review(
         self,

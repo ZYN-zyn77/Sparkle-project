@@ -85,6 +85,93 @@ class OutboxItem {
   String? error;
 }
 
+// === Phase 9: New Collections for Asset-Concept Sync ===
+
+/// Local cache of learning assets
+@collection
+class LocalLearningAsset {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true)
+  late String serverId;
+
+  late String status; // INBOX, ACTIVE, ARCHIVED
+  late String headword;
+  String? translation;
+  String? definition;
+
+  DateTime? reviewDueAt;
+  int reviewCount = 0;
+
+  late DateTime updatedAt;
+
+  @enumerated
+  SyncStatus syncStatus = SyncStatus.synced;
+}
+
+/// Local cache of asset-concept links
+@collection
+class LocalAssetConceptLink {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true)
+  late String serverId;
+
+  @Index()
+  late String assetId;
+
+  @Index()
+  late String conceptId;
+
+  late String linkType;
+  double confidence = 1.0;
+
+  late DateTime updatedAt;
+}
+
+/// Tracks processed events for idempotency
+@collection
+class ProcessedEvent {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true)
+  late String eventId; // Server event ID
+
+  late String aggregateId;
+  late int sequence;
+  late DateTime occurredAt;
+  late DateTime processedAt;
+}
+
+/// Singleton sync state storage
+@collection
+class SyncState {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true)
+  String key = 'main'; // Singleton key
+
+  String? cursor;
+  DateTime? lastSyncAt;
+  String schemaVersion = '1';
+}
+
+/// Conflict records for later resolution
+@collection
+class SyncConflict {
+  Id id = Isar.autoIncrement;
+
+  late String entityType; // asset, link, concept
+  late String entityId;
+  late String conflictType; // version_mismatch, deleted_on_server
+
+  late String localData; // JSON
+  late String serverData; // JSON
+
+  late DateTime detectedAt;
+  bool resolved = false;
+}
+
 class LocalDatabase {
   factory LocalDatabase() => _instance;
 
@@ -99,7 +186,18 @@ class LocalDatabase {
     // final encryptionKey = await secureStorage.read(key: 'db_key');
 
     isar = await Isar.open(
-      [LocalKnowledgeNodeSchema, PendingUpdateSchema, LocalCRDTSnapshotSchema, OutboxItemSchema],
+      [
+        LocalKnowledgeNodeSchema,
+        PendingUpdateSchema,
+        LocalCRDTSnapshotSchema,
+        OutboxItemSchema,
+        // Phase 9 collections
+        LocalLearningAssetSchema,
+        LocalAssetConceptLinkSchema,
+        ProcessedEventSchema,
+        SyncStateSchema,
+        SyncConflictSchema,
+      ],
       directory: dir.path,
     );
   }

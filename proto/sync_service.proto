@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package sync.v1;
+
+option go_package = "github.com/sparkle/gateway/gen/sync/v1;syncv1";
+
+import "google/protobuf/timestamp.proto";
+
+// SyncService defines the interface for multi-device sync operations.
+// Phase 9: Event stream API for offline-first sync.
+//
+// Note: This service is exposed as REST API via Go Gateway, not gRPC.
+// Proto definition serves as documentation and type reference.
+service SyncService {
+  // Bootstrap: Get initial state snapshot for new device
+  rpc Bootstrap(BootstrapRequest) returns (BootstrapResponse);
+
+  // GetEvents: Get incremental events since cursor
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
+}
+
+message BootstrapRequest {
+  string user_id = 1;
+  string schema_version = 2;  // Client schema version for compatibility check
+}
+
+message BootstrapResponse {
+  string cursor = 1;  // Cursor for subsequent GetEvents calls
+  SnapshotData snapshot = 2;
+}
+
+message SnapshotData {
+  repeated LearningAssetSnapshot assets = 1;
+  repeated AssetConceptLinkSnapshot links = 2;
+  repeated ConceptSnapshot concepts = 3;
+  repeated UserNodeStatusSnapshot statuses = 4;
+}
+
+message LearningAssetSnapshot {
+  string id = 1;
+  string status = 2;  // INBOX, ACTIVE, ARCHIVED
+  string headword = 3;
+  string translation = 4;
+  string definition = 5;
+  google.protobuf.Timestamp review_due_at = 6;
+  int32 review_count = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message AssetConceptLinkSnapshot {
+  string id = 1;
+  string asset_id = 2;
+  string concept_id = 3;
+  string link_type = 4;  // provenance, co_activation, manual
+  double confidence = 5;
+}
+
+message ConceptSnapshot {
+  string id = 1;
+  string name = 2;
+  double position_x = 3;
+  double position_y = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message UserNodeStatusSnapshot {
+  string node_id = 1;
+  double mastery_score = 2;
+  int64 revision = 3;
+  google.protobuf.Timestamp next_review_at = 4;
+}
+
+message GetEventsRequest {
+  string user_id = 1;
+  string cursor = 2;  // Cursor from previous response
+  int32 limit = 3;    // Max events to return (default 100, max 500)
+}
+
+message GetEventsResponse {
+  repeated SyncEvent events = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+}
+
+message SyncEvent {
+  string id = 1;                            // Unique event ID
+  string type = 2;                          // e.g., "learning_asset.created"
+  string aggregate_id = 3;                  // ID of the affected entity
+  int64 sequence = 4;                       // Sequence within aggregate
+  google.protobuf.Timestamp occurred_at = 5;
+  bytes payload = 6;                        // JSON payload (max 2KB)
+}
